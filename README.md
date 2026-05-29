@@ -1,363 +1,291 @@
+<div align="center">
+
 # Vellum
 
-An open-source, AI-first Applicant Tracking System.
-Self-hosted, "Liquid Glass" aesthetic, multi-tenant workspaces.
+**An open-source, AI-first applicant tracking system (ATS) you can self-host in minutes.**
 
-> **Status:** MVP. The whole hiring loop works locally: career site → application
-> → kanban → inbox → interview. AI features (summaries, reply drafts, JD
-> rewrite) run on Anthropic when you give it a key, otherwise they return
-> high-quality mocks so the UI still feels alive.
+Beautiful hiring pipeline · branded career sites · a calm shared inbox ·
+bring-your-own (or local) AI. Multi-tenant, privacy-respecting, and yours to run.
 
----
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-2b6cb0.svg)](LICENSE)
+![Self-hosted](https://img.shields.io/badge/self--hosted-Docker-2496ed.svg)
+![Status: MVP](https://img.shields.io/badge/status-active%20MVP-f59e0b.svg)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-22c55e.svg)
 
-## Quick start (Docker, ~2 min)
-
-```bash
-git clone <this-repo> vellum
-cd vellum
-cp .env.example .env       # adjust if you want; defaults are fine for local
-docker compose up --build
-```
-
-On first run the app container migrates Postgres, seeds a demo "goscore"
-workspace, prints the admin credentials, and starts on port 3000:
-
-```
-  ──────────────────────────────────────────────
-   Vellum is ready.
-   Admin: admin@vellum.local   password: vellum
-   App:    http://localhost:3000
-   Career site: http://goscore.localhost:3000
-  ──────────────────────────────────────────────
-```
-
-Open <http://localhost:3000> and sign in.
-
-### Career site URLs
-
-Career sites live on a **per-workspace subdomain** of the apex configured in
-`PUBLIC_DOMAIN` (default `localhost:3000`). For the seed workspace:
-
-- Public site: <http://goscore.localhost:3000>
-- A specific role: <http://goscore.localhost:3000/jobs/senior-product-designer>
-
-On most browsers `*.localhost` resolves to 127.0.0.1 without any `/etc/hosts`
-edits. If yours doesn't, add:
-
-```
-127.0.0.1 goscore.localhost
-```
-
-When you create new workspaces from the in-app UI, use their slug — e.g.
-`acme.localhost:3000`.
+</div>
 
 ---
 
-## Production install
+## Contents
 
-For a real server (your own domain + HTTPS), use the guided installer instead
-of the local quick-start. It checks Docker, generates strong secrets, sets up
-automatic HTTPS, and starts an **empty** instance — no demo data:
+- [Why Vellum](#why-vellum)
+- [Features](#features)
+- [Quick start](#quick-start)
+- [Configuration](#configuration)
+- [Updating](#updating)
+- [FAQ](#faq)
+- [Tech stack](#tech-stack)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+
+---
+
+## Why Vellum
+
+Most ATSs are either expensive SaaS that owns your candidate data, or clunky
+self-hosted tools that feel like a database with a form bolted on. Vellum is
+built to be **delightful to use, honest about AI, and fully self-hosted** — your
+data stays on your infrastructure, AI is optional and bring-your-own, and the
+whole thing runs from a single `docker compose`.
+
+> **Status:** actively developed MVP. The full hiring loop works today:
+> career site → application → pipeline → inbox → interview. AI features return
+> high-quality mock responses until you add a provider key, so the UI is fully
+> alive out of the box.
+
+<!-- Screenshots welcome — drop them in docs/ and link here. -->
+
+---
+
+## Features
+
+### Pipeline & workflow
+- **Kanban pipeline** with drag-and-drop, customizable stages per workspace.
+- **Applicant ProfileSheet** — overview, résumé preview (PDF/image), communication, and timeline in one sheet.
+- Stage moves, internal team notes, and activity history.
+
+### Candidates
+- Searchable **candidate database** scoped to each workspace.
+- **AI résumé parsing** to backfill role, experience, location, and links on applicants from your career site.
+- **AI candidate summaries** anchored to the résumé + role (never auto-decisions).
+
+### Jobs
+- Job lifecycle management with **AI-assisted job-description drafting & rewriting**.
+- One click to publish a role to your branded career site.
+
+### Career sites
+- **Server-rendered, SEO-friendly career sites**, one per workspace.
+- Per-workspace **subdomains** (`careers.yourco.com` / `yourco.example.com`) with custom-domain support.
+- No-code **WYSIWYG editor** for lede, about, team stories, offices, values, and CTAs.
+- Built-in, configurable **cookie-consent** banner for GDPR-friendly tracking.
+
+### Unified inbox & email
+- Per-workspace **IMAP + SMTP** — connect your real shared inbox (e.g. `careers@yourco.com`).
+- Threaded conversations with proper `In-Reply-To`/`References` headers.
+- **AI reply drafts** that match tone and never auto-send.
+- Inbound/outbound credentials **AES-256-GCM encrypted at rest**.
+
+### Calendar & scheduling
+- Schedule interviews with **Google Calendar, Microsoft 365/Outlook, and CalDAV** (iCloud, Fastmail, Nextcloud…).
+- `.ics` invites and follow-up handling; CalDAV needs no server-side OAuth setup.
+
+### AI — optional, bring-your-own, or fully local
+- Multi-provider: **Anthropic, OpenAI, and Ollama / [Ollama Cloud](https://ollama.com)** (Google planned).
+- **No key? No problem.** Every AI surface falls back to polished mock output, so nothing looks broken.
+- Per-workspace provider/model/key overrides in **Settings → AI**, with token-usage tracking.
+- AI assists — it **never auto-rejects** candidates (EU AI Act-aware) and labels AI-generated content.
+
+### Analytics & insights
+- Pipeline **analytics dashboard**, a candidate **review queue**, and a **monthly recap**.
+
+### Multi-tenant & roles
+- **Workspaces** with hard per-tenant data isolation (`workspaceId` on every record).
+- Roles: **owner / admin / member**, plus hiring-team and interviewer relationships.
+- Invite teammates by email with token-based, role-scoped links.
+
+### Design & self-hosting
+- "Liquid Glass" UI — **dark/light themes**, compact/cozy **density modes**, OKLCH theming.
+- **One-command install**, automatic **HTTPS** (Caddy, incl. wildcard career-site certs), optional **auto-updates** (Watchtower).
+- Runs on **Docker + PostgreSQL**. Your data lives in named volumes you control.
+
+---
+
+## Quick start
+
+### Option A — turnkey (fresh server, zero Docker knowledge)
+
+Installs Docker, downloads what's needed, and runs the guided setup:
 
 ```bash
-git clone <this-repo> vellum
+curl -fsSL https://raw.githubusercontent.com/MGTechAS/vellum/main/setup-all.sh | sudo bash
+```
+
+### Option B — guided install (you already have Docker)
+
+```bash
+git clone https://github.com/MGTechAS/vellum.git
 cd vellum
 ./setup.sh
 ```
 
-The wizard walks you through every setting. Press **Enter** to accept the
-`[default]` shown for any step, skip the optional ones, and re-run it anytime to
-change a single value (it backs up your `.env` and offers current values as
-defaults):
+`setup.sh` is an interactive wizard (press **Enter** to accept defaults). It checks
+Docker, generates strong secrets, optionally configures HTTPS and AI, and starts a
+**clean** instance — no demo data. You sign in with the admin account you chose and
+create your first workspace.
 
-- **Docker preflight** — verifies Docker + Compose are installed and the daemon
-  is reachable, with copy-paste install commands if not.
-- **Deployment mode** — pull a prebuilt image (recommended) or build from source.
-- **Domain & HTTPS** — your app domain and the apex that career-site subdomains
-  hang off.
-- **Admin account** — your first login; can auto-generate a strong password.
-- **Secrets** — `NEXTAUTH_SECRET`, `VELLUM_SECRET`, and the Postgres password are
-  generated for you and written to `.env` (chmod 600).
-- **AI** — optional. Recommends **Ollama Cloud** (with the exact steps to get a
-  key); Anthropic and OpenAI are also supported. Every value is overridable per
-  workspace later in **Settings → AI**.
-- **HTTPS (Caddy)** — automatic Let's Encrypt certificates, including a wildcard
-  cert for career-site subdomains.
-- **Auto-updates (Watchtower)** — optional; keeps the app on the latest image.
-
-### Prerequisites
-
-- A Linux server with Docker Engine + the Compose plugin
-  (`curl -fsSL https://get.docker.com | sh`).
-- A domain you control, with DNS records pointing at the server's public IP:
-
-  | Type | Host | Purpose |
-  |---|---|---|
-  | `A` | `vellum.example.com` | Admin app (where you sign in) |
-  | `A` | `*.example.com` | Career sites (`acme.example.com`, …) |
-
-- For **wildcard HTTPS**, a DNS-provider API token (Cloudflare is supported out
-  of the box) so Caddy can solve the DNS-01 challenge for `*.example.com`.
-
-### Deployment modes
-
-| Mode | How updates work | Best for |
-|---|---|---|
-| **Prebuilt image** (default) | Watchtower auto-updates, or run `./update.sh` | Most installs |
-| **Build from source** | `./update.sh` (git pull + rebuild) | Forks / local changes |
-
-### Publishing your own image
-
-Image mode needs a published image. Build and push one — `publish.sh` produces a
-clean image (compiled output only, no secrets or internal docs) and defaults to
-`linux/amd64` so it runs on a typical cloud VM:
+### Option C — local trial (see it with sample data)
 
 ```bash
-docker login
-./publish.sh        # prompts for namespace/name/version → yourname/vellum:latest
-```
-
-Then point `setup.sh` (or `APP_IMAGE` in `.env`) at that reference.
-
-### Updating
-
-```bash
-./update.sh         # pulls the new image (or rebuilds from source), then restarts
-```
-
-Your data lives in named Docker volumes (`vellum_db`, `vellum_uploads`) and is
-preserved across updates. Database migrations run automatically on start.
-
-### Email & calendar
-
-SMTP/IMAP are configured **per workspace** in Settings → Email — nothing to set
-in `.env`. Calendar OAuth (Google / Microsoft) needs HTTPS callback URLs; see
-the step-by-step walkthroughs in `.env.example`. CalDAV needs no server config.
-
----
-
-## Logging in
-
-**Local quick-start** seeds a demo admin:
-
-| | |
-|---|---|
-| Email | `admin@vellum.local` |
-| Password | `vellum` |
-
-**Production install** has no demo account. You sign in with the admin email and
-password you chose in `./setup.sh`. If you let the wizard generate the password,
-it's printed once at the end of the run (and stored in `.env` as
-`SEED_ADMIN_PASSWORD`) — save it somewhere safe.
-
-Change either by setting `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env`
-**before** the first `docker compose up`, or via Settings → Profile after
-signing in.
-
----
-
-## Inviting teammates
-
-In **Settings → Team**, enter an email and pick a role. The OSS edition
-doesn't ship an SMTP integration, so the invite link is:
-
-1. Returned to the browser and shown in the success card
-2. Printed to the server logs prefixed with `📨 INVITE for …`
-
-Share the link with your teammate. They'll set their name + password and land
-in your workspace.
-
----
-
-## AI
-
-By default Vellum uses **mocked AI responses** so every shimmer animation,
-summary, and reply draft still works without an API key.
-
-To use real AI, set in `.env`:
-
-```bash
-ANTHROPIC_API_KEY=sk-ant-xxxxx
-ANTHROPIC_MODEL=claude-sonnet-4-5     # or claude-haiku-4-5
-```
-
-…and restart. The picker in Settings → AI & integrations also lets each
-workspace override the model and store its own key.
-
-The plumbing for **OpenAI / Google / Ollama** is in place (the provider
-abstraction lives in `src/lib/ai.ts`) but only the Anthropic path is
-wired through for real completions in the MVP.
-
----
-
-## Stack
-
-- **Next.js 15** (App Router) — admin SPA + SSR career sites in one binary
-- **Postgres 16** via Prisma 5 — strict multi-tenant (`workspaceId` on every
-  table)
-- **NextAuth.js (Credentials)** — JWT sessions, bcrypt-hashed passwords,
-  token-based invites
-- **@dnd-kit** — accessible drag-and-drop on the Kanban
-- **@anthropic-ai/sdk** — AI provider, mockable
-- **imapflow + nodemailer + mailparser** — per-workspace inbound IMAP polling
-  and outbound SMTP, credentials AES-256-GCM encrypted at rest
-- **Plain CSS** for the design system — see `src/app/globals.css`
-
-A single subdomain-aware middleware (`middleware.ts`) routes requests:
-
-- `<slug>.<PUBLIC_DOMAIN>/…` → server-rendered career site
-- Anything else → the admin app (requires auth)
-
----
-
-## Local dev (without Docker)
-
-You still need Postgres. The easiest path is to keep the DB in Docker and run
-the Next.js app on the host:
-
-```bash
-docker compose up -d db
+git clone https://github.com/MGTechAS/vellum.git
+cd vellum
 cp .env.example .env
-# point DATABASE_URL at localhost:
-sed -i '' 's|@db:5432|@localhost:5432|' .env
+docker compose up --build
+```
 
+Open <http://localhost:3000>. The first run seeds a demo "goscore" workspace and
+prints the login (`admin@vellum.local` / `vellum`). Career site:
+<http://goscore.localhost:3000>.
+
+### Requirements
+
+- **Docker Engine + Compose** (the turnkey script installs these for you).
+- For public HTTPS: a **domain** with DNS pointing at your server
+  (`A` record for the app host, and a `*.` wildcard for career-site subdomains).
+
+---
+
+## Configuration
+
+All configuration lives in `.env` — `setup.sh` writes it for you, or copy
+[`.env.example`](.env.example) and edit by hand. Highlights:
+
+| Area | Keys | Notes |
+|---|---|---|
+| Secrets | `NEXTAUTH_SECRET`, `VELLUM_SECRET` | Auto-generated by `setup.sh`. `VELLUM_SECRET` encrypts stored email/calendar credentials. |
+| URLs | `APP_ORIGIN`, `NEXTAUTH_URL`, `PUBLIC_DOMAIN` | App URL + the apex career-site subdomains hang off. |
+| AI | `AI_PROVIDER`, `OLLAMA_*`, `ANTHROPIC_*`, `OPENAI_*` | Optional. Overridable per workspace in Settings. |
+| Database | `POSTGRES_*` | Defaults are fine; `setup.sh` generates a strong password. |
+| Calendar | `GOOGLE_*`, `MICROSOFT_*` | OAuth apps; CalDAV needs nothing here. |
+
+**AI recommendation:** the easiest path to real AI is **[Ollama Cloud](https://ollama.com)** —
+hosted open models with a free tier. Create a key at
+<https://ollama.com/settings/keys>, then set `AI_PROVIDER=ollama`,
+`OLLAMA_BASE_URL=https://ollama.com`, and `OLLAMA_API_KEY=…`. You can also do this
+later, per workspace, in **Settings → AI**.
+
+**Email** is configured per workspace in **Settings → Email** (no `.env` needed).
+
+---
+
+## Updating
+
+On a server set up with `setup.sh`:
+
+```bash
+./update.sh        # pulls the latest image (or rebuilds from source) and restarts
+```
+
+Or enable **Watchtower** during setup for automatic updates. Your data
+(`vellum_db`, `vellum_uploads` volumes) is preserved and database migrations run
+automatically on start.
+
+---
+
+## FAQ
+
+**Is it really free and open source?**
+Yes — licensed under [AGPL-3.0](#license). Self-host it, modify it, run it for your
+company at no cost. The only obligation: if you offer a *modified* version to others
+over a network, you share your changes (see the license note below).
+
+**Do I need an AI API key?**
+No. Without a key, AI features return high-quality mock responses so the app is fully
+usable. Add a key anytime to switch on real AI.
+
+**Which AI providers are supported?**
+Anthropic (Claude), OpenAI, and Ollama / Ollama Cloud today; Google is planned. You
+can run **fully locally** with a self-hosted Ollama server, or use Ollama Cloud for a
+zero-infrastructure hosted option. Keys/models are configurable per workspace.
+
+**Is candidate data sent to AI providers?**
+Only when you enable a provider, and only for the specific feature you trigger
+(summaries, drafts, JD rewrites). With no provider configured, nothing leaves your
+server. Vellum is designed to assist, not auto-decide — it never auto-rejects.
+
+**How do career sites and custom domains work?**
+Each workspace gets a subdomain of `PUBLIC_DOMAIN` (e.g. `acme.yourdomain.com`).
+`setup.sh` can provision a wildcard HTTPS certificate so every workspace's career
+site is served over TLS. Point a `*.` DNS record at your server and you're set.
+
+**How is data isolated between workspaces?**
+Every record carries a `workspaceId` and queries are scoped to the active workspace,
+so candidates and jobs never leak across tenants.
+
+**How do I invite teammates?**
+**Settings → Team** → enter an email and pick a role (owner/admin/member). Vellum
+generates a token-based invite link to share.
+
+**How do I back up my data?**
+Everything lives in the `vellum_db` (PostgreSQL) and `vellum_uploads` Docker volumes.
+Back those up (e.g. `pg_dump` the database and archive uploads) and you can restore
+anywhere.
+
+**Can I run it without Docker?**
+Yes, for development — you still need PostgreSQL. See [Contributing](#contributing);
+Docker is strongly recommended for production.
+
+**Is it production-ready?**
+It's an actively developed MVP: the core hiring loop is solid and self-hostable.
+Review the open issues for current rough edges before betting your whole process on it.
+
+---
+
+## Tech stack
+
+- **Next.js (App Router)** — admin app + server-rendered career sites in one binary
+- **PostgreSQL + Prisma** — strict multi-tenant data model
+- **NextAuth (credentials)** — JWT sessions, bcrypt passwords, token invites
+- **@dnd-kit** — accessible drag-and-drop Kanban
+- Multi-provider **AI abstraction** (Anthropic / OpenAI / Ollama) with mock fallback
+- **IMAP/SMTP** for the inbox; provider OAuth for calendars
+- **Plain CSS** design system · **Docker + Caddy** for delivery
+
+---
+
+## Contributing
+
+Contributions are welcome — issues, ideas, docs, testing, and PRs all help. 🙌
+
+**Ways to help**
+- 🐛 **Report bugs** or 💡 **request features** via [GitHub Issues](https://github.com/MGTechAS/vellum/issues).
+- 📝 Improve docs, examples, or this README.
+- 🔧 Fix a bug or build a feature (browse issues labeled `good first issue`).
+
+**Development setup**
+```bash
+git clone https://github.com/MGTechAS/vellum.git
+cd vellum
+cp .env.example .env
+docker compose up -d db          # Postgres in Docker
 npm install
-npx prisma migrate deploy
-npm run db:seed
-npm run dev          # http://localhost:3000
+npm run prisma:push && npm run db:seed
+npm run dev                      # http://localhost:3000
 ```
 
----
+**Guidelines**
+- Keep PRs focused; describe the change and how you tested it.
+- Match the existing style (TypeScript, plain CSS, small components).
+- New source files should carry an SPDX license header:
+  ```ts
+  // SPDX-License-Identifier: AGPL-3.0-or-later
+  ```
+- Sign your commits off (Developer Certificate of Origin): `git commit -s`.
+- By contributing, you agree your work is licensed under **AGPL-3.0**.
 
-## Project layout
+**Workflow:** fork → branch → commit → open a PR against `main`. A maintainer will
+review and, once merged, it ships in the next release and image.
 
-```
-prisma/
-  schema.prisma          # 15+ models — Workspace, Job, Candidate, Application,
-                         # Thread, Message, Interview, CareerSite, AIConfig, …
-  seed.ts                # admin user + goscore demo workspace
-middleware.ts            # subdomain → admin vs careers rewrite
-src/
-  lib/
-    auth.ts              # NextAuth config + password hashing
-    db.ts                # Prisma client singleton
-    ai.ts                # Provider abstraction (Anthropic + mock fallback)
-    workspace.ts         # requireWorkspace() — resolves current ws from cookie
-    design.ts            # ACCENTS, AI_PROVIDERS, DEFAULT_STAGES
-    utils.ts             # slug/token/relativeTime helpers
-    seed-demo.ts         # demo jobs / candidates / threads
-  components/
-    primitives.tsx       # Glass, Chip, Avatar, AIPill, RingScore, WorkspaceMark
-    Icons.tsx            # Original lucide-inspired SVG icons
-    Sidebar.tsx          # Workspace switcher + nav
-    Topbar.tsx           # Search, notifications, theme toggle
-    ThemeBoot.tsx        # data-theme / accent / density boot
-    ScheduleModal.tsx    # Interview scheduling sheet
-    SessionProvider.tsx  # NextAuth client wrapper
-  app/
-    layout.tsx           # Root HTML shell
-    globals.css          # Liquid Glass design tokens + primitives
-    page.tsx             # → /dashboard or /login
-    (auth)/              # Login + invite acceptance pages
-    onboarding/          # First-run + new-workspace flow
-    (admin)/             # Auth-gated admin app: dashboard, pipeline, jobs,
-                         # candidates, inbox, analytics, settings, career, profile
-    careers/[workspace]/ # Public SSR career site + job detail + apply form
-    api/                 # REST endpoints under /api/*
-```
+Please be kind and constructive — we follow the spirit of the
+[Contributor Covenant](https://www.contributor-covenant.org/).
 
 ---
 
-## API surface (admin requests come with cookie-based auth)
+## Security
 
-| Endpoint | Purpose |
-|---|---|
-| `POST /api/auth/[...nextauth]` | Sign in / out |
-| `POST /api/invites` | Create teammate invite |
-| `POST /api/invites/accept` | Accept invite + set password |
-| `POST /api/workspace/create` | Create a new workspace |
-| `PATCH /api/workspace` | Update name/domain/color |
-| `DELETE /api/workspace` | Delete the workspace (owner only) |
-| `GET /api/workspace/export` | Download workspace data as JSON |
-| `POST /api/workspaces/switch` | Switch active workspace |
-| `POST /api/preferences` | Theme / density / accent |
-| `POST /api/jobs` · `PATCH /api/jobs/:id` · `DELETE /api/jobs/:id` | Job CRUD |
-| `PATCH /api/applications/:id` | Move stage / archive |
-| `POST /api/threads` | Open a conversation |
-| `PATCH /api/threads/:id` | Star / mark unread |
-| `POST /api/threads/:id/messages` | Send an internal-only message |
-| `POST /api/threads/:id/send-email` | Send via SMTP when email is configured |
-| `GET /api/applications/:id/sheet` | Hydrate the shared ProfileSheet modal |
-| `PUT /api/email-account` · `DELETE /api/email-account` | Save / disconnect IMAP+SMTP |
-| `POST /api/email-account/test` · `POST /api/email-account/poll` | Verify / fetch new mail now |
-| `POST /api/candidates/:id/notes` | Internal team note |
-| `POST /api/interviews` | Schedule interview |
-| `PATCH /api/career-site` | Update career site content (sanitized rich text) |
-| `PATCH /api/ai-config` | Workspace AI settings |
-| `GET /api/ai/test` | Smoke-test the configured provider |
-| `POST /api/ai/candidate-summary` · `POST /api/ai/draft-reply` · `POST /api/ai/rewrite-jd` | AI helpers |
-| `POST /api/public/apply` | Public application submission |
-
----
-
-## What's intentionally still rough
-
-These follow naturally from the design notes (see `PRODUCT_NOTES.md`) but
-were out of scope for the local MVP:
-
-- **Calendar OAuth** — the Schedule modal saves interviews but doesn't push
-  invites to Google / Outlook calendars yet.
-- **Wildcard SSL for prod** — the CNAME UI shows the record HR needs to
-  create; the routing layer (Caddy / Cloudflare) is a deployment concern.
-- **PII redaction & no-log enforcement** — the toggles exist; only the
-  Anthropic no-log header is plumbed.
-- **OpenAI / Google / Ollama** — provider picker is in the UI, but only
-  Anthropic is wired to real calls. The abstraction is ready in `lib/ai.ts`.
-- **pgvector / semantic search** — the schema doesn't ship a vector column
-  yet. Search is keyword today.
-- **Email scaling** — IMAP polling runs inside the Next.js process on a
-  3-minute interval. Fine for one-org self-hosted; multi-tenant SaaS will
-  want a dedicated worker and per-account IDLE.
-
----
-
-## Email integration
-
-Each workspace can connect its own shared inbox (e.g. `careers@yourdomain.com`)
-under **Settings → Email**:
-
-- **Inbound**: IMAP poll every 3 minutes (`EMAIL_POLL_INTERVAL_MS` to tune).
-  Messages from senders matching a known candidate's email are appended to the
-  most recent thread; unknown senders are ignored.
-- **Outbound**: SMTP send from the configured From identity, with proper
-  `In-Reply-To` / `References` headers so the candidate's mail client threads
-  the reply.
-- **Storage**: IMAP and SMTP passwords are encrypted with AES-256-GCM, keyed
-  off `VELLUM_SECRET` (falls back to `NEXTAUTH_SECRET`). Plaintext never
-  touches the database.
-- **Manual ops**: *Test connection* verifies both halves; *Poll now* fetches
-  immediately without waiting for the next tick.
-
-Disable the worker entirely with `EMAIL_POLL_DISABLED=1`.
-
----
-
-## Applicant ProfileSheet
-
-Clicking an applicant anywhere in the app (Pipeline cards, Candidates list)
-opens the **ProfileSheet** modal from the design — four tabs (Overview,
-Resume, Communication, Timeline), inline CV preview (PDF / image / download
-fallback), AI summary regeneration, stage moves, and threaded messaging that
-routes through SMTP when configured.
-
----
-
-## Career site content
-
-Settings → Career site uses a small WYSIWYG editor (bold/italic/lists/links,
-sanitized server-side via `src/lib/sanitize.ts`) for the lede, about blocks,
-team-story quotes, and footer CTA body. Offices, team stories, and a roles
-filter live alongside the existing values + stats sections.
+Please **do not** open public issues for security vulnerabilities. Email
+`security@<your-domain>` with details and we'll respond promptly. _(Maintainers:
+replace this with your real security contact.)_
 
 ---
 
@@ -366,10 +294,9 @@ filter live alongside the existing values + stats sections.
 Vellum is licensed under the **GNU Affero General Public License v3.0**
 (AGPL-3.0) — see [`LICENSE`](LICENSE).
 
-Copyright (C) 2026 MG Tech AS.
+Copyright © 2026 MG Tech AS.
 
-AGPL keeps Vellum genuinely open source while closing the SaaS loophole: anyone
-who runs a modified version as a network service must make the corresponding
-source available to its users (AGPL §13). That's the deliberate trade-off here —
-adopt, self-host, and modify freely, but you can't fork it into a closed hosted
-product without sharing your changes.
+AGPL keeps Vellum genuinely open source while closing the SaaS loophole: anyone who
+runs a *modified* version as a network service must make the corresponding source
+available to its users (AGPL §13). Adopt, self-host, and modify freely — you just
+can't turn a fork into a closed hosted product without sharing your changes.
