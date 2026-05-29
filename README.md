@@ -108,13 +108,13 @@ whole thing runs from a single `docker compose`.
 Installs Docker, downloads what's needed, and runs the guided setup:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MGTechAS/vellum/main/setup-all.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/maxig/vellum-oss/main/setup-all.sh | sudo bash
 ```
 
 ### Option B — guided install (you already have Docker)
 
 ```bash
-git clone https://github.com/MGTechAS/vellum.git
+git clone https://github.com/maxig/vellum-oss.git vellum
 cd vellum
 ./setup.sh
 ```
@@ -127,7 +127,7 @@ create your first workspace.
 ### Option C — local trial (see it with sample data)
 
 ```bash
-git clone https://github.com/MGTechAS/vellum.git
+git clone https://github.com/maxig/vellum-oss.git vellum
 cd vellum
 cp .env.example .env
 docker compose up --build
@@ -248,13 +248,13 @@ Review the open issues for current rough edges before betting your whole process
 Contributions are welcome — issues, ideas, docs, testing, and PRs all help. 🙌
 
 **Ways to help**
-- 🐛 **Report bugs** or 💡 **request features** via [GitHub Issues](https://github.com/MGTechAS/vellum/issues).
+- 🐛 **Report bugs** or 💡 **request features** via [GitHub Issues](https://github.com/maxig/vellum-oss/issues).
 - 📝 Improve docs, examples, or this README.
 - 🔧 Fix a bug or build a feature (browse issues labeled `good first issue`).
 
 **Development setup**
 ```bash
-git clone https://github.com/MGTechAS/vellum.git
+git clone https://github.com/maxig/vellum-oss.git vellum
 cd vellum
 cp .env.example .env
 docker compose up -d db          # Postgres in Docker

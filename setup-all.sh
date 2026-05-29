@@ -13,17 +13,17 @@
 #
 # Run it straight off the internet — no git, no manual downloads:
 #
-#   curl -fsSL https://raw.githubusercontent.com/vellum-ats/vellum/main/setup-all.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/maxig/vellum-oss/main/setup-all.sh | sudo bash
 #
 # or download and run:
 #
-#   curl -fsSLO https://raw.githubusercontent.com/vellum-ats/vellum/main/setup-all.sh
+#   curl -fsSLO https://raw.githubusercontent.com/maxig/vellum-oss/main/setup-all.sh
 #   sudo bash setup-all.sh
 #
 # Options (flags or env vars):
 #   -y, --yes            Don't ask before updating packages / installing Docker
 #   --dir   <path>       Install directory   (default: /opt/vellum as root, else ~/vellum)
-#   --repo  <owner/name> Source repo          (default: vellum-ats/vellum)
+#   --repo  <owner/name> Source repo          (default: maxig/vellum-oss)
 #   --ref   <branch|tag> Source ref           (default: main)
 #   --image <ref>        App image to deploy  (default: ask in setup.sh)
 #
@@ -47,7 +47,7 @@ err()  { printf '%s\n' "${RED}✗ $*${RESET}" >&2; }
 
 # ── config / args ─────────────────────────────────────────────────────
 ASSUME_YES="${ASSUME_YES:-0}"
-VELLUM_REPO="${VELLUM_REPO:-vellum-ats/vellum}"
+VELLUM_REPO="${VELLUM_REPO:-maxig/vellum-oss}"
 VELLUM_REF="${VELLUM_REF:-main}"
 VELLUM_IMAGE="${VELLUM_IMAGE:-}"
 VELLUM_DIR="${VELLUM_DIR:-}"
