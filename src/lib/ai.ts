@@ -1,0 +1,382 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 MG Tech AS
+
+import Anthropic from "@anthropic-ai/sdk";
+import { db } from "@/lib/db";
+import { decryptSecret } from "@/lib/crypto";
+
+type Provider = "anthropic" | "openai" | "google" | "ollama";
+
+export type AIResult = { text: string; mocked: boolean; provider: Provider | "mock" };
+
+const DEFAULT_MODELS: Record<Provider, string> = {
+  anthropic: "claude-sonnet-4-5",
+  openai: "gpt-4o-mini",
+  google: "gemini-2.0-flash",
+  ollama: "llama3.1",
+};
+
+export async function getAIConfig(workspaceId: string) {
+  return db.aIConfig.findUnique({ where: { workspaceId } });
+}
+
+/**
+ * Is there a live AI provider for this workspace? True when the resolved
+ * provider has an API key (workspace or env), or when Ollama has a base URL.
+ * Use this before kicking off background AI work so we don't persist mocks.
+ */
+export async function isAIEnabled(workspaceId: string, feature?: string): Promise<boolean> {
+  const cfg = await getAIConfig(workspaceId);
+  const provider = resolveProvider(cfg?.provider);
+
+  if (feature) {
+    const features = (cfg?.features as Record<string, boolean> | null) || {};
+    if (features[feature] === false) return false;
+  }
+
+  if (provider === "ollama") {
+    return Boolean(cfg?.baseUrl || process.env.OLLAMA_BASE_URL);
+  }
+  return Boolean(cfg?.apiKeyEncrypted || getEnvKey(provider));
+}
+
+function isProvider(value: unknown): value is Provider {
+  return value === "anthropic" || value === "openai" || value === "google" || value === "ollama";
+}
+
+function resolveProvider(configured?: string | null): Provider {
+  if (isProvider(configured)) return configured;
+  if (isProvider(process.env.AI_PROVIDER)) return process.env.AI_PROVIDER;
+  if (process.env.OPENAI_API_KEY) return "openai";
+  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  if (process.env.OLLAMA_BASE_URL) return "ollama";
+  return "anthropic";
+}
+
+function getEnvKey(provider: Provider) {
+  if (provider === "anthropic") return process.env.ANTHROPIC_API_KEY || "";
+  if (provider === "openai") return process.env.OPENAI_API_KEY || "";
+  if (provider === "ollama") return process.env.OLLAMA_API_KEY || "";
+  return "";
+}
+
+function getEnvModel(provider: Provider) {
+  if (provider === "anthropic") return process.env.ANTHROPIC_MODEL || DEFAULT_MODELS.anthropic;
+  if (provider === "openai") return process.env.OPENAI_MODEL || DEFAULT_MODELS.openai;
+  if (provider === "ollama") return process.env.OLLAMA_MODEL || DEFAULT_MODELS.ollama;
+  return DEFAULT_MODELS[provider];
+}
+
+function trimTrailingSlash(value: string) {
+  return value.replace(/\/+$/, "");
+}
+
+function providerError(provider: Provider, resp: Response, body: unknown) {
+  const message =
+    body && typeof body === "object" && "error" in body
+      ? JSON.stringify((body as { error: unknown }).error)
+      : typeof body === "string"
+      ? body
+      : resp.statusText;
+  return new Error(`${provider} ${resp.status}: ${message}`);
+}
+
+async function readJson(resp: Response) {
+  const text = await resp.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+async function recordUsage(workspaceId: string, tokens: number | null | undefined) {
+  if (!tokens || !Number.isFinite(tokens) || tokens <= 0) return;
+  await db.aIConfig
+    .update({ where: { workspaceId }, data: { tokensUsed: { increment: Math.round(tokens) } } })
+    .catch(() => null);
+}
+
+/**
+ * Run a completion with the workspace's AI config. Falls back to a mock
+ * response when no provider key is available.
+ */
+export async function complete(
+  workspaceId: string,
+  system: string,
+  user: string,
+  opts: { maxTokens?: number; temperature?: number } = {},
+): Promise<AIResult> {
+  const cfg = await getAIConfig(workspaceId);
+  const provider = resolveProvider(cfg?.provider);
+  const key = (cfg?.apiKeyEncrypted ? decryptSecret(cfg.apiKeyEncrypted) : "") || getEnvKey(provider);
+  const model = cfg?.model || getEnvModel(provider);
+
+  // Self-hosted Ollama path: doesn't require an API key, but does need a
+  // base URL pointing at the user's server.
+  if (provider === "ollama") {
+    const baseUrl = trimTrailingSlash(cfg?.baseUrl || process.env.OLLAMA_BASE_URL || "");
+    if (!baseUrl) {
+      return { text: mockResponse(user), mocked: true, provider: "mock" };
+    }
+    try {
+      const resp = await fetch(`${baseUrl}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          // Ollama exposes temperature inside options.* — same nesting as
+          // num_predict. Falls through to the model default when caller
+          // doesn't pass one.
+          options: {
+            num_predict: opts.maxTokens ?? 600,
+            ...(typeof opts.temperature === "number" ? { temperature: opts.temperature } : {}),
+          },
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+        }),
+      });
+      const json: any = await readJson(resp);
+      console.log(json);
+      if (!resp.ok) throw providerError(provider, resp, json);
+      const text: string = json?.message?.content || json?.response || "";
+      if (!text.trim()) throw new Error("ollama returned an empty response");
+      await recordUsage(workspaceId, (json?.prompt_eval_count || 0) + (json?.eval_count || 0));
+      return { text, mocked: false, provider };
+    } catch (e) {
+      console.error("[ai] ollama call failed:", e);
+      return { text: mockResponse(user), mocked: true, provider: "mock" };
+    }
+  }
+
+  if (!key) {
+    return { text: mockResponse(user), mocked: true, provider: "mock" };
+  }
+
+  if (provider === "anthropic") {
+    try {
+      const client = new Anthropic({ apiKey: key });
+      const resp = await client.messages.create({
+        model,
+        max_tokens: opts.maxTokens ?? 600,
+        // Anthropic defaults to 1.0, which is fine for prose generation
+        // (drafts, summaries) but too random for strict-JSON callers that
+        // need stable outputs across builds. Default unchanged; callers
+        // who care pass an explicit value.
+        ...(typeof opts.temperature === "number" ? { temperature: opts.temperature } : {}),
+        system,
+        messages: [{ role: "user", content: user }],
+      });
+      const text = resp.content
+        .filter((b): b is { type: "text"; text: string } => b.type === "text")
+        .map((b) => b.text)
+        .join("");
+      // Count tokens (best-effort).
+      await recordUsage(workspaceId, (resp.usage?.input_tokens ?? 0) + (resp.usage?.output_tokens ?? 0));
+      return { text, mocked: false, provider };
+    } catch (e) {
+      console.error("[ai] anthropic call failed:", e);
+      return { text: mockResponse(user), mocked: true, provider: "mock" };
+    }
+  }
+
+  if (provider === "openai") {
+    try {
+      const baseUrl = trimTrailingSlash(process.env.OPENAI_BASE_URL || "https://api.openai.com/v1");
+      const resp = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: opts.maxTokens ?? 600,
+          // Caller-supplied wins; otherwise keep the existing 0.3 default
+          // that the prose helpers rely on.
+          temperature: typeof opts.temperature === "number" ? opts.temperature : 0.3,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+        }),
+      });
+      const json: any = await readJson(resp);
+      if (!resp.ok) throw providerError(provider, resp, json);
+
+      const text: string = json?.choices?.[0]?.message?.content || "";
+      if (!text.trim()) throw new Error("openai returned an empty response");
+      await recordUsage(
+        workspaceId,
+        json?.usage?.total_tokens ??
+          ((json?.usage?.prompt_tokens || 0) + (json?.usage?.completion_tokens || 0)),
+      );
+      return { text, mocked: false, provider };
+    } catch (e) {
+      console.error("[ai] openai call failed:", e);
+      return { text: mockResponse(user), mocked: true, provider: "mock" };
+    }
+  }
+
+  // Google is listed in the UI, but not implemented yet.
+  return { text: mockResponse(user), mocked: true, provider: "mock" };
+}
+
+function mockResponse(user: string): string {
+  // Pretty deterministic mock so the UI feels alive without a key.
+  if (user.toLowerCase().includes("draft a reply")) {
+    return [
+      "Hi —",
+      "",
+      "Thanks so much for getting in touch. I really enjoyed reading about your work; the way you've handled dense interfaces is exactly the sort of thinking we're looking for.",
+      "",
+      "I'd love to set up a first chat. Are you free for 30 minutes later this week? Tuesday or Thursday afternoon (CET) would work well on our side.",
+      "",
+      "Warmly,\nMaya",
+    ].join("\n");
+  }
+  if (user.toLowerCase().includes("summary")) {
+    return [
+      "Strong, systems-oriented designer with 6+ years in B2B fintech.",
+      "Portfolio leans heavily on dense data UI — directly relevant to our credit console.",
+      "Available in CET; open to hybrid in Berlin. Worth moving to phone screen.",
+    ].join(" ");
+  }
+  if (user.toLowerCase().includes("rewrite") || user.toLowerCase().includes("job description")) {
+    return "We're hiring a senior product designer to own the credit decisioning console used by risk teams at our partner banks. You'll set patterns, ship features, and shape how design works at goscore — alongside engineers and modellers who care a lot about clarity.";
+  }
+  return "Here is a thoughtful response. (Configure Anthropic, OpenAI, or Ollama in Settings -> AI to switch from mocked to real AI output.)";
+}
+
+// ── Common task helpers ──────────────────────────────────────────────
+export async function summarizeCandidate(
+  workspaceId: string,
+  payload: {
+    name: string;
+    resume: string;
+    jobTitle: string;
+    jobDescription?: string | null;
+    requirements?: string[] | null;
+  },
+) {
+  const system =
+    "You are a kind, sharp recruiting copilot for an ATS called Vellum. Generate short, factual candidate summaries for hiring managers — never speculative, never gendered, never autocratic. Always 3 sentences max. Anchor every claim in the resume; if the resume is thin, say so plainly.";
+
+  const jobBlock = [
+    `Role: ${payload.jobTitle}`,
+    payload.jobDescription ? `What the role is:\n${payload.jobDescription}` : null,
+    payload.requirements?.length ? `Key requirements:\n- ${payload.requirements.join("\n- ")}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const user = [
+    "Write a 3-sentence summary for this candidate, focused on fit against the role.",
+    "",
+    jobBlock,
+    "",
+    `Candidate: ${payload.name}`,
+    "Resume / context:",
+    payload.resume || "(no resume text available — summarize from name + role only)",
+  ].join("\n");
+
+  return complete(workspaceId, system, user, { maxTokens: 10000 });
+}
+
+export async function draftReply(workspaceId: string, payload: { candidateName: string; lastMessage: string; stage: string }) {
+  const system = "You write warm, specific recruiter replies on behalf of Vellum users. Match the tone of the candidate's message. Never auto-commit to interviews; offer options. Sign with the user's name.";
+  const user = `Draft a reply.\nCandidate: ${payload.candidateName}\nCurrent stage: ${payload.stage}\nTheir last message:\n${payload.lastMessage}`;
+  return complete(workspaceId, system, user, { maxTokens: 10000 });
+}
+
+export async function rewriteJobDescription(workspaceId: string, payload: { title: string; rough: string }) {
+  const system = "You are an expert recruiting copywriter. Rewrite job descriptions to be warm, specific, and free of clichés. Keep it short (under 180 words) and end with a clear call to action.";
+  const user = `Rewrite this job description for clarity and warmth.\n\nRole: ${payload.title}\n\nDraft:\n${payload.rough}`;
+  return complete(workspaceId, system, user, { maxTokens: 10000 });
+}
+
+export type ResumeProfile = {
+  currentRole?: string;
+  years?: number;
+  location?: string;
+  linkedin?: string;
+  github?: string;
+  portfolio?: string;
+};
+
+export type ResumeProfileResult = ResumeProfile & { mocked: boolean };
+
+/**
+ * Pull structured profile fields out of a parsed resume. Used by the apply
+ * route to backfill `currentRole`, `years`, and link fields on candidates
+ * who came in through the career site. Returns an empty object when the
+ * provider is mocked or the JSON can't be parsed — callers must treat the
+ * result as best-effort hints, never as ground truth.
+ */
+export async function extractResumeProfile(
+  workspaceId: string,
+  resumeText: string,
+): Promise<ResumeProfileResult> {
+  if (!resumeText.trim()) return { mocked: true };
+
+  const system = [
+    "You extract structured candidate profile data from resume text for an ATS.",
+    "Reply with a single JSON object only — no prose, no fences.",
+    "Schema: { currentRole?: string, years?: number, location?: string, linkedin?: string, github?: string, portfolio?: string }.",
+    "- currentRole: the candidate's most recent job title (e.g. \"Senior Product Designer at Stripe\"). Omit if not stated.",
+    "- years: integer count of years of relevant professional experience inferred from the work history. Omit if the resume doesn't make this estimable.",
+    "- location: city / country if listed in the header. Omit otherwise.",
+    "- linkedin / github / portfolio: full URLs if present. Omit if missing.",
+    "Never invent values. Omit any field you're not confident in.",
+  ].join("\n");
+
+  const user = `Resume text:\n${resumeText.slice(0, 12_000)}`;
+
+  const r = await complete(workspaceId, system, user, { maxTokens: 400, temperature: 0 });
+  if (r.mocked) return { mocked: true };
+
+  const parsed = parseResumeProfileJson(r.text);
+  return { ...parsed, mocked: false };
+}
+
+function parseResumeProfileJson(text: string): ResumeProfile {
+  let cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  if (!cleaned.startsWith("{")) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) cleaned = m[0];
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(cleaned);
+  } catch {
+    return {};
+  }
+  if (!raw || typeof raw !== "object") return {};
+  const obj = raw as Record<string, unknown>;
+  const out: ResumeProfile = {};
+  const str = (k: string, max: number) => {
+    const v = obj[k];
+    if (typeof v === "string") {
+      const t = v.trim();
+      if (t) return t.slice(0, max);
+    }
+    return undefined;
+  };
+  out.currentRole = str("currentRole", 180);
+  out.location = str("location", 160);
+  out.linkedin = str("linkedin", 300);
+  out.github = str("github", 300);
+  out.portfolio = str("portfolio", 300);
+  const y = obj.years;
+  if (typeof y === "number" && Number.isFinite(y) && y >= 0 && y <= 80) {
+    out.years = Math.round(y);
+  } else if (typeof y === "string") {
+    const n = Number.parseInt(y, 10);
+    if (Number.isFinite(n) && n >= 0 && n <= 80) out.years = n;
+  }
+  return out;
+}

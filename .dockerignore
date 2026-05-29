@@ -1,0 +1,49 @@
+# Anything here is kept OUT of the Docker build context — it never reaches any
+# image layer. The final published image is the Dockerfile's `runner` stage,
+# which only copies compiled output; this list is defense-in-depth + keeps the
+# build context small.
+
+# ── VCS / CI ──
+.git
+.gitignore
+.github
+
+# ── Dependencies & build output (rebuilt inside the image) ──
+node_modules
+.next
+out
+dist
+*.tsbuildinfo
+
+# ── Secrets & local env — NEVER ship these ──
+.env
+.env.*
+
+# ── Editor / OS / agent tooling ──
+.DS_Store
+.idea
+.vscode
+.claude
+.antigravitycli
+
+# ── Internal docs, specs & design assets (keep private) ──
+*.md
+vellum-design
+vellum-handoff.zip
+
+# ── Deployment artifacts (not needed at runtime) ──
+Dockerfile
+Dockerfile.caddy
+.dockerignore
+docker-compose.yml
+Caddyfile
+setup.sh
+setup-all.sh
+update.sh
+publish.sh
+sync-public.sh
+
+# ── Misc local cruft ──
+*.bak
+*.log
+uploads

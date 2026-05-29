@@ -1,0 +1,136 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vellum}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vellum}
+      POSTGRES_DB: ${POSTGRES_DB:-vellum}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vellum} -d ${POSTGRES_DB:-vellum}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - vellum_db:/var/lib/postgresql/data
+    ports:
+      # Bind Postgres to loopback by default so it isn't exposed publicly.
+      - "${POSTGRES_BIND:-127.0.0.1}:${POSTGRES_PORT:-55432}:5432"
+
+  app:
+    # Dual mode (see setup.sh):
+    #   • Image mode (default): `docker compose pull && docker compose up -d`
+    #     pulls the prebuilt image below — this is what Watchtower auto-updates.
+    #   • Source mode: `docker compose up -d --build` builds from the Dockerfile
+    #     and tags it as ${APP_IMAGE}.
+    image: ${APP_IMAGE:-ghcr.io/vellum-ats/vellum:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      # Only auto-updated when this is "true" (image mode + Watchtower enabled).
+      # Watchtower runs with label-enable, so a "false" here means "leave alone"
+      # — important in source mode so it doesn't overwrite a locally-built image.
+      com.centurylinklabs.watchtower.enable: "${WATCHTOWER_APP_ENABLE:-false}"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vellum}:${POSTGRES_PASSWORD:-vellum}@db:5432/${POSTGRES_DB:-vellum}?schema=public
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me-please-this-is-just-for-local-dev-only-please-change}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-localhost:3000}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@vellum.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-vellum}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Maya Berg}
+      # Set to false for a clean install (admin login only, no demo workspace).
+      SEED_DEMO: ${SEED_DEMO:-true}
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-5}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      # Secret used to derive the AES key for encrypting at-rest tokens
+      # (CalDAV passwords, Google/Microsoft refresh tokens). Falls back to
+      # NEXTAUTH_SECRET if unset — fine for local dev, set a distinct value
+      # in production.
+      VELLUM_SECRET: ${VELLUM_SECRET:-}
+      # Calendar integrations — see .env.example for setup walkthroughs.
+      # Without these, the Connect Google / Connect Outlook buttons in
+      # Settings → Calendar are disabled with an inline hint. CalDAV needs
+      # no server config (user-provided credentials).
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-}
+      MICROSOFT_TENANT: ${MICROSOFT_TENANT:-common}
+      MICROSOFT_REDIRECT_URI: ${MICROSOFT_REDIRECT_URI:-}
+      CALENDAR_WORKER_TICK_MS: ${CALENDAR_WORKER_TICK_MS:-}
+      CALENDAR_FOLLOWUP_TICK_MS: ${CALENDAR_FOLLOWUP_TICK_MS:-}
+      NODE_ENV: production
+    ports:
+      # When Caddy is the front door (proxy profile) the app only needs to be
+      # reachable on the internal network, so this defaults to loopback. Plain
+      # HTTP installs set WEB_BIND=0.0.0.0 to expose it directly.
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3000}:3000"
+    volumes:
+      - vellum_uploads:/app/uploads
+
+  # ── Reverse proxy with automatic HTTPS (optional) ─────────────────────
+  # Enabled by adding "proxy" to COMPOSE_PROFILES (setup.sh does this for you).
+  # Built from Dockerfile.caddy, which setup.sh generates — plain Caddy for an
+  # app-domain-only cert, or Caddy + a DNS plugin when wildcard career-site
+  # certs are requested.
+  caddy:
+    profiles: ["proxy"]
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+    image: ${CADDY_IMAGE:-vellum-caddy:local}
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-}
+      PUBLIC_DOMAIN_BARE: ${PUBLIC_DOMAIN_BARE:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      # DNS-01 credential for wildcard career-site certs (Cloudflare default).
+      CF_API_TOKEN: ${CF_API_TOKEN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # ── Automatic image updates (optional) ────────────────────────────────
+  # Enabled by adding "watchtower" to COMPOSE_PROFILES. Only updates containers
+  # labelled com.centurylinklabs.watchtower.enable=true — i.e. the app in image
+  # mode. Source-built containers are left untouched.
+  watchtower:
+    profiles: ["watchtower"]
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      # How often to check the registry for a newer image (seconds).
+      WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL:-86400}
+
+volumes:
+  vellum_db:
+  vellum_uploads:
+  caddy_data:
+  caddy_config:
