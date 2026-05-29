@@ -246,6 +246,7 @@ Review the open issues for current rough edges before betting your whole process
 ## Contributing
 
 Contributions are welcome — issues, ideas, docs, testing, and PRs all help. 🙌
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
 
 **Ways to help**
 - 🐛 **Report bugs** or 💡 **request features** via [GitHub Issues](https://github.com/maxig/vellum-oss/issues).
@@ -283,9 +284,8 @@ Please be kind and constructive — we follow the spirit of the
 
 ## Security
 
-Please **do not** open public issues for security vulnerabilities. Email
-`security@<your-domain>` with details and we'll respond promptly. _(Maintainers:
-replace this with your real security contact.)_
+Please **do not** open public issues for security vulnerabilities. See
+**[SECURITY.md](SECURITY.md)** for how to report privately.
 
 ---
 
