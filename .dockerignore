@@ -7,6 +7,8 @@
 .git
 .gitignore
 .github
+.githooks
+install-hooks.sh
 
 # ── Dependencies & build output (rebuilt inside the image) ──
 node_modules
