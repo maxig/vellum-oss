@@ -29,9 +29,11 @@
 #
 set -euo pipefail
 
-# Reconnect stdin to the terminal so prompts work even via `curl | bash`.
-# Only do it if /dev/tty is actually openable (skips CI / no-tty contexts).
-if [ ! -t 0 ] && { : < /dev/tty; } 2>/dev/null; then exec < /dev/tty; fi
+# IMPORTANT: when this script is piped in (`curl … | sudo bash`), bash reads
+# the script ITSELF from stdin. So we must NOT `exec < /dev/tty` here — that
+# redirects bash away from the pipe mid-read and the script hangs. Instead,
+# interactive prompts read from /dev/tty directly, and we hand off to setup.sh
+# with its stdin attached to the tty (see the bottom of this file).
 
 # ── pretty output ─────────────────────────────────────────────────────
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -70,9 +72,19 @@ RAW_BASE="${VELLUM_REPO_RAW:-https://raw.githubusercontent.com/$VELLUM_REPO/$VEL
 confirm() {  # confirm "Question" → 0/1 ; auto-yes when ASSUME_YES
   local q="$1"
   [ "$ASSUME_YES" = "1" ] && return 0
-  local a; read -r -p "$(printf '%s %s[Y/n]%s ' "$q" "$DIM" "$RESET")" a || true
+  local a; read -r -p "$(printf '%s %s[Y/n]%s ' "$q" "$DIM" "$RESET")" a < /dev/tty || true
   case "${a:-Y}" in Y|y|yes|Yes) return 0;; *) return 1;; esac
 }
+
+# This installer is interactive and needs a real terminal. `curl | sudo bash`
+# still gives us one via /dev/tty; a no-tty context (CI/cron) does not.
+if ! { : < /dev/tty; } 2>/dev/null; then
+  err "No interactive terminal detected."
+  echo "Download the script and run it attached to your shell instead:"
+  echo "  curl -fsSLO $RAW_BASE/setup-all.sh && sudo bash setup-all.sh"
+  echo "(Or pass -y for unattended mode once a non-interactive path is supported.)"
+  exit 1
+fi
 
 cat <<EOF
 ${BOLD}${CYAN}
@@ -215,7 +227,9 @@ EOF
   exit 0
 fi
 
+# Hand off with stdin on the terminal so setup.sh's prompts work (it's run as a
+# file here, so attaching the tty is safe — unlike piping into bash).
 case "$DOCKER_VIA" in
-  sg)   exec sg docker -c "cd '$VELLUM_DIR' && exec bash ./setup.sh";;
-  *)    exec bash ./setup.sh;;
+  sg)   exec sg docker -c "cd '$VELLUM_DIR' && exec bash ./setup.sh < /dev/tty";;
+  *)    exec bash ./setup.sh < /dev/tty;;
 esac
