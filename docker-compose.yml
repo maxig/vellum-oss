@@ -23,7 +23,7 @@ services:
     #     pulls the prebuilt image below — this is what Watchtower auto-updates.
     #   • Source mode: `docker compose up -d --build` builds from the Dockerfile
     #     and tags it as ${APP_IMAGE}.
-    image: ${APP_IMAGE:-ghcr.io/vellum-ats/vellum:latest}
+    image: ${APP_IMAGE:-maxig/vellum-oss:latest}
     build:
       context: .
       dockerfile: Dockerfile

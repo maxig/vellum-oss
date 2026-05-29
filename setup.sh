@@ -211,7 +211,7 @@ EOF
     ok "Image mode — a prebuilt image will be pulled."
   fi
 fi
-ask APP_IMAGE "  Image reference:" "$(env_default APP_IMAGE "${APP_IMAGE:-${VELLUM_IMAGE:-ghcr.io/vellum-ats/vellum:latest}}")"
+ask APP_IMAGE "  Image reference:" "$(env_default APP_IMAGE "${APP_IMAGE:-${VELLUM_IMAGE:-maxig/vellum-oss:latest}}")"
 
 # ══════════════════════════════════════════════════════════════════════
 # 3. Networking / public URL

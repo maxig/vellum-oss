@@ -58,9 +58,9 @@ docker info >/dev/null 2>&1 || { err "Docker daemon not reachable."; exit 1; }
 step "Vellum image publisher"
 
 REGISTRY="${REGISTRY:-docker.io}"
-ask NAMESPACE "Registry namespace (your Docker Hub username or org):" "${NAMESPACE:-}"
+ask NAMESPACE "Registry namespace (your Docker Hub username or org):" "${NAMESPACE:-maxig}"
 [ -n "$NAMESPACE" ] || { err "A namespace is required."; exit 1; }
-ask IMAGE   "Image name:" "${IMAGE:-vellum}"
+ask IMAGE   "Image name:" "${IMAGE:-vellum-oss}"
 PKG_VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 0.1.0)"
 ask VERSION "Version tag:" "${VERSION:-$PKG_VERSION}"
 
