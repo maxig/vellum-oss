@@ -16,9 +16,26 @@ const DEFAULT_MODELS: Record<Provider, string> = {
   ollama: "llama3.1",
 };
 
+// Ollama Cloud's hosted endpoint is fixed. When an Ollama API key is present
+// but no base URL is configured, the key is a Cloud key and this is where it
+// goes — so an API key alone is enough to turn on the integration. Exported so
+// the Settings page resolves the same default instead of keeping its own copy.
+export const OLLAMA_CLOUD_URL = "https://ollama.com";
+// `llama3.1` (DEFAULT_MODELS.ollama) is a self-hosted-only tag — it 404s on
+// Cloud. Fall back to a Cloud-served model when we're talking to Cloud and the
+// caller hasn't pinned one. Mirrors the default setup.sh writes.
+export const OLLAMA_CLOUD_DEFAULT_MODEL = "gemma4:31b-cloud";
+
 export async function getAIConfig(workspaceId: string) {
   return db.aIConfig.findUnique({ where: { workspaceId } });
 }
+
+type AIConfigRow = Awaited<ReturnType<typeof getAIConfig>>;
+
+/** Fully-resolved AI settings: provider plus the key/model/baseUrl actually
+ *  used for the call, after merging workspace config with the instance-wide
+ *  env defaults. */
+type ResolvedAI = { provider: Provider; key: string; model: string; baseUrl: string };
 
 /**
  * Is there a live AI provider for this workspace? True when the resolved
@@ -27,30 +44,101 @@ export async function getAIConfig(workspaceId: string) {
  */
 export async function isAIEnabled(workspaceId: string, feature?: string): Promise<boolean> {
   const cfg = await getAIConfig(workspaceId);
-  const provider = resolveProvider(cfg?.provider);
+  const { provider, key, baseUrl } = resolveAI(cfg);
 
   if (feature) {
     const features = (cfg?.features as Record<string, boolean> | null) || {};
     if (features[feature] === false) return false;
   }
 
-  if (provider === "ollama") {
-    return Boolean(cfg?.baseUrl || process.env.OLLAMA_BASE_URL);
-  }
-  return Boolean(cfg?.apiKeyEncrypted || getEnvKey(provider));
+  // Ollama is live when it has an endpoint (baseUrl already folds in the
+  // Cloud default for a bare key); every other provider needs a key.
+  if (provider === "ollama") return Boolean(baseUrl);
+  return Boolean(key);
 }
 
 function isProvider(value: unknown): value is Provider {
   return value === "anthropic" || value === "openai" || value === "google" || value === "ollama";
 }
 
-function resolveProvider(configured?: string | null): Provider {
-  if (isProvider(configured)) return configured;
+/** The instance-wide provider, from env only. This is the fallback used when a
+ *  workspace hasn't *usably* configured its own provider. */
+function envProvider(): Provider {
   if (isProvider(process.env.AI_PROVIDER)) return process.env.AI_PROVIDER;
   if (process.env.OPENAI_API_KEY) return "openai";
   if (process.env.ANTHROPIC_API_KEY) return "anthropic";
-  if (process.env.OLLAMA_BASE_URL) return "ollama";
+  // Either a self-hosted base URL or a Cloud API key implies Ollama.
+  if (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_API_KEY) return "ollama";
   return "anthropic";
+}
+
+/** Can this provider actually be called given the workspace row + env — i.e. is
+ *  it backed by a key (workspace or env), or, for Ollama, a base URL? */
+function providerHasCredentials(provider: Provider, cfg: AIConfigRow): boolean {
+  if (cfg?.apiKeyEncrypted) return true;
+  if (provider === "ollama") {
+    return Boolean(cfg?.baseUrl || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_API_KEY);
+  }
+  return Boolean(getEnvKey(provider));
+}
+
+/**
+ * Pick the provider to use. A workspace's own provider wins ONLY when it's
+ * usable — `AIConfig.provider` has a DB default of "anthropic", so a row created
+ * as a side effect of saving unrelated settings looks "configured" while having
+ * no key. In that case the stale default must not shadow the instance-wide env
+ * provider, so we fall back to it.
+ */
+function resolveProvider(cfg: AIConfigRow): Provider {
+  if (cfg && isProvider(cfg.provider) && providerHasCredentials(cfg.provider, cfg)) {
+    return cfg.provider;
+  }
+  return envProvider();
+}
+
+/**
+ * Resolve the provider AND the key/model/baseUrl to call it with. Workspace
+ * fields only apply when the workspace's own provider is the one we resolved
+ * to — after a fallback to the env provider, those fields belong to a different
+ * provider and would be wrong (e.g. an Anthropic model name sent to Ollama).
+ */
+function resolveAI(cfg: AIConfigRow): ResolvedAI {
+  const provider = resolveProvider(cfg);
+  const useCfg = isProvider(cfg?.provider) && cfg?.provider === provider;
+
+  const key =
+    (useCfg && cfg?.apiKeyEncrypted ? decryptSecret(cfg.apiKeyEncrypted) : "") || getEnvKey(provider);
+
+  if (provider === "ollama") {
+    // Explicit base URL wins; otherwise an API key means Cloud (always
+    // https://ollama.com). Only a keyless install with no URL stays empty.
+    const explicitUrl = (useCfg ? cfg?.baseUrl : "") || process.env.OLLAMA_BASE_URL || "";
+    const baseUrl = trimTrailingSlash(explicitUrl || (key ? OLLAMA_CLOUD_URL : ""));
+    // `llama3.1` (the self-hosted default) 404s on Cloud — pick a Cloud model.
+    const explicitModel = (useCfg ? cfg?.model : "") || process.env.OLLAMA_MODEL || "";
+    const model =
+      explicitModel || (baseUrl === OLLAMA_CLOUD_URL ? OLLAMA_CLOUD_DEFAULT_MODEL : DEFAULT_MODELS.ollama);
+    return { provider, key, model, baseUrl };
+  }
+
+  const model = (useCfg ? cfg?.model : "") || getEnvModel(provider);
+  return { provider, key, model, baseUrl: "" };
+}
+
+/**
+ * Effective AI settings for display (Settings → AI). Runs the same resolution
+ * as the live call path, minus the secret, so the UI shows what will actually
+ * run — not the raw workspace row, which may hold a stale default provider that
+ * the instance-wide env overrides at runtime.
+ */
+export function effectiveAISettings(cfg: AIConfigRow): {
+  provider: Provider;
+  model: string;
+  baseUrl: string | null;
+  hasKey: boolean;
+} {
+  const { provider, key, model, baseUrl } = resolveAI(cfg);
+  return { provider, model, baseUrl: baseUrl || null, hasKey: Boolean(key) };
 }
 
 function getEnvKey(provider: Provider) {
@@ -109,14 +197,12 @@ export async function complete(
   opts: { maxTokens?: number; temperature?: number } = {},
 ): Promise<AIResult> {
   const cfg = await getAIConfig(workspaceId);
-  const provider = resolveProvider(cfg?.provider);
-  const key = (cfg?.apiKeyEncrypted ? decryptSecret(cfg.apiKeyEncrypted) : "") || getEnvKey(provider);
-  const model = cfg?.model || getEnvModel(provider);
+  const { provider, key, model, baseUrl } = resolveAI(cfg);
 
-  // Self-hosted Ollama path: doesn't require an API key, but does need a
-  // base URL pointing at the user's server.
+  // Ollama path: self-hosted (base URL, no key) or Cloud (API key, base URL
+  // defaults to https://ollama.com). Both speak the same /api/chat protocol.
   if (provider === "ollama") {
-    const baseUrl = trimTrailingSlash(cfg?.baseUrl || process.env.OLLAMA_BASE_URL || "");
+    // baseUrl is "" only for a keyless install with no URL — stay mocked.
     if (!baseUrl) {
       return { text: mockResponse(user), mocked: true, provider: "mock" };
     }
@@ -141,7 +227,6 @@ export async function complete(
         }),
       });
       const json: any = await readJson(resp);
-      console.log(json);
       if (!resp.ok) throw providerError(provider, resp, json);
       const text: string = json?.message?.content || json?.response || "";
       if (!text.trim()) throw new Error("ollama returned an empty response");

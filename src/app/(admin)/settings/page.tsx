@@ -7,28 +7,9 @@ import { publicScheme } from "@/lib/app-host";
 import { db } from "@/lib/db";
 import SettingsView from "./SettingsView";
 import { normalizeCookieConfig } from "@/lib/cookies";
+import { effectiveAISettings } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
-
-function envProvider() {
-  const provider = process.env.AI_PROVIDER;
-  if (provider === "openai" || provider === "ollama" || provider === "anthropic") return provider;
-  if (process.env.OPENAI_API_KEY) return "openai";
-  if (process.env.OLLAMA_BASE_URL) return "ollama";
-  return "anthropic";
-}
-
-function envModel(provider: string) {
-  if (provider === "openai") return process.env.OPENAI_MODEL || "gpt-4o-mini";
-  if (provider === "ollama") return process.env.OLLAMA_MODEL || "llama3.1";
-  return process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
-}
-
-function hasEnvKey(provider: string) {
-  if (provider === "openai") return !!process.env.OPENAI_API_KEY;
-  if (provider === "ollama") return !!process.env.OLLAMA_API_KEY || !!process.env.OLLAMA_BASE_URL;
-  return !!process.env.ANTHROPIC_API_KEY;
-}
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { workspace, user, membership } = await requireWorkspace();
@@ -48,7 +29,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       orderBy: { createdAt: "desc" },
     }),
   ]);
-  const defaultAIProvider = envProvider();
+  // Show what AI will actually run (the env may override a stale workspace
+  // default), keeping the rest of the row's settings as stored.
+  const aiEffective = effectiveAISettings(ai);
 
   return (
     <SettingsView
@@ -85,37 +68,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         verifiedAt: careerSite.verifiedAt?.toISOString() || null,
         publishedAt: careerSite.publishedAt?.toISOString() || null,
       } : null}
-      ai={
-        ai
-          ? {
-              provider: ai.provider,
-              model: ai.model,
-              baseUrl: ai.baseUrl,
-              hasKey: !!ai.apiKeyEncrypted || hasEnvKey(ai.provider),
-              features: ai.features as Record<string, boolean>,
-              redactPII: ai.redactPII,
-              noLog: ai.noLog,
-              cacheEnabled: ai.cacheEnabled,
-              tokensUsed: ai.tokensUsed,
-              tokensQuota: ai.tokensQuota,
-              recapSettings: ai.recapSettings as Record<string, unknown>,
-              reviewRules: ai.reviewRules as Record<string, unknown>,
-            }
-          : {
-              provider: defaultAIProvider,
-              model: envModel(defaultAIProvider),
-              baseUrl: defaultAIProvider === "ollama" ? process.env.OLLAMA_BASE_URL || null : null,
-              hasKey: hasEnvKey(defaultAIProvider),
-              features: null,
-              redactPII: null,
-              noLog: null,
-              cacheEnabled: null,
-              tokensUsed: 0,
-              tokensQuota: 100000,
-              recapSettings: {},
-              reviewRules: {},
-            }
-      }
+      ai={{
+        provider: aiEffective.provider,
+        model: aiEffective.model,
+        baseUrl: aiEffective.baseUrl,
+        hasKey: aiEffective.hasKey,
+        features: (ai?.features as Record<string, boolean>) ?? null,
+        redactPII: ai?.redactPII ?? null,
+        noLog: ai?.noLog ?? null,
+        cacheEnabled: ai?.cacheEnabled ?? null,
+        tokensUsed: ai?.tokensUsed ?? 0,
+        tokensQuota: ai?.tokensQuota ?? 100000,
+        recapSettings: (ai?.recapSettings as Record<string, unknown>) ?? {},
+        reviewRules: (ai?.reviewRules as Record<string, unknown>) ?? {},
+      }}
       email={emailAccount ? {
         imapHost: emailAccount.imapHost,
         imapPort: emailAccount.imapPort,
