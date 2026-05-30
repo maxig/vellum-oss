@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { isAppHost } from "@/lib/app-host";
 
 const COOKIE = "vellum_ws";
 
@@ -102,6 +103,9 @@ export async function workspaceFromHost(): Promise<{ slug: string; workspaceId: 
   const apexBare = apex.split(":")[0];
   const hostBare = host.split(":")[0];
   if (hostBare === apexBare || hostBare === "127.0.0.1") return null;
+  // The admin app may be served from a subdomain of the same apex; never
+  // resolve that host to a workspace career site.
+  if (isAppHost(hostBare)) return null;
   if (!hostBare.endsWith("." + apexBare)) return null;
   const slug = hostBare.slice(0, hostBare.length - ("." + apexBare).length);
   if (!slug) return null;

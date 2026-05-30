@@ -2,6 +2,7 @@
 // Copyright (C) 2026 MG Tech AS
 
 import { NextResponse, type NextRequest } from "next/server";
+import { isAppHost } from "@/lib/app-host";
 
 const PUBLIC_PATHS = [
   "/_next",
@@ -23,6 +24,10 @@ export function middleware(req: NextRequest) {
   const isSubdomain =
     hostBare !== apex &&
     hostBare !== "127.0.0.1" &&
+    // The admin app may live on a subdomain of the same apex (e.g.
+    // vellum.example.com with PUBLIC_DOMAIN=example.com). Don't treat it as a
+    // career-site workspace — let it fall through to the admin app.
+    !isAppHost(hostBare) &&
     hostBare.endsWith("." + apex) &&
     hostBare.slice(0, hostBare.length - ("." + apex).length).length > 0;
 
