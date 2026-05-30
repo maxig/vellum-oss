@@ -120,9 +120,11 @@ cd vellum
 ```
 
 `setup.sh` is an interactive wizard (press **Enter** to accept defaults). It checks
-Docker, generates strong secrets, optionally configures HTTPS and AI, and starts a
-**clean** instance — no demo data. You sign in with the admin account you chose and
-create your first workspace.
+Docker, generates strong secrets, and optionally configures AI, the Google/Microsoft
+**calendar OAuth apps** (printing the exact redirect URI to register), the background
+**email poller**, and HTTPS — each step is skippable. It then starts a **clean**
+instance — no demo data. You sign in with the admin account you chose and create your
+first workspace.
 
 ### Option C — local trial (see it with sample data)
 
@@ -156,7 +158,8 @@ All configuration lives in `.env` — `setup.sh` writes it for you, or copy
 | URLs | `APP_ORIGIN`, `NEXTAUTH_URL`, `PUBLIC_DOMAIN` | App URL + the apex career-site subdomains hang off. |
 | AI | `AI_PROVIDER`, `OLLAMA_*`, `ANTHROPIC_*`, `OPENAI_*` | Optional. Overridable per workspace in Settings. |
 | Database | `POSTGRES_*` | Defaults are fine; `setup.sh` generates a strong password. |
-| Calendar | `GOOGLE_*`, `MICROSOFT_*` | OAuth apps; CalDAV needs nothing here. |
+| Calendar | `GOOGLE_*`, `MICROSOFT_*` | Instance-wide OAuth apps — `setup.sh` walks you through registering them and prints the callback URL (`${APP_ORIGIN}/api/calendar/oauth/{google,microsoft}/callback`). Users then connect their own calendars in Settings. CalDAV needs nothing here. |
+| Email | `EMAIL_POLL_DISABLED`, `EMAIL_POLL_INTERVAL_MS` | Inboxes are per-workspace (Settings → Email); these only tune the instance-wide background poller. |
 
 **AI recommendation:** the easiest path to real AI is **[Ollama Cloud](https://ollama.com)** —
 hosted open models with a free tier. Create a key at
@@ -207,6 +210,10 @@ server. Vellum is designed to assist, not auto-decide — it never auto-rejects.
 Each workspace gets a subdomain of `PUBLIC_DOMAIN` (e.g. `acme.yourdomain.com`).
 `setup.sh` can provision a wildcard HTTPS certificate so every workspace's career
 site is served over TLS. Point a `*.` DNS record at your server and you're set.
+The admin app can safely live on a subdomain of that same apex (e.g.
+`vellum.yourdomain.com` with `PUBLIC_DOMAIN=yourdomain.com`) — that one host is
+recognized from `APP_ORIGIN`/`APP_DOMAIN` and always serves the admin app instead
+of being treated as a workspace career site.
 
 **How is data isolated between workspaces?**
 Every record carries a `workspaceId` and queries are scoped to the active workspace,
