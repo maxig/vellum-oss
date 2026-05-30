@@ -358,7 +358,7 @@ EOF
     # llama3.1 is the generic local default; for Ollama Cloud suggest a hosted
     # model instead (others: gpt-oss:20b, qwen3-coder:480b, deepseek-v3.1:671b).
     OLLAMA_MODEL_DEFAULT="$OLLAMA_MODEL"
-    case "$OLLAMA_MODEL_DEFAULT" in ""|llama3.1) OLLAMA_MODEL_DEFAULT="gpt-oss:120b";; esac
+    case "$OLLAMA_MODEL_DEFAULT" in ""|llama3.1) OLLAMA_MODEL_DEFAULT="gemma4:31b-cloud";; esac
     ask OLLAMA_MODEL "Model:" "$OLLAMA_MODEL_DEFAULT"
     [ -n "$OLLAMA_API_KEY" ] && ok "Ollama Cloud configured ($OLLAMA_MODEL)." || warn "No key entered — AI will stay mocked."
     ;;

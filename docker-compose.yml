@@ -123,7 +123,7 @@ services:
   # mode. Source-built containers are left untouched.
   watchtower:
     profiles: ["watchtower"]
-    image: containrrr/watchtower
+    image: nickfedor/watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
