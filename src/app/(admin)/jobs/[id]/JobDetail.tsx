@@ -57,6 +57,7 @@ export default function JobDetail({
   job,
   workspaceSlug,
   publicDomain,
+  publicScheme,
   stages,
   members,
   currentRole,
@@ -64,6 +65,7 @@ export default function JobDetail({
   job: JobShape;
   workspaceSlug: string;
   publicDomain: string;
+  publicScheme: string;
   stages: StageStat[];
   members: Member[];
   currentRole: string;
@@ -183,7 +185,7 @@ export default function JobDetail({
         <span style={{ flex: 1 }} />
         <a
           className="btn btn-sm"
-          href={`http://${workspaceSlug}.${publicDomain}/jobs/${job.slug}`}
+          href={`${publicScheme}://${workspaceSlug}.${publicDomain}/jobs/${job.slug}`}
           target="_blank"
           rel="noreferrer"
         >
@@ -373,7 +375,7 @@ export default function JobDetail({
           canManage={currentRole === "owner" || currentRole === "admin"}
         />
       )}
-      {tab === "publish" && <PublishingTab job={job} workspaceSlug={workspaceSlug} publicDomain={publicDomain} onToggle={toggleChannel} />}
+      {tab === "publish" && <PublishingTab job={job} workspaceSlug={workspaceSlug} publicDomain={publicDomain} publicScheme={publicScheme} onToggle={toggleChannel} />}
       {tab === "analytics" && <JobAnalytics job={job} stages={stages} />}
     </div>
   );
@@ -1094,14 +1096,16 @@ function PublishingTab({
   job,
   workspaceSlug,
   publicDomain,
+  publicScheme,
   onToggle,
 }: {
   job: JobShape;
   workspaceSlug: string;
   publicDomain: string;
+  publicScheme: string;
   onToggle: (key: string, value: boolean) => Promise<void>;
 }) {
-  const publicUrl = `http://${workspaceSlug}.${publicDomain}/jobs/${job.slug}`;
+  const publicUrl = `${publicScheme}://${workspaceSlug}.${publicDomain}/jobs/${job.slug}`;
   const channels: { key: string; name: string; sub: string; icon: keyof typeof Icons }[] = [
     { key: "vellum", name: `${workspaceSlug} careers`, sub: `${publicUrl} · branded`, icon: "Globe" },
     { key: "linkedin", name: "LinkedIn Jobs", sub: "Free posting · syncs every 24h", icon: "Linkedin" },

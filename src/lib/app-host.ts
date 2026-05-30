@@ -45,3 +45,17 @@ export function isAppHost(host: string | undefined | null): boolean {
   const app = appHostBare();
   return app != null && stripPort(host) === app;
 }
+
+/**
+ * URL scheme ("http" or "https") for candidate-facing / career-site links.
+ * Derived from APP_ORIGIN (which setup.sh sets to https://… in the proxy/HTTPS
+ * install mode), falling back to NEXTAUTH_URL, then "http" for plain-HTTP and
+ * local installs. Career-site subdomains share the app's scheme in both modes,
+ * so this is what lets an https:// admin page embed an https:// career-site
+ * preview instead of an http:// one — which browsers (Safari especially) block
+ * as mixed content.
+ */
+export function publicScheme(): "http" | "https" {
+  const raw = (process.env.APP_ORIGIN || process.env.NEXTAUTH_URL || "").trim();
+  return /^https:\/\//i.test(raw) ? "https" : "http";
+}

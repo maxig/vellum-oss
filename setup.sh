@@ -392,7 +392,99 @@ EOF
 esac
 
 # ══════════════════════════════════════════════════════════════════════
-# 7. HTTPS / reverse proxy (Caddy)
+# 7. Calendar & email integrations (optional, instance-wide)
+# ══════════════════════════════════════════════════════════════════════
+step "Step 7 · Calendar & email integrations ${DIM}(optional)${RESET}"
+cat <<EOF
+${DIM}These are instance-wide settings. A calendar OAuth app is registered once for
+the whole server; each user then connects their own calendar from Settings →
+Calendar. CalDAV (iCloud, Fastmail, Nextcloud) needs nothing here. Email
+inboxes (IMAP/SMTP) are connected per workspace in Settings → Email — only the
+background poller is set here.${RESET}
+EOF
+
+# Carry forward existing values (so re-runs keep what you already configured).
+GOOGLE_CLIENT_ID="$(env_default GOOGLE_CLIENT_ID)"
+GOOGLE_CLIENT_SECRET="$(env_default GOOGLE_CLIENT_SECRET)"
+GOOGLE_REDIRECT_URI="$(env_default GOOGLE_REDIRECT_URI)"
+MICROSOFT_CLIENT_ID="$(env_default MICROSOFT_CLIENT_ID)"
+MICROSOFT_CLIENT_SECRET="$(env_default MICROSOFT_CLIENT_SECRET)"
+MICROSOFT_TENANT="$(env_default MICROSOFT_TENANT common)"
+MICROSOFT_REDIRECT_URI="$(env_default MICROSOFT_REDIRECT_URI)"
+EMAIL_POLL_DISABLED="$(env_default EMAIL_POLL_DISABLED)"
+EMAIL_POLL_INTERVAL_MS="$(env_default EMAIL_POLL_INTERVAL_MS)"
+
+# ── Google Calendar OAuth ──
+GOOGLE_CB="${APP_ORIGIN}/api/calendar/oauth/google/callback"
+if [ -n "$GOOGLE_CLIENT_ID" ]; then GOOGLE_DEFAULT="Y"; else GOOGLE_DEFAULT="N"; fi
+if yesno "Set up Google Calendar OAuth (lets users connect Google calendars)?" "$GOOGLE_DEFAULT"; then
+  cat <<EOF
+
+${BOLD}Register a Google OAuth app:${RESET}
+  1. ${CYAN}https://console.cloud.google.com${RESET} → create or pick a project
+  2. Enable the ${BOLD}Google Calendar API${RESET}
+  3. OAuth consent screen → External (scopes: calendar.events + calendar.readonly)
+  4. Credentials → Create credentials → OAuth client ID → ${BOLD}Web application${RESET}
+  5. Add this ${BOLD}Authorized redirect URI${RESET}:
+       ${BOLD}$GOOGLE_CB${RESET}
+${DIM}Paste the client ID and secret below. Leave the secret blank to keep the
+current value (or, on a fresh install, to skip — Google stays off until both
+are set).${RESET}
+EOF
+  ask       GOOGLE_CLIENT_ID "Google client ID:" "$GOOGLE_CLIENT_ID"
+  asksecret _g_secret        "Google client secret:"
+  if [ -n "$_g_secret" ]; then GOOGLE_CLIENT_SECRET="$_g_secret"; fi
+  if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+    ok "Google Calendar OAuth configured."
+  else
+    warn "Incomplete — Google calendar stays off until client ID + secret are both set."
+  fi
+else
+  info "Skipped Google calendar. You can add GOOGLE_CLIENT_ID/SECRET later by re-running this."
+fi
+
+# ── Microsoft 365 / Outlook calendar OAuth ──
+MS_CB="${APP_ORIGIN}/api/calendar/oauth/microsoft/callback"
+if [ -n "$MICROSOFT_CLIENT_ID" ]; then MS_DEFAULT="Y"; else MS_DEFAULT="N"; fi
+if yesno "Set up Microsoft 365 / Outlook calendar OAuth?" "$MS_DEFAULT"; then
+  cat <<EOF
+
+${BOLD}Register an app at${RESET} ${CYAN}https://entra.microsoft.com${RESET} ${BOLD}→ App registrations:${RESET}
+  1. New registration; under ${BOLD}Redirect URI${RESET} pick ${BOLD}Web${RESET} and enter:
+       ${BOLD}$MS_CB${RESET}
+  2. API permissions → delegated: Calendars.ReadWrite, User.Read, offline_access
+     (grant admin consent if this is a work tenant)
+  3. Certificates & secrets → New client secret
+${DIM}Tenant controls who may sign in: common = work + personal, organizations =
+work only, consumers = personal only, or a specific tenant ID. Leave the secret
+blank to keep the current value / skip.${RESET}
+EOF
+  ask       MICROSOFT_CLIENT_ID "Microsoft client ID:" "$MICROSOFT_CLIENT_ID"
+  asksecret _ms_secret          "Microsoft client secret:"
+  if [ -n "$_ms_secret" ]; then MICROSOFT_CLIENT_SECRET="$_ms_secret"; fi
+  ask       MICROSOFT_TENANT "Accepted accounts (tenant):" "${MICROSOFT_TENANT:-common}"
+  if [ -n "$MICROSOFT_CLIENT_ID" ] && [ -n "$MICROSOFT_CLIENT_SECRET" ]; then
+    ok "Microsoft calendar OAuth configured (tenant: $MICROSOFT_TENANT)."
+  else
+    warn "Incomplete — Microsoft calendar stays off until client ID + secret are both set."
+  fi
+else
+  info "Skipped Microsoft calendar."
+fi
+
+# ── Email: accounts are per-workspace; only the poller is instance-wide ──
+info "Email inboxes (IMAP/SMTP) are added per workspace in Settings → Email."
+if [ "$EMAIL_POLL_DISABLED" = "1" ]; then EMAIL_POLL_DEFAULT="N"; else EMAIL_POLL_DEFAULT="Y"; fi
+if yesno "Run the background email poller (syncs connected inboxes)?" "$EMAIL_POLL_DEFAULT"; then
+  EMAIL_POLL_DISABLED=""
+  ok "Email poller enabled."
+else
+  EMAIL_POLL_DISABLED="1"
+  info "Email poller disabled — connected inboxes won't sync until you re-enable it."
+fi
+
+# ══════════════════════════════════════════════════════════════════════
+# 8. HTTPS / reverse proxy (Caddy)
 # ══════════════════════════════════════════════════════════════════════
 PROFILES=()
 USE_CADDY=0
@@ -401,7 +493,7 @@ CADDY_DNS_MODULE=""
 CF_API_TOKEN="$(env_default CF_API_TOKEN)"
 
 if [ "$USE_HTTPS" = "1" ]; then
-  step "Step 7 · Automatic HTTPS (Caddy)"
+  step "Step 8 · Automatic HTTPS (Caddy)"
   info "Caddy will obtain & renew TLS certificates automatically."
   USE_CADDY=1
   PROFILES+=("proxy")
@@ -447,14 +539,14 @@ EOF
     info "Only $APP_DOMAIN will get a cert. Career subdomains will need manual TLS."
   fi
 else
-  step "Step 7 · Reverse proxy"
+  step "Step 8 · Reverse proxy"
   info "Skipped (plain HTTP mode). The app will be exposed on port $WEB_PORT."
 fi
 
 # ══════════════════════════════════════════════════════════════════════
-# 8. Automatic updates (Watchtower)
+# 9. Automatic updates (Watchtower)
 # ══════════════════════════════════════════════════════════════════════
-step "Step 8 · Automatic updates ${DIM}(Watchtower, optional)${RESET}"
+step "Step 9 · Automatic updates ${DIM}(Watchtower, optional)${RESET}"
 WATCHTOWER_APP_ENABLE="false"
 WATCHTOWER_POLL_INTERVAL="$(env_default WATCHTOWER_POLL_INTERVAL 86400)"
 if [ "$DEPLOY_MODE" = "image" ]; then
@@ -478,9 +570,9 @@ else
 fi
 
 # ══════════════════════════════════════════════════════════════════════
-# 9. Write .env
+# 10. Write .env
 # ══════════════════════════════════════════════════════════════════════
-step "Step 9 · Writing configuration"
+step "Step 10 · Writing configuration"
 
 COMPOSE_PROFILES_STR="$(IFS=,; echo "${PROFILES[*]:-}")"
 PUBLIC_DOMAIN_BARE="$(bare_host "${PUBLIC_DOMAIN}")"
@@ -544,23 +636,27 @@ fi
   echo "OLLAMA_MODEL=\"$OLLAMA_MODEL\""
   echo "OLLAMA_API_KEY=\"$OLLAMA_API_KEY\""
   echo
-  echo "# ── Calendar OAuth (optional — see .env.example, or set up in Settings) ──"
-  echo "GOOGLE_CLIENT_ID=\"$(env_default GOOGLE_CLIENT_ID)\""
-  echo "GOOGLE_CLIENT_SECRET=\"$(env_default GOOGLE_CLIENT_SECRET)\""
-  echo "GOOGLE_REDIRECT_URI=\"$(env_default GOOGLE_REDIRECT_URI)\""
-  echo "MICROSOFT_CLIENT_ID=\"$(env_default MICROSOFT_CLIENT_ID)\""
-  echo "MICROSOFT_CLIENT_SECRET=\"$(env_default MICROSOFT_CLIENT_SECRET)\""
-  echo "MICROSOFT_TENANT=\"$(env_default MICROSOFT_TENANT common)\""
-  echo "MICROSOFT_REDIRECT_URI=\"$(env_default MICROSOFT_REDIRECT_URI)\""
+  echo "# ── Calendar OAuth (instance-wide; users connect their own calendars in Settings) ──"
+  echo "GOOGLE_CLIENT_ID=\"$GOOGLE_CLIENT_ID\""
+  echo "GOOGLE_CLIENT_SECRET=\"$GOOGLE_CLIENT_SECRET\""
+  echo "GOOGLE_REDIRECT_URI=\"$GOOGLE_REDIRECT_URI\""
+  echo "MICROSOFT_CLIENT_ID=\"$MICROSOFT_CLIENT_ID\""
+  echo "MICROSOFT_CLIENT_SECRET=\"$MICROSOFT_CLIENT_SECRET\""
+  echo "MICROSOFT_TENANT=\"$MICROSOFT_TENANT\""
+  echo "MICROSOFT_REDIRECT_URI=\"$MICROSOFT_REDIRECT_URI\""
+  echo
+  echo "# ── Email (inboxes are per-workspace in Settings → Email; this tunes the poller) ──"
+  echo "EMAIL_POLL_DISABLED=\"$EMAIL_POLL_DISABLED\""
+  echo "EMAIL_POLL_INTERVAL_MS=\"$EMAIL_POLL_INTERVAL_MS\""
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE" 2>/dev/null || true
 ok "Wrote $ENV_FILE (chmod 600)"
 
 # ══════════════════════════════════════════════════════════════════════
-# 10. Generate Caddy config (if used)
+# 11. Generate Caddy config (if used)
 # ══════════════════════════════════════════════════════════════════════
 if [ "$USE_CADDY" = "1" ]; then
-  step "Step 10 · Generating Caddy config"
+  step "Step 11 · Generating Caddy config"
 
   if [ "$WILDCARD" = "1" ] && [ -n "$CADDY_DNS_MODULE" ]; then
     cat > "$SCRIPT_DIR/Dockerfile.caddy" <<EOF
@@ -617,9 +713,9 @@ EOF
 fi
 
 # ══════════════════════════════════════════════════════════════════════
-# 11. Review & launch
+# 12. Review & launch
 # ══════════════════════════════════════════════════════════════════════
-step "Step 11 · Review"
+step "Step 12 · Review"
 hr
 printf '  %-22s %s\n' "Deployment:"   "$DEPLOY_MODE ($APP_IMAGE)"
 printf '  %-22s %s\n' "App URL:"      "$APP_ORIGIN"
@@ -627,6 +723,9 @@ printf '  %-22s %s\n' "App URL:"      "$APP_ORIGIN"
 printf '  %-22s %s\n' "Admin email:"  "$SEED_ADMIN_EMAIL"
 printf '  %-22s %s\n' "Demo data:"    "skipped (clean install)"
 printf '  %-22s %s\n' "AI provider:"  "${AI_PROVIDER:-mock}"
+printf '  %-22s %s\n' "Google calendar:" "$([ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ] && echo "configured" || echo "off")"
+printf '  %-22s %s\n' "Microsoft calendar:" "$([ -n "$MICROSOFT_CLIENT_ID" ] && [ -n "$MICROSOFT_CLIENT_SECRET" ] && echo "configured" || echo "off")"
+printf '  %-22s %s\n' "Email poller:" "$([ "$EMAIL_POLL_DISABLED" = "1" ] && echo "disabled" || echo "enabled")"
 printf '  %-22s %s\n' "HTTPS (Caddy):" "$([ "$USE_CADDY" = 1 ] && echo "yes$([ "$WILDCARD" = 1 ] && echo " + wildcard")" || echo "no")"
 printf '  %-22s %s\n' "Auto-updates:" "$([ "$WATCHTOWER_APP_ENABLE" = true ] && echo "Watchtower (every $((WATCHTOWER_POLL_INTERVAL/3600))h)" || echo "manual (./update.sh)")"
 printf '  %-22s %s\n' "Profiles:"     "${COMPOSE_PROFILES_STR:-<none>}"

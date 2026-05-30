@@ -49,7 +49,11 @@ if [ "$DEPLOY_MODE" = "source" ]; then
   $COMPOSE up -d --build
 else
   info "Pulling latest image(s)…"
-  $COMPOSE pull
+  # Pull only the registry-backed services. caddy is built locally (image
+  # vellum-caddy:local has no registry), so a blanket `pull` exits non-zero on
+  # it and, under `set -e`, would abort before we recreate anything. Mirrors
+  # setup.sh's launch step.
+  $COMPOSE pull app db || true
   info "Recreating containers…"
   $COMPOSE up -d
 fi

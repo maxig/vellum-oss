@@ -64,10 +64,11 @@ export default function SettingsView(props: {
   members: { id: string; role: string; user: { id: string; name: string | null; email: string } }[];
   invites: { id: string; email: string; role: string; token: string; expiresAt: string }[];
   publicDomain: string;
+  publicScheme: string;
 }) {
   const router = useRouter();
   const tab = (TABS.find((t) => t.id === props.tab)?.id || "workspace") as Tab;
-  const inviteLinkBase = `http://${props.publicDomain}/invite/`;
+  const inviteLinkBase = `${props.publicScheme}://${props.publicDomain}/invite/`;
 
   return (
     <div className="page settings-page">
@@ -390,7 +391,7 @@ function WorkspaceTab({ workspace }: any) {
 type Office = { city: string; country: string; address: string; employees: string };
 type Story = { name: string; role: string; years: string; quote: string; photoUrl: string };
 
-function CareerTab({ workspace, careerSite, publicDomain }: any) {
+function CareerTab({ workspace, careerSite, publicDomain, publicScheme }: any) {
   const router = useRouter();
   const [state, setState] = React.useState(() => ({
     brand: careerSite?.brand || { name: workspace.name, domain: `careers.${workspace.domain}` },
@@ -416,7 +417,7 @@ function CareerTab({ workspace, careerSite, publicDomain }: any) {
   }
 
   const apex = publicDomain;
-  const publicUrl = `http://${workspace.slug}.${apex}`;
+  const publicUrl = `${publicScheme}://${workspace.slug}.${apex}`;
 
   return (
     <>

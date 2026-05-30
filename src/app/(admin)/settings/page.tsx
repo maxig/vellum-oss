@@ -3,6 +3,7 @@
 
 import * as React from "react";
 import { requireWorkspace } from "@/lib/workspace";
+import { publicScheme } from "@/lib/app-host";
 import { db } from "@/lib/db";
 import SettingsView from "./SettingsView";
 import { normalizeCookieConfig } from "@/lib/cookies";
@@ -133,6 +134,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       members={members.map((m) => ({ id: m.id, role: m.role, user: { id: m.user.id, name: m.user.name, email: m.user.email } }))}
       invites={invites.map((i) => ({ id: i.id, email: i.email, role: i.role, token: i.token, expiresAt: i.expiresAt.toISOString() }))}
       publicDomain={process.env.PUBLIC_DOMAIN || "localhost:3000"}
+      publicScheme={publicScheme()}
     />
   );
 }

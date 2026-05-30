@@ -4,6 +4,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/workspace";
+import { publicScheme } from "@/lib/app-host";
 import { Glass, Chip, Icons } from "@/components/primitives";
 import { db } from "@/lib/db";
 
@@ -16,7 +17,7 @@ export default async function CareerPreviewPage() {
     db.careerSite.findUnique({ where: { workspaceId: workspace.id } }),
   ]);
   const apex = process.env.PUBLIC_DOMAIN || "localhost:3000";
-  const publicUrl = `http://${workspace.slug}.${apex}`;
+  const publicUrl = `${publicScheme()}://${workspace.slug}.${apex}`;
   const customDomain = careerSite?.customDomain || null;
   const verified = !!careerSite?.verifiedAt;
   const displayDomain = customDomain || `${workspace.slug}.${apex}`;

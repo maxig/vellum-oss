@@ -4,6 +4,7 @@
 import * as React from "react";
 import { notFound } from "next/navigation";
 import { requireWorkspace } from "@/lib/workspace";
+import { publicScheme } from "@/lib/app-host";
 import { db } from "@/lib/db";
 import JobDetail from "./JobDetail";
 
@@ -83,6 +84,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       }}
       workspaceSlug={workspace.slug}
       publicDomain={process.env.PUBLIC_DOMAIN || "localhost:3000"}
+      publicScheme={publicScheme()}
       stages={stages.map((s) => ({ key: s.key, name: s.name, color: s.color, count: byStageKey[s.key] || 0 }))}
       members={members.map((m) => ({
         id: m.user.id,

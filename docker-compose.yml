@@ -74,6 +74,11 @@ services:
       MICROSOFT_REDIRECT_URI: ${MICROSOFT_REDIRECT_URI:-}
       CALENDAR_WORKER_TICK_MS: ${CALENDAR_WORKER_TICK_MS:-}
       CALENDAR_FOLLOWUP_TICK_MS: ${CALENDAR_FOLLOWUP_TICK_MS:-}
+      # Email — IMAP/SMTP accounts are configured per workspace in Settings →
+      # Email. These only tune the instance-wide background poller: set
+      # EMAIL_POLL_DISABLED=1 to turn it off, or override the poll cadence.
+      EMAIL_POLL_DISABLED: ${EMAIL_POLL_DISABLED:-}
+      EMAIL_POLL_INTERVAL_MS: ${EMAIL_POLL_INTERVAL_MS:-}
       NODE_ENV: production
     ports:
       # When Caddy is the front door (proxy profile) the app only needs to be

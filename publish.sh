@@ -9,10 +9,14 @@
 # stage (compiled output only — no source docs, specs, or secrets) and pushes
 # it so a server can pull it via setup.sh's "image mode".
 #
+# Version: auto-suggests the next free patch (bumps from package.json / the
+# registry); override at the prompt or with VERSION=. Older versions stay
+# published under their own tags, so you can always roll back.
+#
 # Usage:
-#   ./publish.sh                       # interactive
-#   NAMESPACE=acme ./publish.sh        # acme/vellum:<version> + :latest
-#   NAMESPACE=acme IMAGE=vellum VERSION=0.1.0 PLATFORMS=linux/amd64 ./publish.sh
+#   ./publish.sh                       # interactive (auto-suggests next patch)
+#   NAMESPACE=maxig ./publish.sh       # maxig/vellum-oss:<version> + :latest
+#   VERSION=0.2.0 ./publish.sh         # explicit version override
 #
 set -euo pipefail
 
@@ -50,6 +54,21 @@ yesno() {
   done
 }
 
+# bump the patch component of a semver-ish version (1.2.3 → 1.2.4)
+bump_patch() {
+  local v="${1#v}" core ma mi pa _
+  core="${v%%-*}"                       # drop any -prerelease suffix
+  IFS=. read -r ma mi pa _ <<<"$core"
+  [[ "$ma" =~ ^[0-9]+$ ]] || ma=0
+  [[ "$mi" =~ ^[0-9]+$ ]] || mi=0
+  [[ "$pa" =~ ^[0-9]+$ ]] || pa=0
+  printf '%s.%s.%s' "$ma" "$mi" "$((pa + 1))"
+}
+
+# does this image tag already exist in the registry? (best-effort; false on any
+# error, e.g. repo not found or no network)
+tag_exists() { docker manifest inspect "$1" >/dev/null 2>&1; }
+
 # ── preflight ──
 command -v docker >/dev/null 2>&1 || { err "docker not found."; exit 1; }
 docker buildx version >/dev/null 2>&1 || { err "docker buildx not found (needs Docker 19.03+ / Buildx)."; exit 1; }
@@ -61,12 +80,6 @@ REGISTRY="${REGISTRY:-docker.io}"
 ask NAMESPACE "Registry namespace (your Docker Hub username or org):" "${NAMESPACE:-maxig}"
 [ -n "$NAMESPACE" ] || { err "A namespace is required."; exit 1; }
 ask IMAGE   "Image name:" "${IMAGE:-vellum-oss}"
-PKG_VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 0.1.0)"
-ask VERSION "Version tag:" "${VERSION:-$PKG_VERSION}"
-
-# Default to amd64 — that's what most cloud servers run. Building amd64 on an
-# Apple-Silicon host uses emulation (slower) but produces a server-ready image.
-ask PLATFORMS "Target platform(s):" "${PLATFORMS:-linux/amd64}"
 
 # docker.io is implied by Docker Hub; don't prefix it into the tag.
 if [ "$REGISTRY" = "docker.io" ]; then
@@ -74,6 +87,28 @@ if [ "$REGISTRY" = "docker.io" ]; then
 else
   REF="$REGISTRY/$NAMESPACE/$IMAGE"
 fi
+
+# Version: auto-suggest the next free patch. Start from package.json's version
+# and advance past anything already published, so each release gets a fresh patch
+# and previous versions stay put. Always overridable (prompt or VERSION=).
+PKG_VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 0.1.0)"
+if [ -n "${VERSION:-}" ]; then
+  DEF_VERSION="$VERSION"
+else
+  DEF_VERSION="$PKG_VERSION"
+  if tag_exists "$REF:$DEF_VERSION"; then
+    info "Looking up the next free patch for $REF…"
+    n=0
+    while tag_exists "$REF:$DEF_VERSION" && [ "$n" -lt 1000 ]; do
+      DEF_VERSION="$(bump_patch "$DEF_VERSION")"; n=$((n + 1))
+    done
+  fi
+fi
+ask VERSION "Version tag:" "$DEF_VERSION"
+
+# Default to amd64 — that's what most cloud servers run. Building amd64 on an
+# Apple-Silicon host uses emulation (slower) but produces a server-ready image.
+ask PLATFORMS "Target platform(s):" "${PLATFORMS:-linux/amd64}"
 
 TAGS=(-t "$REF:$VERSION" -t "$REF:latest")
 GITSHA="$(git rev-parse --short HEAD 2>/dev/null || true)"
@@ -112,6 +147,14 @@ docker buildx build \
 
 echo
 ok "Published $REF:$VERSION (and :latest)"
+
+# Save the version: bump package.json so the next publish starts from here. The
+# previous version isn't lost — it stays in the registry under its own tag.
+if [ "$VERSION" != "$PKG_VERSION" ] && command -v node >/dev/null 2>&1; then
+  node -e 'const fs=require("fs"),f="package.json",p=JSON.parse(fs.readFileSync(f));p.version=process.argv[1];fs.writeFileSync(f,JSON.stringify(p,null,2)+"\n")' "$VERSION" 2>/dev/null \
+    && info "Bumped package.json: $PKG_VERSION → $VERSION — commit it (and sync to the public repo)."
+fi
+
 cat <<EOF
 
 Use it on a server: run ${BOLD}./setup.sh${RESET} and, at the deployment step, set the
@@ -120,4 +163,8 @@ image reference to:
   ${CYAN}$REF:latest${RESET}
 
 (or pre-seed it: ${BOLD}APP_IMAGE="$REF:latest"${RESET} in .env)
+
+This release is also tagged ${BOLD}$REF:$VERSION${RESET}${GITSHA:+ and ${BOLD}$REF:git-$GITSHA${RESET}},
+and older versions stay published — pin/roll back anytime with
+${BOLD}APP_IMAGE="$REF:<version>"${RESET} then ./update.sh.
 EOF
