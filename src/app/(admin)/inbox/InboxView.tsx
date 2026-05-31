@@ -45,7 +45,7 @@ export default function InboxView({
   fromAddress,
   stages,
 }: {
-  currentUser: { id: string; name: string };
+  currentUser: { id: string; name: string; signature: string };
   threads: ThreadItem[];
   activeId: string | null;
   active: ActiveThread | null;
@@ -55,13 +55,19 @@ export default function InboxView({
   stages?: { id: string; key: string; name: string; color: string }[];
 }) {
   const router = useRouter();
-  const [reply, setReply] = React.useState("");
+  const [reply, setReply] = React.useState(currentUser.signature ? `\n\n${currentUser.signature}` : "");
   const [sending, setSending] = React.useState(false);
   const [composing, setComposing] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [sendError, setSendError] = React.useState<string | null>(null);
   const [openProfile, setOpenProfile] = React.useState<string | null>(null);
   const messagesRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (active?.id && !reply && currentUser.signature) {
+      setReply(`\n\n${currentUser.signature}`);
+    }
+  }, [active?.id, currentUser.signature, reply]);
 
   React.useEffect(() => {
     if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -137,7 +143,10 @@ export default function InboxView({
     })
       .then((r) => r.json())
       .then((j) => {
-        const text: string = j.text || "Thanks for getting back to me. Let me know what timing works best on your end.";
+        let text: string = j.text || "Thanks for getting back to me. Let me know what timing works best on your end.";
+        if (currentUser.signature) {
+          text += `\n\n${currentUser.signature}`;
+        }
         // Type-on effect to match the design's shimmer.
         let i = 0;
         const tick = () => {

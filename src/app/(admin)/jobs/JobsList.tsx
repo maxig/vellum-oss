@@ -3,9 +3,9 @@
 
 "use client";
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Glass, Chip, Icons } from "@/components/primitives";
+import { useProfileSheet } from "@/components/SheetHost";
 
 export type JobRow = {
   id: string;
@@ -34,6 +34,7 @@ const STATUS_COLORS: Record<string, { fg: string; bg: string }> = {
 
 export default function JobsList({ rows }: { rows: JobRow[] }) {
   const router = useRouter();
+  const { openJobWizard } = useProfileSheet();
   const [tab, setTab] = React.useState<Tab>("Open");
 
   const counts = React.useMemo(() => {
@@ -84,9 +85,9 @@ export default function JobsList({ rows }: { rows: JobRow[] }) {
               );
             })}
           </Glass>
-          <Link className="btn btn-primary" href="/jobs/new">
+          <button className="btn btn-primary" onClick={() => openJobWizard()}>
             <Icons.Plus size={13} stroke={2} /> New job
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -116,9 +117,9 @@ export default function JobsList({ rows }: { rows: JobRow[] }) {
                 : `No ${tab.toLowerCase()} roles right now.`}
             </p>
             {rows.length === 0 && (
-              <Link className="btn btn-primary" href="/jobs/new" style={{ marginTop: 16 }}>
+              <button className="btn btn-primary" onClick={() => openJobWizard()} style={{ marginTop: 16 }}>
                 <Icons.Plus size={13} stroke={2} /> Create a job
-              </Link>
+              </button>
             )}
           </div>
         )}

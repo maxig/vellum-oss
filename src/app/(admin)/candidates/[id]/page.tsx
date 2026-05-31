@@ -28,7 +28,11 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
 
   return (
     <CandidateView
-      currentUser={{ id: user.id, name: user.name || user.email }}
+      currentUser={{
+        id: user.id,
+        name: user.name || user.email,
+        signature: user.signature || workspace.signature || "",
+      }}
       currentRole={membership.role}
       candidate={{
         id: candidate.id,

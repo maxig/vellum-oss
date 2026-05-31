@@ -1,0 +1,7 @@
+# Keeps the `public/` directory present in git and the Docker build context.
+#
+# Next.js serves static assets (favicon, robots.txt, og images, etc.) from
+# here, and `output: "standalone"` does NOT generate this folder — so the
+# Dockerfile copies it explicitly (`COPY --from=builder /app/public ./public`).
+# Without a tracked file, the directory wouldn't exist and that COPY fails with
+# "/app/public: not found". Safe to delete once real assets live here.

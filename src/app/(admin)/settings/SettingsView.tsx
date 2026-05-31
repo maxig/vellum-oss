@@ -40,6 +40,33 @@ const TABS: { id: Tab; label: string; icon: keyof typeof Icons }[] = [
   { id: "danger",     label: "Danger zone",       icon: "Trash" },
 ];
 
+type Role = "owner" | "admin" | "member";
+
+// Minimum workspace role that may open each settings tab. Mirrors the
+// capability matrix in ROLES.md §5 — keep the two in sync. "member" means
+// every workspace member: Appearance is purely personal preference, and
+// Calendar exposes a per-user "connect my calendar" panel that members
+// legitimately need (the workspace-level pieces inside it are gated
+// separately). Every other tab configures the workspace itself, so it's
+// admin/owner-only. The owner-only action — delete workspace — lives inside
+// the Danger tab and is gated on its own, below.
+const TAB_MIN_ROLE: Record<Tab, Role> = {
+  workspace:  "admin",
+  appearance: "member",
+  career:     "admin",
+  ai:         "admin",
+  team:       "admin",
+  email:      "admin",
+  calendar:   "member",
+  cookies:    "admin",
+  danger:     "admin",
+};
+
+const ROLE_RANK: Record<Role, number> = { member: 0, admin: 1, owner: 2 };
+function roleAtLeast(role: string, min: Role): boolean {
+  return (ROLE_RANK[role as Role] ?? 0) >= ROLE_RANK[min];
+}
+
 export default function SettingsView(props: {
   tab: string;
   workspace: {
@@ -67,7 +94,13 @@ export default function SettingsView(props: {
   publicScheme: string;
 }) {
   const router = useRouter();
-  const tab = (TABS.find((t) => t.id === props.tab)?.id || "workspace") as Tab;
+  const role = props.currentUser.role;
+  // Only surface tabs this role can actually use, and never render a tab's
+  // contents just because it was requested via ?tab=<x> — fall back to the
+  // first tab the user is allowed to see.
+  const visibleTabs = TABS.filter((t) => roleAtLeast(role, TAB_MIN_ROLE[t.id]));
+  const requested = TABS.find((t) => t.id === props.tab)?.id;
+  const tab = ((requested && roleAtLeast(role, TAB_MIN_ROLE[requested]) ? requested : visibleTabs[0]?.id) || "appearance") as Tab;
   const inviteLinkBase = `${props.publicScheme}://${props.publicDomain}/invite/`;
 
   return (
@@ -75,7 +108,7 @@ export default function SettingsView(props: {
       <div className="settings-shell">
         <nav className="settings-nav">
           <div className="section-h" style={{ padding: "6px 10px", marginBottom: 8 }}>Settings</div>
-          {TABS.map((t) => {
+          {visibleTabs.map((t) => {
             const I = Icons[t.icon];
             return (
               <Link key={t.id} href={`/settings?tab=${t.id}`} className={`nav-item ${tab === t.id ? "active" : ""}`}>
@@ -2001,8 +2034,12 @@ function EmailTab({ email, workspace, currentUser }: any) {
 }
 
 // ───────────────────────────────────────── Calendar ─────────────────────
-function CalendarTab({ workspace, email }: any) {
+function CalendarTab({ workspace, email, currentUser }: any) {
   const router = useRouter();
+  // Connecting your own calendar is per-user, so every member sees that panel.
+  // The workspace-wide bits (invite defaults, working hours) write through
+  // admin-only APIs, so they're shown only to admins/owners.
+  const admin = roleAtLeast(currentUser?.role || "member", "admin");
   const defaults = (workspace.defaults || {}) as Record<string, boolean>;
   // Default ON — opt-out, since most recruiters want the candidate to receive
   // a real calendar invite when they hit Schedule.
@@ -2030,6 +2067,7 @@ function CalendarTab({ workspace, email }: any) {
 
   return (
     <>
+      {admin && (
       <Glass className="card" style={{ padding: 24 }}>
         <h2 style={{ fontSize: 18, marginBottom: 4 }}>Calendar invites</h2>
         <p className="muted" style={{ marginBottom: 14, fontSize: 13 }}>
@@ -2068,12 +2106,13 @@ function CalendarTab({ workspace, email }: any) {
           </ul>
         </div>
       </Glass>
+      )}
 
       <CalendarAccountsPanel />
 
-      <CalendarDefaultsPanel workspace={workspace} />
+      {admin && <CalendarDefaultsPanel workspace={workspace} />}
 
-
+      {admin && (
       <div className="row" style={{ justifyContent: "flex-end", gap: 10 }}>
         {savedAt && (
           <span className="tiny" style={{ color: "var(--accent-solid)" }}>
@@ -2084,6 +2123,7 @@ function CalendarTab({ workspace, email }: any) {
           {saving ? "Saving…" : "Save changes"}
         </button>
       </div>
+      )}
     </>
   );
 }
@@ -2839,10 +2879,13 @@ function CookieScriptEditor({
 }
 
 // ───────────────────────────────────────── Danger ─────────────────────
-function DangerTab({ workspace }: any) {
+function DangerTab({ workspace, currentUser }: any) {
   const router = useRouter();
   const [confirm, setConfirm] = React.useState("");
   const [purging, setPurging] = React.useState<"idle" | "busy" | "ok" | "err">("idle");
+  // Deleting the workspace is owner-only (ROLES.md §2.1 / §5). Admins still get
+  // export + recap-cache purge, but never see the destroy-workspace control.
+  const isOwner = currentUser?.role === "owner";
 
   async function exportData() {
     window.open("/api/workspace/export", "_blank");
@@ -2888,14 +2931,16 @@ function DangerTab({ workspace }: any) {
         </button>
       </div>
 
-      <div className="row" style={{ padding: "12px 0", borderBottom: "0.5px solid var(--line)", alignItems: "flex-start" }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 500, color: "oklch(58% 0.2 28)" }}>Delete workspace</div>
-          <div className="tiny">Permanently remove this workspace and all its data. Type the workspace slug to confirm.</div>
-          <input className="input" placeholder={workspace.slug} value={confirm} onChange={(e) => setConfirm(e.target.value)} style={{ marginTop: 10, maxWidth: 320 }} />
+      {isOwner && (
+        <div className="row" style={{ padding: "12px 0", borderBottom: "0.5px solid var(--line)", alignItems: "flex-start" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 500, color: "oklch(58% 0.2 28)" }}>Delete workspace</div>
+            <div className="tiny">Permanently remove this workspace and all its data. Type the workspace slug to confirm.</div>
+            <input className="input" placeholder={workspace.slug} value={confirm} onChange={(e) => setConfirm(e.target.value)} style={{ marginTop: 10, maxWidth: 320 }} />
+          </div>
+          <button className="btn btn-danger" disabled={confirm !== workspace.slug} onClick={deleteWorkspace}>Delete forever</button>
         </div>
-        <button className="btn btn-danger" disabled={confirm !== workspace.slug} onClick={deleteWorkspace}>Delete forever</button>
-      </div>
+      )}
     </Glass>
   );
 }

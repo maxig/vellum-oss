@@ -2,7 +2,7 @@
 // Copyright (C) 2026 MG Tech AS
 
 import * as React from "react";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, isAdmin } from "@/lib/workspace";
 import { publicScheme } from "@/lib/app-host";
 import { db } from "@/lib/db";
 import SettingsView from "./SettingsView";
@@ -15,19 +15,29 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const { workspace, user, membership } = await requireWorkspace();
   const sp = await searchParams;
 
+  // Workspace-level config (career site, AI, email, the member roster, and
+  // pending invites) is admin/owner-only — see ROLES.md §5. Members only get
+  // the Appearance + Calendar tabs, so we don't fetch the admin datasets for
+  // them: that keeps invite tokens, email hosts, and the roster out of the
+  // client payload entirely, not merely hidden in the rendered UI.
+  const admin = isAdmin(membership.role);
   const [careerSite, ai, emailAccount, members, invites] = await Promise.all([
-    db.careerSite.findUnique({ where: { workspaceId: workspace.id } }),
-    db.aIConfig.findUnique({ where: { workspaceId: workspace.id } }),
-    db.emailAccount.findUnique({ where: { workspaceId: workspace.id } }),
-    db.membership.findMany({
-      where: { workspaceId: workspace.id },
-      include: { user: true },
-      orderBy: { createdAt: "asc" },
-    }),
-    db.invite.findMany({
-      where: { workspaceId: workspace.id, acceptedAt: null, expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: "desc" },
-    }),
+    admin ? db.careerSite.findUnique({ where: { workspaceId: workspace.id } }) : Promise.resolve(null),
+    admin ? db.aIConfig.findUnique({ where: { workspaceId: workspace.id } }) : Promise.resolve(null),
+    admin ? db.emailAccount.findUnique({ where: { workspaceId: workspace.id } }) : Promise.resolve(null),
+    admin
+      ? db.membership.findMany({
+          where: { workspaceId: workspace.id },
+          include: { user: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : Promise.resolve([]),
+    admin
+      ? db.invite.findMany({
+          where: { workspaceId: workspace.id, acceptedAt: null, expiresAt: { gt: new Date() } },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]),
   ]);
   // Show what AI will actually run (the env may override a stale workspace
   // default), keeping the rest of the row's settings as stored.
@@ -68,7 +78,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         verifiedAt: careerSite.verifiedAt?.toISOString() || null,
         publishedAt: careerSite.publishedAt?.toISOString() || null,
       } : null}
-      ai={{
+      ai={admin ? {
         provider: aiEffective.provider,
         model: aiEffective.model,
         baseUrl: aiEffective.baseUrl,
@@ -81,7 +91,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         tokensQuota: ai?.tokensQuota ?? 100000,
         recapSettings: (ai?.recapSettings as Record<string, unknown>) ?? {},
         reviewRules: (ai?.reviewRules as Record<string, unknown>) ?? {},
-      }}
+      } : null}
       email={emailAccount ? {
         imapHost: emailAccount.imapHost,
         imapPort: emailAccount.imapPort,

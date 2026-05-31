@@ -16,7 +16,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const app = await db.application.findFirst({
     where: { id, workspaceId: workspace.id },
     include: {
-      job: { select: { id: true, title: true, slug: true, department: true, location: true } },
+      job: {
+        include: {
+          screening: { orderBy: { position: "asc" } },
+        },
+      },
       stage: true,
       candidate: {
         include: {
@@ -68,6 +72,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       resumeName: app.resumeName,
       resumeText: app.resumeText,
       whyUs: app.whyUs,
+      screeningQuestions: app.job.screening.map((q) => ({ id: q.id, label: q.label, kind: q.kind })),
       screeningAnswers: normalizeJsonObject(app.screeningAnswers),
       archived: app.archived,
       appliedAt: app.appliedAt.toISOString(),

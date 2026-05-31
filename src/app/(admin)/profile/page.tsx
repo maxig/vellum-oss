@@ -14,7 +14,7 @@ export default async function ProfilePage() {
       <h1>Your profile</h1>
       <p className="muted" style={{ marginTop: 6, marginBottom: 28 }}>How you appear to teammates and candidates.</p>
       <ProfileForm
-        user={{ id: user.id, name: user.name || "", email: user.email }}
+        user={{ id: user.id, name: user.name || "", email: user.email, signature: user.signature }}
         role={membership.role}
         workspaceName={workspace.name}
       />

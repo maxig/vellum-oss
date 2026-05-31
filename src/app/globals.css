@@ -1396,6 +1396,11 @@ textarea.autogrow[data-max-vh="70"] { --autogrow-max-vh: 70vh; }
   animation: shimmer 1.4s linear infinite;
 }
 @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes shimmer-text { from { opacity: 0.45; } to { opacity: 0.85; } }
+
+.ai-shimmer-text {
+  animation: shimmer-text 1.6s ease-in-out infinite alternate;
+}
 
 .ai-pill {
   display: inline-flex; align-items: center; gap: 5px;

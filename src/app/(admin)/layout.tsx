@@ -2,47 +2,55 @@
 // Copyright (C) 2026 MG Tech AS
 
 import * as React from "react";
-import { redirect } from "next/navigation";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
-import NextAuthProvider from "@/components/SessionProvider";
-import ThemeBoot, { type Prefs } from "@/components/ThemeBoot";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 import SheetHost from "@/components/SheetHost";
-import { relativeTime } from "@/lib/utils";
+import ThemeBoot, { type Prefs } from "@/components/ThemeBoot";
+import NextAuthProvider from "@/components/SessionProvider";
 
-export const dynamic = "force-dynamic";
+const DEFAULT_PREFS: Prefs = {
+  theme: "light",
+  density: "cozy",
+  accent: "indigo",
+  glassIntensity: 1.0,
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await requireWorkspace().catch((e) => {
-    if (e?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
-    return null;
-  });
-  if (!ctx) redirect("/login");
+  const { user, workspace, membership, workspaces } = await requireWorkspace();
 
-  const { user, workspace, workspaces, membership } = ctx;
-
-  const [openJobsCount, unreadCount, notifications, stages] = await Promise.all([
-    db.job.count({ where: { workspaceId: workspace.id, status: "Open" } }),
+  const [stages, unreadCount, jobs, prefsData, notifications] = await Promise.all([
+    db.stage.findMany({ where: { workspaceId: workspace.id }, orderBy: { position: "asc" } }),
     db.thread.count({ where: { workspaceId: workspace.id, unread: true } }),
+    db.job.findMany({ where: { workspaceId: workspace.id } }),
+    db.userPreference.findUnique({ where: { userId: user.id } }),
     db.notification.findMany({
-      where: { workspaceId: workspace.id, userId: user.id },
+      where: { userId: user.id },
       orderBy: { createdAt: "desc" },
-      take: 12,
-    }),
-    db.stage.findMany({
-      where: { workspaceId: workspace.id },
-      orderBy: { position: "asc" },
+      take: 20,
     }),
   ]);
 
   const prefs: Prefs = {
-    theme: (user.preferences?.theme as Prefs["theme"]) || "light",
-    density: (user.preferences?.density as Prefs["density"]) || "cozy",
-    accent: (user.preferences?.accent as Prefs["accent"]) || "indigo",
-    glassIntensity: user.preferences?.glassIntensity ?? 1.0,
+    theme: (prefsData?.theme as any) || DEFAULT_PREFS.theme,
+    density: (prefsData?.density as any) || DEFAULT_PREFS.density,
+    accent: (prefsData?.accent as any) || DEFAULT_PREFS.accent,
+    glassIntensity: prefsData?.glassIntensity ?? DEFAULT_PREFS.glassIntensity,
   };
+
+  const openJobsCount = jobs.filter((j) => j.status === "Published" || j.status === "published").length;
+
+  const locationOptions = Array.from(
+    new Set(
+      jobs
+        .map((j) => j.location)
+        .filter(Boolean)
+        .concat(["Remote", "London", "New York", "Berlin", "San Francisco"]) as string[]
+    )
+  );
+
+  const departments = (workspace.departments as string[]) || [];
 
   return (
     <NextAuthProvider>
@@ -50,8 +58,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="ambient"><div className="blob" /></div>
       <SheetHost
         stages={stages.map((s) => ({ id: s.id, key: s.key, name: s.name, color: s.color }))}
-        currentUser={{ id: user.id, name: user.name || user.email }}
+        currentUser={{
+          id: user.id,
+          name: user.name || user.email,
+          signature: user.signature || workspace.signature || "",
+        }}
         currentRole={membership.role}
+        workspaceData={{
+          departments,
+          locations: locationOptions,
+          currency: workspace.currency || "EUR",
+        }}
         userProfile={{
           id: user.id,
           name: user.name || "",
@@ -62,16 +79,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           timezone: user.timezone || "",
           workingHours: user.workingHours || "",
           bio: user.bio || "",
-          signature: user.signature || workspace.signature || "",
+          signature: user.signature || "",
           role: membership.role,
-          joinedAt: user.createdAt.toLocaleDateString(undefined, {
-            month: "short",
-            year: "numeric",
-          }),
-          notifications:
-            user.preferences && user.preferences.notifications
-              ? (user.preferences.notifications as Record<string, boolean>) as any
-              : {},
+          joinedAt: user.createdAt.toLocaleDateString(),
+          notifications: (user.preferences?.notifications as any) || {},
         }}
       >
         <div className="app">
@@ -90,11 +101,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 id: n.id,
                 title: n.title,
                 body: n.body,
-                createdAt: relativeTime(n.createdAt),
+                createdAt: n.createdAt.toISOString(),
                 read: n.read,
               }))}
             />
-            <div className="viewport">{children}</div>
+            <div className="main-content scroll">{children}</div>
           </main>
         </div>
       </SheetHost>

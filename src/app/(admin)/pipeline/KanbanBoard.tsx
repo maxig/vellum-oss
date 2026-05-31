@@ -71,7 +71,7 @@ export default function KanbanBoard({
   applications,
 }: {
   activeJobId: string;
-  currentUser: { name: string };
+  currentUser: { id: string; name: string; signature: string };
   jobs: JobSummary[];
   stages: Stage[];
   applications: Applicant[];
@@ -278,7 +278,7 @@ export default function KanbanBoard({
         <ProfileSheet
           applicationId={selectedId}
           stages={visibleStages.map((s) => ({ id: s.id, key: s.key, name: s.name, color: s.color }))}
-          currentUser={{ id: "current", name: currentUser.name }}
+          currentUser={currentUser}
           onClose={() => setSelectedId(null)}
           onChanged={() => router.refresh()}
         />

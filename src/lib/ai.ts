@@ -384,6 +384,67 @@ export async function rewriteJobDescription(workspaceId: string, payload: { titl
   return complete(workspaceId, system, user, { maxTokens: 10000 });
 }
 
+export type JobWizardResult = {
+  pitch: string;
+  description: string;
+  requirements: string[];
+  niceToHave: string[];
+};
+
+export async function generateJobWizard(
+  workspaceId: string,
+  payload: { title: string; prompt: string; tone: string },
+) {
+  const system = [
+    "You are an expert recruiting copywriter for an ATS called Vellum.",
+    "Your goal is to generate compelling, structured job postings based on a job title and a brief prompt.",
+    `The tone should be ${payload.tone}.`,
+    "- Pitch: A one-line hook that grabs attention.",
+    "- Description: 2-3 paragraphs about the role and impact. Use markdown (bolding, etc.) but no headers.",
+    "- Requirements: A list of specific qualifications. One per line in the output array.",
+    "- Nice to have: A list of bonus skills or experience. One per line in the output array.",
+    "",
+    "Respond with a single JSON object ONLY. No prose, no markdown fences.",
+    "Schema: { pitch: string, description: string, requirements: string[], niceToHave: string[] }",
+  ].join("\n");
+
+  const user = `Job Title: ${payload.title}\nUser Prompt: ${payload.prompt}`;
+
+  const r = await complete(workspaceId, system, user, { maxTokens: 2000, temperature: 0.7 });
+
+  if (r.mocked) {
+    return {
+      pitch: "Help us make lending feel obvious.",
+      description: `We help banks make better lending decisions and bring tailor-made offers to consumers. As a ${payload.title} on our small but mighty team, you'll own the end-to-end experience of our core products.
+
+You'll work closely with modellers and engineers to design interfaces that make complicated logic feel obvious. We care a lot about explainability: every screen should help our users understand why a decision was made.`,
+      requirements: [
+        "5+ years of relevant experience",
+        "A portfolio of complex, data-dense interfaces",
+        "Comfortable with ambiguity and opinionated about systems",
+      ],
+      niceToHave: ["Experience in regulated industries", "Prototyping in code"],
+    };
+  }
+
+  try {
+    let text = r.text.trim();
+    if (text.startsWith("```")) {
+      text = text.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+    }
+    return JSON.parse(text) as JobWizardResult;
+  } catch (e) {
+    console.error("[ai] failed to parse job wizard json:", e);
+    // Return a fallback or throw? For now fallback.
+    return {
+      pitch: "",
+      description: r.text,
+      requirements: [],
+      niceToHave: [],
+    };
+  }
+}
+
 export type ResumeProfile = {
   currentRole?: string;
   years?: number;
@@ -464,4 +525,65 @@ function parseResumeProfileJson(text: string): ResumeProfile {
     if (Number.isFinite(n) && n >= 0 && n <= 80) out.years = n;
   }
   return out;
+}
+
+export type ScreeningQuestionSuggestion = {
+  q: string;
+  type: "short" | "long" | "yes/no";
+  reason: string;
+};
+
+/**
+ * Suggest screening questions based on job posting details.
+ */
+export async function suggestScreeningQuestions(
+  workspaceId: string,
+  payload: { title: string; description: string; requirements: string[]; niceToHave: string[] },
+) {
+  const system = [
+    "You are an expert recruiter helping to draft screening questions for a job posting.",
+    "Based on the job title, description, and requirements, suggest up to 5 relevant screening questions.",
+    "Each question should help filter for specific skills or traits mentioned in the JD.",
+    "Keep questions concise and professional.",
+    "Assign a type to each question: 'short', 'long', or 'yes/no'.",
+    "Provide a brief (one sentence) reason why this question is relevant.",
+    "",
+    "Respond with a single JSON object ONLY. No prose, no markdown fences.",
+    "Schema: { suggestions: Array<{ q: string, type: 'short' | 'long' | 'yes/no', reason: string }> }",
+  ].join("\n");
+
+  const user = [
+    `Job Title: ${payload.title}`,
+    `Description: ${payload.description}`,
+    `Requirements:\n${payload.requirements.join("\n")}`,
+    `Nice to have:\n${payload.niceToHave.join("\n")}`,
+  ].join("\n\n");
+
+  const r = await complete(workspaceId, system, user, { maxTokens: 1500, temperature: 0.7 });
+
+  if (r.mocked) {
+    return {
+      suggestions: [
+        { q: "How many years of experience do you have with React?", type: "short", reason: "React is a core requirement for this role." },
+        { q: "Have you ever worked in a regulated industry like fintech?", type: "yes/no", reason: "Experience with compliance is listed as a plus." },
+        { q: "Tell us about a time you had to explain a complex technical concept to a non-technical stakeholder.", type: "long", reason: "Communication with diverse stakeholders is key for this position." },
+        { q: "Do you have experience with Figma and design systems?", type: "yes/no", reason: "The role requires close collaboration with the design team." },
+        { q: "What is your preferred approach to unit testing in a large codebase?", type: "long", reason: "Quality and testing are highlighted in the job description." },
+      ]
+    };
+  }
+
+  try {
+    let text = r.text.trim();
+    if (text.startsWith("```")) {
+      text = text.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+    }
+    const parsed = JSON.parse(text) as { suggestions: ScreeningQuestionSuggestion[] };
+    return {
+      suggestions: (parsed.suggestions || []).slice(0, 5)
+    };
+  } catch (e) {
+    console.error("[ai] failed to parse screening questions suggestions json:", e);
+    return { suggestions: [] };
+  }
 }

@@ -31,7 +31,7 @@ export default function CandidateView({
   applications,
   stages,
 }: {
-  currentUser: { id: string; name: string };
+  currentUser: { id: string; name: string; signature: string };
   currentRole?: string;
   candidate: {
     id: string; name: string; email: string | null; location: string | null;

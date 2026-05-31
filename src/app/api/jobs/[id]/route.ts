@@ -26,13 +26,22 @@ const Patch = z.object({
     .array(z.object({ n: z.string().default(""), who: z.string().default(""), d: z.string().default("") }))
     .optional(),
   channels: z.record(z.string(), z.boolean()).optional(),
+  screening: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        kind: z.string().default("text"),
+        required: z.boolean().default(false),
+      }),
+    )
+    .optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { workspace, membership } = await requireWorkspace();
   const { id } = await params;
   const body = Patch.safeParse(await req.json().catch(() => ({})));
-  if (!body.success) return NextResponse.json({ error: "bad input" }, { status: 400 });
+  if (!body.success) return NextResponse.json({ error: "bad input", detail: body.error.flatten() }, { status: 400 });
 
   // Members can edit a job's content but only admins can change its
   // publishing status (Open / Draft / Closed) — that's what flips public
@@ -57,7 +66,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   // Strip relational fields out of the simple data payload — they need
   // their own nested mutations below.
-  const { hiringTeam, leadReviewerId, ...scalarData } = body.data;
+  const { hiringTeam, leadReviewerId, screening, ...scalarData } = body.data;
   const data: any = { ...scalarData };
   if (typeof body.data.description === "string") data.description = sanitizeRichText(body.data.description);
   if (body.data.status === "Open" && !existing.publishedAt) data.publishedAt = new Date();
@@ -78,6 +87,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       db.jobHiringTeamMember.createMany({
         data: hiringTeam.map((m) => ({ jobId: id, userId: m.userId, role: m.role })),
         skipDuplicates: true,
+      }),
+    ]);
+  }
+
+  // Replace screening questions
+  if (screening) {
+    await db.$transaction([
+      db.screeningQuestion.deleteMany({ where: { jobId: id } }),
+      db.screeningQuestion.createMany({
+        data: screening.map((q, i) => ({
+          jobId: id,
+          label: q.label,
+          kind: q.kind,
+          required: q.required,
+          position: i,
+        })),
       }),
     ]);
   }

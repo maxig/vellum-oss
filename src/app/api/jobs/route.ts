@@ -19,6 +19,11 @@ const Body = z.object({
   niceToHave: z.array(z.string()).default([]),
   salaryMin: z.number().int().optional().nullable(),
   salaryMax: z.number().int().optional().nullable(),
+  screeningQuestions: z.array(z.object({
+    q: z.string().min(1),
+    required: z.boolean().default(false),
+    type: z.string().default("short"),
+  })).optional(),
   // Hiring team: list of workspace users to assign + their role label.
   // Replaces the previous JSON-of-strings shape; the relation feeds both
   // the career-site display and the Review Queue's Mine-scope filter.
@@ -93,6 +98,14 @@ export async function POST(req: Request) {
       hiringTeam: {
         create: hiringTeamSeed.map((m) => ({ userId: m.userId, role: m.role })),
       },
+      screening: d.screeningQuestions ? {
+        create: d.screeningQuestions.map((q, i) => ({
+          label: q.q,
+          required: q.required,
+          kind: q.type === "short" ? "text" : q.type === "long" ? "longtext" : "yesno",
+          position: i,
+        })),
+      } : undefined,
       processSteps,
       status: d.publish ? "Open" : "Draft",
       publishedAt: d.publish ? new Date() : null,

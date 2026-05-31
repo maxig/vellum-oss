@@ -29,6 +29,20 @@ export default function ApplyForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    
+    // Check required screening questions
+    for (const q of screening) {
+      if (q.required) {
+        const answer = (answers[q.id] || "").trim();
+        // For HTML fields, we need to strip tags to see if there's actual text
+        const text = answer.replace(/<[^>]*>/g, "").trim();
+        if (!text && !answer) {
+          setError(`Please answer the required question: "${q.label}"`);
+          return;
+        }
+      }
+    }
+
     if (!consent) { setError("Please accept the data processing notice."); return; }
     setBusy(true);
     const fd = new FormData();
@@ -91,6 +105,19 @@ export default function ApplyForm({
               onChange={(html) => setAnswers({ ...answers, [q.id]: html })}
               minHeight={90}
             />
+          ) : q.kind === "yesno" ? (
+            <div className="row" style={{ gap: 8 }}>
+              {["Yes", "No"].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className={`btn btn-sm ${answers[q.id] === v ? "btn-primary" : ""}`}
+                  onClick={() => setAnswers({ ...answers, [q.id]: v })}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
           ) : (
             <input className="input" type={q.kind === "number" ? "number" : "text"} required={q.required} value={answers[q.id] || ""} onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })} />
           )}

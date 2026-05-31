@@ -622,15 +622,156 @@ function DField({
 }
 
 function ScreeningTab({ job }: { job: JobShape }) {
+  const router = useRouter();
+  const [questions, setQuestions] = React.useState(job.screening);
+  const [editing, setEditing] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+
+  function update(i: number, patch: Partial<(typeof questions)[0]>) {
+    setQuestions((arr) => arr.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
+  }
+  function move(i: number, delta: number) {
+    setQuestions((arr) => {
+      const next = [...arr];
+      const ni = i + delta;
+      if (ni < 0 || ni >= next.length) return arr;
+      [next[i], next[ni]] = [next[ni], next[i]];
+      return next;
+    });
+  }
+  function remove(i: number) {
+    setQuestions((arr) => arr.filter((_, idx) => idx !== i));
+  }
+  function add() {
+    setQuestions((arr) => [
+      ...arr,
+      { id: `new-${Date.now()}`, label: "New question", kind: "text", required: false },
+    ]);
+  }
+
+  async function save() {
+    setBusy(true);
+    const clean = questions.map((q) => ({
+      label: q.label.trim(),
+      kind: q.kind,
+      required: q.required,
+    }));
+    await fetch(`/api/jobs/${job.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ screening: clean }),
+    });
+    setBusy(false);
+    setEditing(false);
+    router.refresh();
+  }
+
   return (
     <Glass style={{ padding: 26, borderRadius: 16 }}>
       <div className="row" style={{ marginBottom: 16 }}>
-        <h3 style={{ flex: 1 }}>Screening questions</h3>
-        <button className="btn btn-sm" type="button">
-          <Icons.Plus size={12} stroke={2} /> Add question
-        </button>
+        <div style={{ flex: 1 }}>
+          <h3>Screening questions</h3>
+          <p className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>
+            Custom questions asked when a candidate applies.
+          </p>
+        </div>
+        {editing ? (
+          <div className="row" style={{ gap: 8 }}>
+            <button
+              className="btn btn-sm"
+              type="button"
+              onClick={() => {
+                setQuestions(job.screening);
+                setEditing(false);
+              }}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+            <button className="btn btn-sm btn-primary" type="button" onClick={save} disabled={busy}>
+              <Icons.Check size={12} stroke={2} /> {busy ? "Saving…" : "Save questions"}
+            </button>
+          </div>
+        ) : (
+          <button className="btn btn-sm" type="button" onClick={() => setEditing(true)}>
+            <Icons.Plus size={12} stroke={2} /> Edit questions
+          </button>
+        )}
       </div>
-      {job.screening.length === 0 ? (
+
+      {editing ? (
+        <div className="col" style={{ gap: 12 }}>
+          {questions.map((q, i) => (
+            <Glass faint key={q.id} style={{ padding: 14, borderRadius: 12 }}>
+              <div className="row" style={{ gap: 8, marginBottom: 8, alignItems: "center" }}>
+                <span className="chip mono" style={{ height: 22, fontSize: 11 }}>
+                  Q{i + 1}
+                </span>
+                <select
+                  className="input"
+                  style={{ width: 120, height: 26, padding: "0 8px", fontSize: 12 }}
+                  value={q.kind}
+                  onChange={(e) => update(i, { kind: e.target.value })}
+                >
+                  <option value="text">Short text</option>
+                  <option value="longtext">Long text</option>
+                  <option value="yesno">Yes/No</option>
+                  <option value="number">Number</option>
+                </select>
+                <label className="row" style={{ gap: 6, fontSize: 12, cursor: "pointer", userSelect: "none" }}>
+                  <input
+                    type="checkbox"
+                    checked={q.required}
+                    onChange={(e) => update(i, { required: e.target.checked })}
+                  />
+                  Required
+                </label>
+                <span style={{ flex: 1 }} />
+                <button
+                  type="button"
+                  className="iconbtn"
+                  style={{ width: 26, height: 26 }}
+                  onClick={() => move(i, -1)}
+                  disabled={i === 0}
+                >
+                  <Icons.ChevronLeft size={12} style={{ transform: "rotate(90deg)" }} />
+                </button>
+                <button
+                  type="button"
+                  className="iconbtn"
+                  style={{ width: 26, height: 26 }}
+                  onClick={() => move(i, 1)}
+                  disabled={i === questions.length - 1}
+                >
+                  <Icons.ChevronDown size={12} />
+                </button>
+                <button
+                  type="button"
+                  className="iconbtn"
+                  style={{ width: 26, height: 26 }}
+                  onClick={() => remove(i)}
+                >
+                  <Icons.Trash size={12} />
+                </button>
+              </div>
+              <input
+                className="input"
+                placeholder="Question label (e.g. Years of experience with React?)"
+                value={q.label}
+                onChange={(e) => update(i, { label: e.target.value })}
+              />
+            </Glass>
+          ))}
+          <button
+            className="btn btn-sm btn-ghost"
+            type="button"
+            onClick={add}
+            style={{ alignSelf: "flex-start", marginTop: 4 }}
+          >
+            <Icons.Plus size={12} stroke={2} /> Add question
+          </button>
+        </div>
+      ) : job.screening.length === 0 ? (
         <p className="muted">No screening questions yet. Candidates will only be asked the defaults.</p>
       ) : (
         <div className="col" style={{ gap: 10 }}>
@@ -642,10 +783,6 @@ function ScreeningTab({ job }: { job: JobShape }) {
                 </span>
                 <span className="chip">{q.kind}</span>
                 {q.required && <span className="chip chip-accent">Required</span>}
-                <span style={{ flex: 1 }} />
-                <div className="iconbtn" style={{ width: 26, height: 26 }}>
-                  <Icons.MoreH size={13} />
-                </div>
               </div>
               <div style={{ fontSize: 14, color: "var(--ink-0)" }}>{q.label}</div>
             </Glass>

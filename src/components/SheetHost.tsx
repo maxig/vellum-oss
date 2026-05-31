@@ -7,22 +7,25 @@ import { useRouter } from "next/navigation";
 import ProfileSheet, { type SheetStage } from "@/components/ProfileSheet";
 import UserProfileSheet, { type UserProfileInitial } from "@/components/UserProfileSheet";
 import ReviewQueueSheet from "@/components/ReviewQueueSheet";
+import JobWizardModal from "@/app/(admin)/jobs/new/JobWizardModal";
 
 /**
  * Global sheet host. Mounted once near the root of the admin layout so any
  * client component can pop open shared modals without each surface needing
  * its own copy of the sheet.
  *
- * Manages three sheets:
+ * Manages four sheets:
  *   - ProfileSheet      — candidate / application sheet
  *   - UserProfileSheet  — current user's account modal (Profile, Stats, etc.)
  *   - ReviewQueueSheet  — AI-curated action items, opened from the topbar
+ *   - JobWizardModal    — multi-step creator for new job postings
  *
  * Usage:
- *   const { openSheet, openUserProfile, openReviewQueue } = useProfileSheet();
+ *   const { openSheet, openUserProfile, openReviewQueue, openJobWizard } = useProfileSheet();
  *   openSheet(applicationId);
  *   openUserProfile();
  *   openReviewQueue();
+ *   openJobWizard();
  */
 
 type SheetCtx = {
@@ -32,6 +35,8 @@ type SheetCtx = {
   closeUserProfile: () => void;
   openReviewQueue: () => void;
   closeReviewQueue: () => void;
+  openJobWizard: (initialData?: any) => void;
+  closeJobWizard: () => void;
 };
 
 const Ctx = React.createContext<SheetCtx | null>(null);
@@ -49,6 +54,8 @@ export function useProfileSheet(): SheetCtx {
       closeUserProfile: () => {},
       openReviewQueue: () => {},
       closeReviewQueue: () => {},
+      openJobWizard: () => {},
+      closeJobWizard: () => {},
     };
   }
   return v;
@@ -59,18 +66,25 @@ export default function SheetHost({
   currentUser,
   currentRole,
   userProfile,
+  workspaceData,
   children,
 }: {
   stages: SheetStage[];
-  currentUser: { id: string; name: string };
+  currentUser: { id: string; name: string; signature: string };
   currentRole?: string;
   userProfile: UserProfileInitial;
+  workspaceData: {
+    departments: string[];
+    locations: string[];
+    currency: string;
+  };
   children: React.ReactNode;
 }) {
   const router = useRouter();
   const [openId, setOpenId] = React.useState<string | null>(null);
   const [userOpen, setUserOpen] = React.useState(false);
   const [reviewOpen, setReviewOpen] = React.useState(false);
+  const [jobWizOpen, setJobWizOpen] = React.useState(false);
 
   const value = React.useMemo<SheetCtx>(
     () => ({
@@ -80,6 +94,8 @@ export default function SheetHost({
       closeUserProfile: () => setUserOpen(false),
       openReviewQueue: () => setReviewOpen(true),
       closeReviewQueue: () => setReviewOpen(false),
+      openJobWizard: () => setJobWizOpen(true),
+      closeJobWizard: () => setJobWizOpen(false),
     }),
     [],
   );
@@ -105,6 +121,18 @@ export default function SheetHost({
         />
       )}
       {reviewOpen && <ReviewQueueSheet onClose={() => setReviewOpen(false)} />}
+      {jobWizOpen && (
+        <JobWizardModal
+          departments={workspaceData.departments}
+          locations={workspaceData.locations}
+          currency={workspaceData.currency}
+          onClose={() => setJobWizOpen(false)}
+          onDone={() => {
+            setJobWizOpen(false);
+            router.refresh();
+          }}
+        />
+      )}
     </Ctx.Provider>
   );
 }

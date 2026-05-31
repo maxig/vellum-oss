@@ -33,7 +33,11 @@ export default async function CandidatesPage() {
 
   return (
     <CandidatesDatabase
-      currentUser={{ id: user.id, name: user.name || user.email }}
+      currentUser={{
+        id: user.id,
+        name: user.name || user.email,
+        signature: user.signature || workspace.signature || "",
+      }}
       currentRole={membership.role}
       stages={stages.map((s) => ({ id: s.id, key: s.key, name: s.name, color: s.color }))}
       jobs={jobs.map((j) => ({ id: j.id, title: j.title, status: j.status }))}

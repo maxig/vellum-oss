@@ -614,10 +614,10 @@ fi
   echo "VELLUM_SECRET=\"$VELLUM_SECRET\""
   echo
   echo "# ── Reverse proxy / HTTPS (proxy profile) ──"
-  echo "APP_DOMAIN=\"${APP_DOMAIN:-}\""
-  echo "PUBLIC_DOMAIN_BARE=\"${PUBLIC_DOMAIN_BARE:-}\""
-  echo "ACME_EMAIL=\"${ACME_EMAIL:-}\""
-  echo "CF_API_TOKEN=\"${CF_API_TOKEN:-}\""
+  [ -n "$APP_DOMAIN" ] && echo "APP_DOMAIN=\"$APP_DOMAIN\"" || echo "# APP_DOMAIN=\"\""
+  [ -n "$PUBLIC_DOMAIN_BARE" ] && echo "PUBLIC_DOMAIN_BARE=\"$PUBLIC_DOMAIN_BARE\"" || echo "# PUBLIC_DOMAIN_BARE=\"\""
+  [ -n "$ACME_EMAIL" ] && echo "ACME_EMAIL=\"$ACME_EMAIL\"" || echo "# ACME_EMAIL=\"\""
+  [ -n "$CF_API_TOKEN" ] && echo "CF_API_TOKEN=\"$CF_API_TOKEN\"" || echo "# CF_API_TOKEN=\"\""
   echo
   echo "# ── Initial admin / seed ──"
   echo "SEED_ADMIN_EMAIL=\"$SEED_ADMIN_EMAIL\""
@@ -626,28 +626,63 @@ fi
   echo "SEED_DEMO=\"$SEED_DEMO\""
   echo
   echo "# ── AI (override per workspace in Settings → AI) ──"
-  echo "AI_PROVIDER=\"$AI_PROVIDER\""
-  echo "ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\""
-  echo "ANTHROPIC_MODEL=\"$ANTHROPIC_MODEL\""
-  echo "OPENAI_API_KEY=\"$OPENAI_API_KEY\""
-  echo "OPENAI_MODEL=\"$OPENAI_MODEL\""
-  echo "OPENAI_BASE_URL=\"$(env_default OPENAI_BASE_URL)\""
-  echo "OLLAMA_BASE_URL=\"$OLLAMA_BASE_URL\""
-  echo "OLLAMA_MODEL=\"$OLLAMA_MODEL\""
-  echo "OLLAMA_API_KEY=\"$OLLAMA_API_KEY\""
+  [ -n "$AI_PROVIDER" ] && echo "AI_PROVIDER=\"$AI_PROVIDER\"" || echo "# AI_PROVIDER=\"\""
+  
+  if [ "$AI_PROVIDER" = "anthropic" ]; then
+    echo "ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\""
+    echo "ANTHROPIC_MODEL=\"$ANTHROPIC_MODEL\""
+  else
+    echo "# ANTHROPIC_API_KEY=\"\""
+    echo "# ANTHROPIC_MODEL=\"$ANTHROPIC_MODEL\""
+  fi
+
+  if [ "$AI_PROVIDER" = "openai" ]; then
+    echo "OPENAI_API_KEY=\"$OPENAI_API_KEY\""
+    echo "OPENAI_MODEL=\"$OPENAI_MODEL\""
+    OPENAI_BASE_URL_VAL="$(env_default OPENAI_BASE_URL)"
+    [ -n "$OPENAI_BASE_URL_VAL" ] && echo "OPENAI_BASE_URL=\"$OPENAI_BASE_URL_VAL\"" || echo "# OPENAI_BASE_URL=\"\""
+  else
+    echo "# OPENAI_API_KEY=\"\""
+    echo "# OPENAI_MODEL=\"$OPENAI_MODEL\""
+    echo "# OPENAI_BASE_URL=\"\""
+  fi
+
+  if [ "$AI_PROVIDER" = "ollama" ]; then
+    echo "OLLAMA_BASE_URL=\"$OLLAMA_BASE_URL\""
+    echo "OLLAMA_MODEL=\"$OLLAMA_MODEL\""
+    echo "OLLAMA_API_KEY=\"$OLLAMA_API_KEY\""
+  else
+    echo "# OLLAMA_BASE_URL=\"\""
+    echo "# OLLAMA_MODEL=\"$OLLAMA_MODEL\""
+    echo "# OLLAMA_API_KEY=\"\""
+  fi
   echo
   echo "# ── Calendar OAuth (instance-wide; users connect their own calendars in Settings) ──"
-  echo "GOOGLE_CLIENT_ID=\"$GOOGLE_CLIENT_ID\""
-  echo "GOOGLE_CLIENT_SECRET=\"$GOOGLE_CLIENT_SECRET\""
-  echo "GOOGLE_REDIRECT_URI=\"$GOOGLE_REDIRECT_URI\""
-  echo "MICROSOFT_CLIENT_ID=\"$MICROSOFT_CLIENT_ID\""
-  echo "MICROSOFT_CLIENT_SECRET=\"$MICROSOFT_CLIENT_SECRET\""
-  echo "MICROSOFT_TENANT=\"$MICROSOFT_TENANT\""
-  echo "MICROSOFT_REDIRECT_URI=\"$MICROSOFT_REDIRECT_URI\""
+  if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+    echo "GOOGLE_CLIENT_ID=\"$GOOGLE_CLIENT_ID\""
+    echo "GOOGLE_CLIENT_SECRET=\"$GOOGLE_CLIENT_SECRET\""
+    [ -n "$GOOGLE_REDIRECT_URI" ] && echo "GOOGLE_REDIRECT_URI=\"$GOOGLE_REDIRECT_URI\"" || echo "# GOOGLE_REDIRECT_URI=\"\""
+  else
+    echo "# GOOGLE_CLIENT_ID=\"\""
+    echo "# GOOGLE_CLIENT_SECRET=\"\""
+    echo "# GOOGLE_REDIRECT_URI=\"\""
+  fi
+
+  if [ -n "$MICROSOFT_CLIENT_ID" ] && [ -n "$MICROSOFT_CLIENT_SECRET" ]; then
+    echo "MICROSOFT_CLIENT_ID=\"$MICROSOFT_CLIENT_ID\""
+    echo "MICROSOFT_CLIENT_SECRET=\"$MICROSOFT_CLIENT_SECRET\""
+    echo "MICROSOFT_TENANT=\"$MICROSOFT_TENANT\""
+    [ -n "$MICROSOFT_REDIRECT_URI" ] && echo "MICROSOFT_REDIRECT_URI=\"$MICROSOFT_REDIRECT_URI\"" || echo "# MICROSOFT_REDIRECT_URI=\"\""
+  else
+    echo "# MICROSOFT_CLIENT_ID=\"\""
+    echo "# MICROSOFT_CLIENT_SECRET=\"\""
+    echo "# MICROSOFT_TENANT=\"$MICROSOFT_TENANT\""
+    echo "# MICROSOFT_REDIRECT_URI=\"\""
+  fi
   echo
   echo "# ── Email (inboxes are per-workspace in Settings → Email; this tunes the poller) ──"
-  echo "EMAIL_POLL_DISABLED=\"$EMAIL_POLL_DISABLED\""
-  echo "EMAIL_POLL_INTERVAL_MS=\"$EMAIL_POLL_INTERVAL_MS\""
+  [ -n "$EMAIL_POLL_DISABLED" ] && echo "EMAIL_POLL_DISABLED=\"$EMAIL_POLL_DISABLED\"" || echo "# EMAIL_POLL_DISABLED=\"\""
+  [ -n "$EMAIL_POLL_INTERVAL_MS" ] && echo "EMAIL_POLL_INTERVAL_MS=\"$EMAIL_POLL_INTERVAL_MS\"" || echo "# EMAIL_POLL_INTERVAL_MS=\"\""
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE" 2>/dev/null || true
 ok "Wrote $ENV_FILE (chmod 600)"

@@ -82,7 +82,11 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
 
   return (
     <InboxView
-      currentUser={{ id: user.id, name: user.name || user.email }}
+      currentUser={{
+        id: user.id,
+        name: user.name || user.email,
+        signature: user.signature || workspace.signature || "",
+      }}
       threads={threads.map((t) => ({
         id: t.id,
         subject: t.subject,

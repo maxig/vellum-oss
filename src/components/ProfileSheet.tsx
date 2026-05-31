@@ -33,6 +33,7 @@ type SheetApplication = {
   resumeName: string | null;
   resumeText: string | null;
   whyUs: string | null;
+  screeningQuestions: { id: string; label: string; kind: string }[];
   screeningAnswers: Record<string, unknown>;
   archived: boolean;
   appliedAt: string;
@@ -105,7 +106,7 @@ export default function ProfileSheet({
 }: {
   applicationId: string;
   stages: SheetStage[];
-  currentUser: { id: string; name: string };
+  currentUser: { id: string; name: string; signature: string };
   currentRole?: string;
   onClose: () => void;
   onChanged?: () => void;
@@ -890,20 +891,24 @@ function OverviewTab({ data }: { data: SheetData }) {
         </div>
       )}
 
-      {screening.length > 0 && (
+      {application.screeningQuestions.length > 0 && (
         <div>
           <h4 style={{ marginBottom: 8 }}>Screening answers</h4>
           <div className="col" style={{ gap: 8 }}>
-            {screening.map(([key, value]) => (
-              <Glass key={key} faint style={{ padding: 12, borderRadius: 10 }}>
-                <div className="tiny" style={{ fontWeight: 500 }}>{labelize(key)}</div>
-                {typeof value === "string" && /<[a-z]/i.test(value) ? (
-                  <RichText html={value} style={{ fontSize: 13, marginTop: 3 }} />
-                ) : (
-                  <div style={{ fontSize: 13, marginTop: 3, whiteSpace: "pre-wrap" }}>{String(value)}</div>
-                )}
-              </Glass>
-            ))}
+            {application.screeningQuestions.map((q) => {
+              const answer = application.screeningAnswers[q.id];
+              if (answer === null || answer === undefined || String(answer).trim() === "") return null;
+              return (
+                <Glass key={q.id} faint style={{ padding: 12, borderRadius: 10 }}>
+                  <div className="tiny" style={{ fontWeight: 500 }}>{q.label}</div>
+                  {typeof answer === "string" && /<[a-z]/i.test(answer) ? (
+                    <RichText html={answer} style={{ fontSize: 13, marginTop: 3 }} />
+                  ) : (
+                    <div style={{ fontSize: 13, marginTop: 3, whiteSpace: "pre-wrap" }}>{String(answer)}</div>
+                  )}
+                </Glass>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1011,18 +1016,29 @@ function CommunicationTab({
   onSend,
 }: {
   data: SheetData;
-  currentUser: { id: string; name: string };
+  currentUser: { id: string; name: string; signature: string };
   onSend: (body: string) => Promise<boolean>;
 }) {
-  const [reply, setReply] = React.useState("");
+  const [reply, setReply] = React.useState(currentUser.signature ? `\n\n${currentUser.signature}` : "");
   const [composing, setComposing] = React.useState(false);
   const [sending, setSending] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!reply && currentUser.signature) {
+      setReply(`\n\n${currentUser.signature}`);
+    }
+  }, [currentUser.signature, reply]);
 
   function generateReply() {
     setComposing(true);
     setReply("");
     const candidate = data.candidate;
-    const text = `Hi ${candidate.name.split(" ")[0]},\n\nThanks so much for applying to the ${data.application.jobTitle} role — your background looks like a great match for what we're working on. We'd love to set up a 30-minute conversation this week to learn more about how you approach this kind of work.\n\nDoes Thursday at 14:00 work? Happy to send alternatives.\n\nWarmly,\n${currentUser.name.split(" ")[0]}`;
+    let text = `Hi ${candidate.name.split(" ")[0]},\n\nThanks so much for applying to the ${data.application.jobTitle} role — your background looks like a great match for what we're working on. We'd love to set up a 30-minute conversation this week to learn more about how you approach this kind of work.\n\nDoes Thursday at 14:00 work? Happy to send alternatives.`;
+    if (currentUser.signature) {
+      text += `\n\n${currentUser.signature}`;
+    } else {
+      text += `\n\nWarmly,\n${currentUser.name.split(" ")[0]}`;
+    }
     let i = 0;
     const tick = () => {
       i += Math.max(1, Math.round(Math.random() * 4));

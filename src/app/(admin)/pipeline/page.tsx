@@ -72,7 +72,11 @@ export default async function PipelinePage({
     <div style={{ height: "100%", minHeight: 0 }}>
       <KanbanBoard
         activeJobId={activeJob.id}
-        currentUser={{ name: user.name || user.email }}
+        currentUser={{
+          id: user.id,
+          name: user.name || user.email,
+          signature: user.signature || workspace.signature || "",
+        }}
         jobs={jobs.map((j) => ({
           id: j.id,
           title: j.title,

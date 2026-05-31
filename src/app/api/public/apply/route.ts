@@ -47,8 +47,20 @@ export async function POST(req: Request) {
 
   if (!name || !email || !jobId) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 
-  const job = await db.job.findUnique({ where: { id: jobId }, include: { workspace: true } });
+  const job = await db.job.findUnique({ where: { id: jobId }, include: { workspace: true, screening: { orderBy: { position: "asc" } } } });
   if (!job || job.status !== "Open") return NextResponse.json({ error: "Job is not accepting applications" }, { status: 404 });
+
+  // Server-side validation of required screening questions
+  const answersObj = screeningAnswers as Record<string, any>;
+  for (const q of job.screening) {
+    if (q.required) {
+      const ans = answersObj[q.id];
+      const text = typeof ans === "string" ? ans.replace(/<[^>]*>/g, "").trim() : String(ans || "").trim();
+      if (!text && (ans === undefined || ans === null || ans === "")) {
+        return NextResponse.json({ error: `Please answer the required question: "${q.label}"` }, { status: 400 });
+      }
+    }
+  }
 
   let resumeUrl: string | null = null;
   let resumeName: string | null = null;
@@ -391,11 +403,19 @@ async function generateApplicationSummary(applicationId: string, workspaceId: st
       ? `Skills: ${(app.candidate.skills as string[]).join(", ")}`
       : null,
     app.whyUs ? `From their application:\n${app.whyUs}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ];
 
-  const resumeBlob = [app.resumeText, structured].filter(Boolean).join("\n\n---\n\n");
+  // Include screening answers in the structured context for the AI.
+  const screeningAnswers = normalizeJsonObject(app.screeningAnswers);
+  const questions = await db.screeningQuestion.findMany({ where: { jobId: app.jobId }, orderBy: { position: "asc" } });
+  for (const q of questions) {
+    const ans = screeningAnswers[q.id];
+    if (ans !== undefined && ans !== null && String(ans).trim() !== "") {
+      structured.push(`Screening Question: ${q.label}\nAnswer: ${ans}`);
+    }
+  }
+
+  const resumeBlob = [app.resumeText, structured.filter(Boolean).join("\n\n")].filter(Boolean).join("\n\n---\n\n");
 
   const requirements = Array.isArray(app.job.requirements)
     ? (app.job.requirements as unknown[]).filter((r): r is string => typeof r === "string")
@@ -444,4 +464,8 @@ function sanitizeScreeningAnswer(value: unknown): Prisma.InputJsonValue | null {
   }
 
   return null;
+}
+
+function normalizeJsonObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }

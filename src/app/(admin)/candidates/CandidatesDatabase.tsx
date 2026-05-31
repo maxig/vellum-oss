@@ -59,7 +59,7 @@ export default function CandidatesDatabase({
   candidates: CandidateRow[];
   stages: Stage[];
   jobs: Job[];
-  currentUser?: { id: string; name: string };
+  currentUser?: { id: string; name: string; signature: string };
   currentRole?: string;
 }) {
   const canDelete = currentRole === "owner" || currentRole === "admin";
@@ -379,7 +379,7 @@ export default function CandidatesDatabase({
         <ProfileSheet
           applicationId={openApplicationId}
           stages={stages}
-          currentUser={currentUser ?? { id: "current", name: "You" }}
+          currentUser={currentUser ?? { id: "current", name: "You", signature: "" }}
           currentRole={currentRole}
           onClose={() => setOpenApplicationId(null)}
           onChanged={() => router.refresh()}

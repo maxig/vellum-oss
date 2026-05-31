@@ -97,7 +97,7 @@ if [ -n "${VERSION:-}" ]; then
 else
   DEF_VERSION="$PKG_VERSION"
   if tag_exists "$REF:$DEF_VERSION"; then
-    info "Looking up the next free patch for $REF…"
+    info "Looking up the next free patch for ${REF}…"
     n=0
     while tag_exists "$REF:$DEF_VERSION" && [ "$n" -lt 1000 ]; do
       DEF_VERSION="$(bump_patch "$DEF_VERSION")"; n=$((n + 1))

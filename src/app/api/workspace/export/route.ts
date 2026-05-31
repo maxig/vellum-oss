@@ -2,11 +2,16 @@
 // Copyright (C) 2026 MG Tech AS
 
 import { NextResponse } from "next/server";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, isAdmin } from "@/lib/workspace";
 import { db } from "@/lib/db";
 
 export async function GET() {
-  const { workspace } = await requireWorkspace();
+  // Bulk export dumps the whole workspace — full candidate PII across jobs,
+  // threads, messages, notes, and interviews. Admin/owner-only per ROLES.md §5.
+  const { workspace, membership } = await requireWorkspace();
+  if (!isAdmin(membership.role)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   const [jobs, candidates, applications, threads, messages, notes, interviews, careerSite] = await Promise.all([
     db.job.findMany({ where: { workspaceId: workspace.id } }),
     db.candidate.findMany({ where: { workspaceId: workspace.id } }),
