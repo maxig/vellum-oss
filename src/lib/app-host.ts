@@ -39,6 +39,24 @@ export function appHostBare(): string | null {
   return hostFromUrl(process.env.APP_ORIGIN) ?? hostFromUrl(process.env.NEXTAUTH_URL);
 }
 
+/**
+ * Full origin (protocol + host + optional port) of the admin app.
+ * Prefers APP_ORIGIN, then NEXTAUTH_URL, then constructs it from headers if
+ * provided, falling back to localhost.
+ */
+export function getAppOrigin(fallbackFromRequest?: string): string {
+  const env = process.env.APP_ORIGIN || process.env.NEXTAUTH_URL;
+  if (env) return env.replace(/\/$/, "");
+  if (fallbackFromRequest) {
+    try {
+      return new URL(fallbackFromRequest).origin;
+    } catch {
+      /* ignore */
+    }
+  }
+  return "http://localhost:3000";
+}
+
 /** True when `host` (with or without a port) is the admin app's own origin. */
 export function isAppHost(host: string | undefined | null): boolean {
   if (!host) return false;

@@ -7,6 +7,7 @@ import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { encryptSecret } from "@/lib/crypto";
 import { exchangeCode } from "@/lib/google-calendar";
+import { getAppOrigin } from "@/lib/app-host";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
 
-  const settingsUrl = new URL("/settings?tab=calendar", url.origin);
+  const settingsUrl = new URL("/settings?tab=calendar", getAppOrigin(req.url));
   if (error) {
     settingsUrl.searchParams.set("calendar_error", error);
     return NextResponse.redirect(settingsUrl);
