@@ -7,11 +7,15 @@
 
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
+import { canReadCandidate } from "@/lib/permissions";
 import { getPulseBreakdown, recomputePulse } from "@/lib/pulse";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ candidateId: string }> }) {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user, membership } = await requireWorkspace();
   const { candidateId } = await params;
+  if (!(await canReadCandidate(user.id, candidateId, workspace.id, membership.role))) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
   const breakdown = await getPulseBreakdown(workspace.id, candidateId);
   if (!breakdown) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json({
@@ -24,8 +28,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ candida
 // POST forces a recompute — useful for the "Recompute" link in the popover
 // after the recruiter has done something they expect to affect the score.
 export async function POST(_req: Request, { params }: { params: Promise<{ candidateId: string }> }) {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user, membership } = await requireWorkspace();
   const { candidateId } = await params;
+  if (!(await canReadCandidate(user.id, candidateId, workspace.id, membership.role))) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
   const result = await recomputePulse(workspace.id, candidateId);
   return NextResponse.json(result);
 }

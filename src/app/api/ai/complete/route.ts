@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/workspace";
+import { aiRateLimit } from "@/lib/rate-limit";
 import { complete } from "@/lib/ai";
 
 const Body = z.object({
@@ -27,7 +28,9 @@ const DEFAULT_SYSTEM =
   "You are Vellum, a warm, sharp recruiting copilot. Answer with concise, professional copy that a recruiter could paste into the product without editing. Prefer plain text or simple markdown; no preamble.";
 
 export async function POST(req: Request) {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user } = await requireWorkspace();
+  const rl = aiRateLimit(workspace.id, user.id);
+  if (!rl.ok) return NextResponse.json({ error: "Too many AI requests." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(

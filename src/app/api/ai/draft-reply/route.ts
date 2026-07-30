@@ -4,13 +4,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/workspace";
+import { canReadCandidate } from "@/lib/permissions";
+import { aiRateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { draftReply } from "@/lib/ai";
 
 const Body = z.object({ threadId: z.string().min(1) });
 
 export async function POST(req: Request) {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user, membership } = await requireWorkspace();
+  const rl = aiRateLimit(workspace.id, user.id);
+  if (!rl.ok) return NextResponse.json({ error: "Too many AI requests." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(
@@ -32,6 +36,12 @@ export async function POST(req: Request) {
     },
   });
   if (!t) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  // Only draft for a candidate this member is connected to — otherwise the
+  // reply is built from another team's private conversation.
+  if (!(await canReadCandidate(user.id, t.candidateId, workspace.id, membership.role))) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
 
   const lastIncoming = t.messages.find((m) => m.direction === "in") || t.messages[0];
   const stage = t.job?.applications.find((a) => a.candidateId === t.candidateId)?.stage?.name || "Applied";

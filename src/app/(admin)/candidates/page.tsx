@@ -22,14 +22,38 @@ export default async function CandidatesPage() {
       // since we pull the full Candidate row.
       include: {
         applications: {
-          include: { job: true, stage: true },
+          // Only the job title + stage display fields are used below — pulling
+          // the whole Job row dragged in description/pitch (@db.Text) and four
+          // JSON blobs per candidate.
+          include: {
+            job: { select: { title: true } },
+            stage: { select: { key: true, name: true, color: true } },
+          },
           orderBy: { appliedAt: "desc" },
           take: 1,
         },
-        threads: { orderBy: { lastAt: "desc" }, take: 1 },
+        threads: { orderBy: { lastAt: "desc" }, take: 1, select: { id: true } },
       },
     }),
   ]);
+
+  // Team-rating aggregate per candidate (across all their applications —
+  // Rating.candidateId is denormalized precisely so this stays one query).
+  const candidateIds = candidates.map((c) => c.id);
+  const ratingRows = candidateIds.length
+    ? await db.rating.groupBy({
+        by: ["candidateId"],
+        where: { workspaceId: workspace.id, candidateId: { in: candidateIds } },
+        _avg: { score: true },
+        _count: { _all: true },
+      })
+    : [];
+  const ratingByCand = new Map(
+    ratingRows.map((r) => [
+      r.candidateId,
+      { avg: r._avg.score != null ? Math.round(r._avg.score * 10) / 10 : 0, count: r._count._all },
+    ]),
+  );
 
   return (
     <CandidatesDatabase
@@ -55,6 +79,8 @@ export default async function CandidatesPage() {
           threadId: c.threads[0]?.id || null,
           pulseScore: c.pulseScore,
           pulseBand: c.pulseBand,
+          rating: ratingByCand.get(c.id)?.avg ?? null,
+          ratingCount: ratingByCand.get(c.id)?.count ?? 0,
           application: app
             ? {
                 id: app.id,

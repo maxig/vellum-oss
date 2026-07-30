@@ -10,9 +10,13 @@ import { Avatar } from "@/components/primitives";
 import { applyPrefs, type Prefs } from "@/components/ThemeBoot";
 import { useProfileSheet } from "@/components/SheetHost";
 import ReviewQueueButton from "@/components/ReviewQueueButton";
+import TodoButton from "@/components/TodoButton";
+import NotificationBell from "@/components/NotificationBell";
+import { toggleMobileNav } from "@/lib/mobile-nav";
 
 const titles: Record<string, { title: string; crumb?: string }> = {
   "/dashboard":  { title: "Dashboard",   crumb: "Your workspace" },
+  "/applications": { title: "Applications", crumb: "All jobs" },
   "/pipeline":   { title: "Pipeline",    crumb: "Jobs › Pipeline" },
   "/jobs":       { title: "Jobs",        crumb: "All postings" },
   "/candidates": { title: "Candidates",  crumb: "Database" },
@@ -49,7 +53,6 @@ export default function Topbar({
   const meta = titles[match];
 
   const [theme, setTheme] = React.useState(prefs.theme);
-  const [bellOpen, setBellOpen] = React.useState(false);
 
   // ── Search state ────────────────────────────────────────────────────────
   const [query, setQuery] = React.useState("");
@@ -67,8 +70,6 @@ export default function Topbar({
     applyPrefs({ ...prefs, theme: next });
     await fetch("/api/preferences", { method: "POST", body: JSON.stringify({ theme: next }) });
   }
-
-  const unread = notifications.filter((n) => !n.read).length;
 
   // Debounced search — abort any in-flight call so we always render the most
   // recent query's results rather than racing.
@@ -177,6 +178,15 @@ export default function Topbar({
 
   return (
     <div className="topbar">
+      <button
+        className="iconbtn topbar-hamburger"
+        onClick={toggleMobileNav}
+        aria-label="Open navigation menu"
+        title="Menu"
+        style={{ marginRight: 4 }}
+      >
+        <Icons.Menu size={17} />
+      </button>
       <div className="topbar-head">
         {meta.crumb && <div className="topbar-crumb">{meta.crumb}</div>}
         <div className="topbar-title">{meta.title}</div>
@@ -335,40 +345,8 @@ export default function Topbar({
       <button className="iconbtn" onClick={toggleTheme} title="Toggle theme">
         {theme === "dark" ? <Icons.Sun size={15} /> : <Icons.Moon size={15} />}
       </button>
-      <div style={{ position: "relative" }}>
-        <button className="iconbtn" onClick={() => setBellOpen((o) => !o)} title="Notifications">
-          <Icons.Bell size={15} />
-          {unread > 0 && (
-            <span style={{
-              position: "absolute", top: 4, right: 4,
-              width: 8, height: 8, borderRadius: "50%",
-              background: "var(--accent-solid)", border: "1.5px solid var(--bg-0)",
-            }} />
-          )}
-        </button>
-        {bellOpen && (
-          <>
-            <div style={{ position: "fixed", inset: 0, zIndex: 80 }} onClick={() => setBellOpen(false)} />
-            <div className="glass glass-strong" style={{
-              position: "absolute", top: "calc(100% + 6px)", right: 0,
-              width: 360, padding: 6, borderRadius: 14, zIndex: 90,
-              maxHeight: 460, overflow: "auto",
-            }}>
-              <div className="section-h" style={{ padding: "10px 12px" }}>Notifications</div>
-              {notifications.length === 0 && (
-                <div style={{ padding: "16px 12px" }} className="tiny">No notifications yet.</div>
-              )}
-              {notifications.map((n) => (
-                <div key={n.id} style={{ padding: "10px 12px", borderRadius: 10, opacity: n.read ? 0.7 : 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{n.title}</div>
-                  <div className="tiny" style={{ marginTop: 2 }}>{n.body}</div>
-                  <div className="tiny" style={{ marginTop: 4, color: "var(--ink-3)" }}>{n.createdAt}</div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      <TodoButton />
+      <NotificationBell initial={notifications} />
     </div>
   );
 }

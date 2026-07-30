@@ -19,14 +19,32 @@
  */
 
 import * as React from "react";
-import { Icons } from "@/components/primitives";
+import { Icons, Stars } from "@/components/primitives";
+import { useDialogA11y } from "@/components/useDialogA11y";
 
+export type DebriefCriterion = {
+  itemId: string;
+  label: string;
+  kind: string; // rating | text | yesno
+  score?: number | null;
+  text?: string | null;
+  yesno?: boolean | null;
+};
+type Kit = {
+  id: string;
+  name: string;
+  description: string | null;
+  stageKey: string | null;
+  items: { id: string; label: string; hint: string | null; kind: string }[];
+};
 type Initial = {
   pros: string | null;
   cons: string | null;
   sentiment: string;
   rating: number | null;
   recommend: string | null;
+  kitId?: string | null;
+  criteria?: DebriefCriterion[] | null;
 } | null;
 
 const SENTIMENTS = [
@@ -44,10 +62,26 @@ const RECOMMENDS = [
   { v: "strong_no", l: "Strong no" },
 ] as const;
 
+// Shared "selectable pill" styling for the yes/no criterion buttons —
+// matches the sentiment/recommend chips.
+function pickStyle(active: boolean): React.CSSProperties {
+  return {
+    height: 26,
+    padding: "0 12px",
+    fontSize: 12,
+    background: active ? "var(--glass-bg-strong)" : "transparent",
+    borderColor: active ? "var(--glass-border)" : "var(--line)",
+    color: active ? "var(--ink-0)" : "var(--ink-2)",
+  };
+}
+
+type Answer = { score?: number | null; text?: string | null; yesno?: boolean | null };
+
 export default function DebriefModal({
   interviewId,
   candidateName,
   interviewKind,
+  stageKey,
   initial,
   onClose,
   onSaved,
@@ -55,6 +89,7 @@ export default function DebriefModal({
   interviewId: string;
   candidateName: string;
   interviewKind: string;
+  stageKey?: string | null;
   initial: Initial;
   onClose: () => void;
   onSaved: () => void;
@@ -66,6 +101,47 @@ export default function DebriefModal({
   const [recommend, setRecommend] = React.useState<string | null>(initial?.recommend ?? null);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  useDialogA11y(dialogRef);
+
+  // Interview kit (scorecard). Load templates, default to the kit whose
+  // stageKey matches this application's stage, and keep per-criterion answers
+  // keyed by item id so switching kits doesn't lose overlapping answers.
+  const [kits, setKits] = React.useState<Kit[]>([]);
+  const [kitId, setKitId] = React.useState<string | null>(initial?.kitId ?? null);
+  const [answers, setAnswers] = React.useState<Record<string, Answer>>(() => {
+    const seed: Record<string, Answer> = {};
+    for (const c of initial?.criteria ?? []) seed[c.itemId] = { score: c.score, text: c.text, yesno: c.yesno };
+    return seed;
+  });
+  // Only auto-pick a stage-default kit for a brand-new debrief. When editing
+  // an existing one we respect its saved kit choice — including a deliberate
+  // "no kit" (initial set but kitId null).
+  const pickedDefault = React.useRef(initial != null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/interview-kits", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j?.kits) return;
+        setKits(j.kits);
+        if (!pickedDefault.current) {
+          const match = stageKey ? j.kits.find((k: Kit) => k.stageKey === stageKey) : null;
+          if (match) setKitId(match.id);
+          pickedDefault.current = true;
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [stageKey]);
+
+  const activeKit = kits.find((k) => k.id === kitId) || null;
+  function setAnswer(itemId: string, patch: Answer) {
+    setAnswers((a) => ({ ...a, [itemId]: { ...a[itemId], ...patch } }));
+  }
 
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -78,6 +154,21 @@ export default function DebriefModal({
   async function save() {
     setSaving(true);
     setError(null);
+    // Snapshot the active kit's criteria + this author's answers. Dropped
+    // when no kit is selected (free-form debrief).
+    const criteria: DebriefCriterion[] = activeKit
+      ? activeKit.items.map((it) => {
+          const a = answers[it.id] || {};
+          return {
+            itemId: it.id,
+            label: it.label,
+            kind: it.kind,
+            score: it.kind === "rating" ? a.score ?? null : null,
+            text: it.kind === "text" ? a.text ?? null : null,
+            yesno: it.kind === "yesno" ? a.yesno ?? null : null,
+          };
+        })
+      : [];
     const res = await fetch(`/api/interviews/${interviewId}/debrief`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -87,6 +178,8 @@ export default function DebriefModal({
         sentiment,
         rating,
         recommend,
+        kitId: activeKit ? activeKit.id : null,
+        criteria,
       }),
     }).catch(() => null);
     setSaving(false);
@@ -102,8 +195,10 @@ export default function DebriefModal({
     <>
       <div className="scrim" onClick={onClose} />
       <div
+        ref={dialogRef}
         className="sheet glass glass-strong sheet-md"
         role="dialog"
+        aria-modal="true"
         aria-label="Interview debrief"
       >
         <div className="sheet-hd">
@@ -119,6 +214,72 @@ export default function DebriefModal({
         </div>
 
         <div className="sheet-body" style={{ padding: 22 }}>
+          {/* Interview kit — structured scorecard */}
+          {kits.length > 0 && (
+            <div style={{ marginBottom: activeKit ? 14 : 16 }}>
+              <label className="label">Interview kit</label>
+              <select
+                className="select"
+                value={kitId || ""}
+                onChange={(e) => setKitId(e.target.value || null)}
+                style={{ width: "100%" }}
+              >
+                <option value="">No kit — free-form notes</option>
+                {kits.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.name}
+                    {stageKey && k.stageKey === stageKey ? " (suggested)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {activeKit && (
+            <div style={{ marginBottom: 18 }}>
+              {activeKit.description && <p className="tiny muted" style={{ marginBottom: 10 }}>{activeKit.description}</p>}
+              <div className="col" style={{ gap: 8 }}>
+                {activeKit.items.map((it) => {
+                  const a = answers[it.id] || {};
+                  return (
+                    <div
+                      key={it.id}
+                      style={{ padding: 12, border: "0.5px solid var(--line)", borderRadius: 10, background: "var(--glass-bg-faint)" }}
+                    >
+                      <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                        <span style={{ fontSize: 13, fontWeight: 550, flex: 1, minWidth: 0 }}>{it.label}</span>
+                        {it.kind === "rating" && (
+                          <Stars value={a.score ?? null} onChange={(n) => setAnswer(it.id, { score: n })} size={18} ariaLabel={it.label} />
+                        )}
+                        {it.kind === "yesno" && (
+                          <div className="row" style={{ gap: 4 }}>
+                            <button type="button" className="btn btn-sm" style={pickStyle(a.yesno === true)} onClick={() => setAnswer(it.id, { yesno: a.yesno === true ? null : true })}>
+                              Yes
+                            </button>
+                            <button type="button" className="btn btn-sm" style={pickStyle(a.yesno === false)} onClick={() => setAnswer(it.id, { yesno: a.yesno === false ? null : false })}>
+                              No
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {it.hint && <p className="tiny muted" style={{ margin: "4px 0 0" }}>{it.hint}</p>}
+                      {it.kind === "text" && (
+                        <textarea
+                          className="input"
+                          rows={2}
+                          value={a.text || ""}
+                          onChange={(e) => setAnswer(it.id, { text: e.target.value })}
+                          placeholder="Notes…"
+                          style={{ fontFamily: "inherit", marginTop: 8 }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Sentiment + Recommend — short answers up top */}
           <div className="row" style={{ gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 200 }}>
@@ -146,35 +307,11 @@ export default function DebriefModal({
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label className="label">Rating</label>
-              <div className="row" style={{ gap: 4 }}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setRating(rating === n ? null : n)}
-                    className="iconbtn"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      color: rating !== null && n <= rating ? "oklch(75% 0.15 80)" : "var(--ink-3)",
-                    }}
-                    aria-label={`${n} star${n === 1 ? "" : "s"}`}
-                  >
-                    <Icons.Star
-                      size={16}
-                      fill={rating !== null && n <= rating ? "oklch(75% 0.15 80)" : "none"}
-                      stroke={rating !== null && n <= rating ? 0 : 1.5}
-                    />
-                  </button>
-                ))}
+              <label className="label">Overall rating</label>
+              <div className="row" style={{ gap: 8, height: 32 }}>
+                <Stars value={rating} onChange={setRating} size={22} ariaLabel="Overall rating" />
                 {rating !== null && (
-                  <button
-                    type="button"
-                    onClick={() => setRating(null)}
-                    className="btn btn-sm btn-ghost"
-                    style={{ marginLeft: 6, fontSize: 11 }}
-                  >
+                  <button type="button" onClick={() => setRating(null)} className="btn btn-sm btn-ghost" style={{ fontSize: 11 }}>
                     Clear
                   </button>
                 )}

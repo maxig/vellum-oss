@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireWorkspace, isAdmin } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { encryptSecret } from "@/lib/crypto";
+import { assertPublicHost, SsrfError } from "@/lib/ssrf";
 
 const Body = z.object({
   imapHost: z.string().min(1),
@@ -33,6 +34,17 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "bad input", details: parsed.error.flatten() }, { status: 400 });
   }
   const input = parsed.data;
+
+  // SSRF guard: the poller/sender will connect to these hosts. Block private/
+  // reserved targets before we store credentials for them.
+  try {
+    await assertPublicHost(input.imapHost);
+    await assertPublicHost(input.smtpHost);
+  } catch (e) {
+    const msg = e instanceof SsrfError ? e.message : "Invalid mail server host";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
   const existing = await db.emailAccount.findUnique({ where: { workspaceId: workspace.id } });
 
   // If the user left password fields blank we keep what was already encrypted.

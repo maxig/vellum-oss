@@ -20,7 +20,7 @@ export default function RichText({
 }: {
   html: string | null | undefined;
   className?: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: keyof React.JSX.IntrinsicElements;
   fallback?: React.ReactNode;
   style?: React.CSSProperties;
 }) {

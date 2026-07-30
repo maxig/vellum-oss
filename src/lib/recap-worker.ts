@@ -33,7 +33,7 @@ const WEEKLY_DAY = Number(process.env.RECAP_WEEKLY_DAY || 1);  // Monday (1) in 
 const MONTHLY_DAY = Number(process.env.RECAP_MONTHLY_DAY || 1); // 1st of month in workspace-local
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __vellumRecapWorker:
     | {
         started: boolean;

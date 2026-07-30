@@ -271,17 +271,30 @@ export async function computeFollowUps(workspaceId: string): Promise<FollowUpCan
 export async function syncFollowUps(workspaceId: string): Promise<{ created: number; updated: number; closed: number }> {
   const candidates = await computeFollowUps(workspaceId);
 
+  // Load active AND dismissed rows: active ones drive the stale-close pass,
+  // and dismissed ones are needed for the re-activation guard below (done rows
+  // are archival, so we leave them out to keep this bounded).
   const existing = await db.followUp.findMany({
-    where: { workspaceId, state: "active" },
-    select: { id: true, userId: true, applicationId: true, kind: true },
+    where: { workspaceId, state: { in: ["active", "dismissed"] } },
+    select: { id: true, userId: true, applicationId: true, kind: true, state: true, updatedAt: true },
   });
 
   const key = (a: { userId: string; applicationId: string; kind: string }) => `${a.userId}::${a.applicationId}::${a.kind}`;
+  const existingByKey = new Map(existing.map((e) => [key(e), e]));
   const wantedKeys = new Set(candidates.map(key));
+  const DISMISS_HOLD_MS = 24 * 60 * 60 * 1000;
 
   let created = 0;
   let updated = 0;
   for (const c of candidates) {
+    // Re-activate a dismissed item only after a 24h hold, so clicking
+    // "dismiss" actually sticks for the day instead of the very next sync
+    // upserting it straight back to active (the guard the old comment
+    // described but never implemented).
+    const prev = existingByKey.get(key(c));
+    const heldDismissed =
+      prev && prev.state === "dismissed" && Date.now() - prev.updatedAt.getTime() < DISMISS_HOLD_MS;
+
     const res = await db.followUp.upsert({
       where: { userId_applicationId_kind: { userId: c.userId, applicationId: c.applicationId, kind: c.kind } },
       create: {
@@ -298,10 +311,9 @@ export async function syncFollowUps(workspaceId: string): Promise<{ created: num
       update: {
         dueAt: c.dueAt,
         reason: c.reason,
-        // Re-activate dismissed/done if the predicate fires again — but
-        // only if it's been at least 24h since the prior state change,
-        // so a freshly-dismissed item doesn't immediately resurrect.
-        state: "active",
+        // Refresh due/reason always; only flip back to active once the hold
+        // has elapsed. Within the hold window we leave `state` untouched.
+        ...(heldDismissed ? {} : { state: "active" }),
       },
     });
     if (res.createdAt.getTime() === res.updatedAt.getTime()) created += 1;
@@ -309,8 +321,9 @@ export async function syncFollowUps(workspaceId: string): Promise<{ created: num
   }
 
   // Close out stale rows. We don't delete — keeps audit, lets the UI
-  // show "you finished X this week" later.
-  const stale = existing.filter((e) => !wantedKeys.has(key(e)));
+  // show "you finished X this week" later. Only active rows are closed;
+  // dismissed ones stay dismissed.
+  const stale = existing.filter((e) => e.state === "active" && !wantedKeys.has(key(e)));
   if (stale.length > 0) {
     await db.followUp.updateMany({
       where: { id: { in: stale.map((s) => s.id) } },

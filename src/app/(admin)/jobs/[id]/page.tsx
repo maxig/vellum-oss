@@ -17,13 +17,16 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     where: { id, workspaceId: workspace.id },
     include: {
       _count: { select: { applications: true } },
-      applications: { include: { candidate: true, stage: true } },
+      // Only the two scalars the header aggregates need — previously this
+      // pulled every full candidate + stage row just to count and average.
+      applications: { select: { appliedAt: true, stageId: true } },
       screening: { orderBy: { position: "asc" } },
       hiringTeam: { include: { user: { select: { id: true, name: true, email: true } } } },
     },
   });
   if (!job) return notFound();
   const stages = await db.stage.findMany({ where: { workspaceId: workspace.id }, orderBy: { position: "asc" } });
+  const stageKeyById = new Map(stages.map((s) => [s.id, s.key]));
   const members = await db.membership.findMany({
     where: { workspaceId: workspace.id },
     include: { user: true },
@@ -35,7 +38,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   const byStageKey: Record<string, number> = {};
   for (const a of job.applications) {
-    const k = a.stage?.key || "applied";
+    const k = (a.stageId && stageKeyById.get(a.stageId)) || "applied";
     byStageKey[k] = (byStageKey[k] || 0) + 1;
   }
 

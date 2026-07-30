@@ -25,7 +25,7 @@ const MIRROR_WINDOW_DAYS = 90;
 const MAX_JOBS_PER_TICK = 8;
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __vellumCalendarWorker:
     | {
         started: boolean;

@@ -9,7 +9,7 @@ import { hashPassword } from "@/lib/auth";
 const Body = z.object({
   token: z.string().min(8),
   name: z.string().min(1),
-  password: z.string().min(6),
+  password: z.string().min(10, "Password must be at least 10 characters"),
 });
 
 export async function POST(req: Request) {

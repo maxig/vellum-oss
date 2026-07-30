@@ -2,6 +2,7 @@
 // Copyright (C) 2026 MG Tech AS
 
 import * as React from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { Glass, Chip, Icons, WorkspaceMark } from "@/components/primitives";
@@ -155,10 +156,10 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
     <>
       <div style={{ position: "relative", padding: "12px 24px 0" }}>
         <Glass className="career-nav glass-strong">
-          <a href="/" className="row" style={{ gap: 10 }}>
+          <Link href="/" className="row" style={{ gap: 10 }}>
             <WorkspaceMark workspace={{ name: ws.name, color: ws.color }} size={28} />
             <span className="gs-name">{site.brand.name}</span>
-          </a>
+          </Link>
           <div style={{ flex: 1 }} />
           <a className="tiny career-nav-extra" href="#about" style={{ color: "var(--ink-1)", fontSize: 13 }}>About</a>
           <a className="tiny career-nav-extra" href="#offices" style={{ color: "var(--ink-1)", fontSize: 13 }}>Offices</a>

@@ -20,13 +20,18 @@ const TAG_LEN = 16;
 function key(): Buffer {
   const secret = process.env.VELLUM_SECRET || process.env.NEXTAUTH_SECRET;
   if (!secret) {
-    // Dev-only fallback so first-time clones don't crash before the user sets
-    // NEXTAUTH_SECRET. A warning is the right behaviour in production — we
-    // intentionally don't throw because the server should keep running for
-    // non-encrypted features.
     if (process.env.NODE_ENV === "production") {
-      console.warn("[vellum] no VELLUM_SECRET/NEXTAUTH_SECRET set — encryption uses a weak default");
+      // Refuse to derive a key from a hardcoded default in production. Writing
+      // secrets under a guessable key is worse than failing: a missing secret
+      // here is a deployment error. decryptSecret() swallows this throw and
+      // returns "" so reads degrade gracefully; encryptSecret() surfaces it so
+      // no weak ciphertext is ever written.
+      throw new Error(
+        "VELLUM_SECRET (or NEXTAUTH_SECRET) must be set in production for at-rest encryption",
+      );
     }
+    // Dev-only fallback so first-time clones don't crash before the user sets
+    // a secret.
     return createHash("sha256").update("vellum-development-key-please-set-NEXTAUTH_SECRET").digest();
   }
   return createHash("sha256").update(secret).digest();

@@ -5,7 +5,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Glass, Chip, Avatar, Icons } from "@/components/primitives";
+import { Glass, Chip, Avatar, Stars, Icons } from "@/components/primitives";
 import { relativeTime } from "@/lib/utils";
 import ProfileSheet from "@/components/ProfileSheet";
 
@@ -24,6 +24,8 @@ type CandidateRow = {
   threadId: string | null;
   pulseScore: number | null;
   pulseBand: string | null;
+  rating: number | null;
+  ratingCount: number;
   application: null | {
     id: string;
     jobId: string;
@@ -47,7 +49,7 @@ const BAND_META: Record<PulseBand, { label: string; emoji: string; dot: string; 
   locked: { label: "Withdrew", emoji: "✖", dot: "oklch(50% 0.02 250)", tint: "var(--glass-bg-faint)", ink: "var(--ink-2)" },
 };
 
-type Sort = "recent" | "score" | "name";
+type Sort = "recent" | "score" | "rated" | "name";
 
 export default function CandidatesDatabase({
   candidates,
@@ -107,6 +109,7 @@ export default function CandidatesDatabase({
       return true;
     });
     if (sort === "score") list = [...list].sort((a, b) => (b.application?.aiFit || 0) - (a.application?.aiFit || 0));
+    if (sort === "rated") list = [...list].sort((a, b) => (b.rating || 0) - (a.rating || 0));
     if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
   }, [activeRows, minScore, q, sort, source, stage, pulseFilter]);
@@ -137,27 +140,37 @@ export default function CandidatesDatabase({
     if (!stageId || apps.length === 0) return;
     setBusy("move");
     const nextStage = stages.find((s) => s.id === stageId);
-    await Promise.all(apps.map((app) => fetch(`/api/applications/${app.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ stageId }),
-    })));
-    setRows((current) => current.map((row) => {
-      if (!row.application || !apps.some((app) => app.id === row.application?.id) || !nextStage) return row;
-      return {
-        ...row,
-        application: {
-          ...row.application,
-          stageId,
-          stageKey: nextStage.key,
-          stageName: nextStage.name,
-          stageColor: nextStage.color,
-        },
-      };
-    }));
-    setSelected(new Set());
-    setBusy(null);
-    flash(`Moved ${apps.length} candidate${apps.length === 1 ? "" : "s"}`);
-    router.refresh();
+    try {
+      // Track each request's outcome — a member moving a candidate they don't
+      // own gets a 403; only update the rows that actually moved, and report
+      // the true count instead of claiming success for all.
+      const results = await Promise.all(
+        apps.map((app) =>
+          fetch(`/api/applications/${app.id}`, { method: "PATCH", body: JSON.stringify({ stageId }) })
+            .then((r) => ({ id: app.id, ok: r.ok }))
+            .catch(() => ({ id: app.id, ok: false })),
+        ),
+      );
+      const movedIds = new Set(results.filter((r) => r.ok).map((r) => r.id));
+      if (movedIds.size > 0 && nextStage) {
+        setRows((current) =>
+          current.map((row) =>
+            row.application && movedIds.has(row.application.id)
+              ? { ...row, application: { ...row.application, stageId, stageKey: nextStage.key, stageName: nextStage.name, stageColor: nextStage.color } }
+              : row,
+          ),
+        );
+      }
+      setSelected(new Set());
+      flash(
+        movedIds.size < apps.length
+          ? `Moved ${movedIds.size} of ${apps.length} (some need admin or reviewer access)`
+          : `Moved ${movedIds.size} candidate${movedIds.size === 1 ? "" : "s"}`,
+      );
+    } finally {
+      setBusy(null);
+      router.refresh();
+    }
   }
 
   async function deleteSelected() {
@@ -168,20 +181,28 @@ export default function CandidatesDatabase({
     );
     if (!ok) return;
     setBusy("delete");
-    const results = await Promise.all(selectedRows.map((row) => fetch(`/api/candidates/${row.id}`, {
-      method: "DELETE",
-    })));
-    const removed = results.filter((r) => r.ok).length;
-    const ids = new Set(selectedRows.map((r) => r.id));
-    setRows((current) => current.filter((row) => !ids.has(row.id)));
-    setSelected(new Set());
-    setBusy(null);
-    if (removed < selectedRows.length) {
-      flash(`Removed ${removed} of ${selectedRows.length} (some required admin)`);
-    } else {
-      flash(`Removed ${removed} candidate${removed === 1 ? "" : "s"}`);
+    try {
+      const results = await Promise.all(
+        selectedRows.map((row) =>
+          fetch(`/api/candidates/${row.id}`, { method: "DELETE" })
+            .then((r) => ({ id: row.id, ok: r.ok }))
+            .catch(() => ({ id: row.id, ok: false })),
+        ),
+      );
+      // Only drop the rows that actually deleted — a failed one should stay
+      // visible rather than vanish and reappear on refresh.
+      const okIds = new Set(results.filter((r) => r.ok).map((r) => r.id));
+      setRows((current) => current.filter((row) => !okIds.has(row.id)));
+      setSelected(new Set());
+      flash(
+        okIds.size < selectedRows.length
+          ? `Removed ${okIds.size} of ${selectedRows.length} (some required admin)`
+          : `Removed ${okIds.size} candidate${okIds.size === 1 ? "" : "s"}`,
+      );
+    } finally {
+      setBusy(null);
+      router.refresh();
     }
-    router.refresh();
   }
 
   async function deleteCandidate(candidateId: string, name: string) {
@@ -205,41 +226,55 @@ export default function CandidatesDatabase({
     const tag = tagText.trim();
     if (!tag || selectedRows.length === 0) return;
     setBusy("tag");
-    await Promise.all(selectedRows.map((row) => fetch(`/api/candidates/${row.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ addSkill: tag }),
-    })));
-    setRows((current) => current.map((row) => (
-      selected.has(row.id) && !row.skills.includes(tag)
-        ? { ...row, skills: [...row.skills, tag] }
-        : row
-    )));
-    setTagText("");
-    setSelected(new Set());
-    setBusy(null);
-    flash(`Added ${tag} to ${selectedRows.length} candidate${selectedRows.length === 1 ? "" : "s"}`);
-    router.refresh();
+    try {
+      const results = await Promise.all(
+        selectedRows.map((row) =>
+          fetch(`/api/candidates/${row.id}`, { method: "PATCH", body: JSON.stringify({ addSkill: tag }) })
+            .then((r) => ({ id: row.id, ok: r.ok }))
+            .catch(() => ({ id: row.id, ok: false })),
+        ),
+      );
+      const okIds = new Set(results.filter((r) => r.ok).map((r) => r.id));
+      setRows((current) =>
+        current.map((row) => (okIds.has(row.id) && !row.skills.includes(tag) ? { ...row, skills: [...row.skills, tag] } : row)),
+      );
+      setTagText("");
+      setSelected(new Set());
+      flash(
+        okIds.size < selectedRows.length
+          ? `Tagged ${okIds.size} of ${selectedRows.length}`
+          : `Added ${tag} to ${okIds.size} candidate${okIds.size === 1 ? "" : "s"}`,
+      );
+    } finally {
+      setBusy(null);
+      router.refresh();
+    }
   }
 
   async function messageSelected() {
     if (selectedRows.length === 0) return;
     setBusy("message");
-    let firstThread = selectedRows.find((row) => row.threadId)?.threadId || null;
-    for (const row of selectedRows) {
-      if (row.threadId) continue;
-      const res = await fetch("/api/threads", {
-        method: "POST",
-        body: JSON.stringify({
-          candidateId: row.id,
-          jobId: row.application?.jobId,
-          subject: `Re: ${row.application?.jobTitle || "Application"}`,
-        }),
-      });
-      const json = await res.json();
-      if (!firstThread) firstThread = json.id;
+    try {
+      let firstThread = selectedRows.find((row) => row.threadId)?.threadId || null;
+      for (const row of selectedRows) {
+        if (row.threadId) continue;
+        const res = await fetch("/api/threads", {
+          method: "POST",
+          body: JSON.stringify({
+            candidateId: row.id,
+            jobId: row.application?.jobId,
+            subject: `Re: ${row.application?.jobTitle || "Application"}`,
+          }),
+        }).catch(() => null);
+        if (!res?.ok) continue;
+        const json = await res.json().catch(() => null);
+        if (!firstThread && json?.id) firstThread = json.id;
+      }
+      if (firstThread) router.push(`/inbox?thread=${firstThread}`);
+      else flash("Could not open a conversation.");
+    } finally {
+      setBusy(null);
     }
-    setBusy(null);
-    if (firstThread) router.push(`/inbox?thread=${firstThread}`);
   }
 
   function clearFilters() {
@@ -280,7 +315,7 @@ export default function CandidatesDatabase({
           <FilterSelect label="Source" value={source} onChange={setSource} options={[{ value: "any", label: "Any source" }, ...sources.map((s) => ({ value: s, label: s }))]} />
           <FilterSelect label="Min score" value={String(minScore)} onChange={(v) => setMinScore(Number(v))} options={[{ value: "0", label: "Any score" }, { value: "70", label: ">= 70" }, { value: "80", label: ">= 80" }, { value: "90", label: ">= 90" }]} />
           <FilterSelect label="Pulse" value={pulseFilter} onChange={setPulseFilter} options={[{ value: "any", label: "Any pulse" }, { value: "hot", label: "🔥 Hot only" }, { value: "cooling", label: "❄️ Cool or cold" }]} />
-          <FilterSelect label="Sort" value={sort} onChange={(v) => setSort(v as Sort)} options={[{ value: "recent", label: "Most recent" }, { value: "score", label: "AI fit" }, { value: "name", label: "Name" }]} />
+          <FilterSelect label="Sort" value={sort} onChange={(v) => setSort(v as Sort)} options={[{ value: "recent", label: "Most recent" }, { value: "score", label: "AI fit" }, { value: "rated", label: "Top rated" }, { value: "name", label: "Name" }]} />
         </div>
         {filtersActive && (
           <div className="row" style={{ marginTop: 10, gap: 6 }}>
@@ -338,6 +373,7 @@ export default function CandidatesDatabase({
           <span className="tiny">Stage</span>
           <span className="tiny">Source</span>
           <span className="tiny" style={{ textAlign: "right" }}>AI fit</span>
+          <span className="tiny" style={{ textAlign: "right" }}>Rating</span>
           <span className="tiny" style={{ textAlign: "right" }}>Applied</span>
         </div>
         {filtered.length === 0 && (
@@ -437,6 +473,17 @@ function CandidateRecord({
     <div
       className="candidate-db-row candidate-db-record"
       onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${candidate.name}`}
+      onKeyDown={(e) => {
+        // Don't hijack keys typed into the row's stage <select> or checkbox.
+        if ((e.target as HTMLElement).closest("select, input, button")) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
       style={{
         borderBottom: isLast ? "none" : "0.5px solid var(--line)",
         background: checked ? "var(--accent-soft)" : "transparent",
@@ -490,6 +537,13 @@ function CandidateRecord({
       <div className="row" style={{ justifyContent: "flex-end", gap: 6 }}>
         <ScorePill score={stage?.aiFit || null} />
         <PulsePill candidateId={candidate.id} score={candidate.pulseScore} band={candidate.pulseBand} />
+      </div>
+      <div className="row" style={{ justifyContent: "flex-end" }}>
+        {candidate.rating != null && candidate.ratingCount > 0 ? (
+          <Stars value={candidate.rating} size={12} showValue count={candidate.ratingCount} />
+        ) : (
+          <span className="tiny muted">—</span>
+        )}
       </div>
       <div className="row" style={{ justifyContent: "flex-end", gap: 4 }}>
         <span className="tiny mono">{stage ? relativeTime(stage.appliedAt) : relativeTime(candidate.createdAt)}</span>

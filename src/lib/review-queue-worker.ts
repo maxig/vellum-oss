@@ -27,7 +27,7 @@ import { buildReviewQueue, eligibleUsersForBuild } from "@/lib/review-queue";
 const CACHE_INTERVAL_MS = Number(process.env.REVIEW_QUEUE_INTERVAL_MS || 60 * 60 * 1000);
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __vellumReviewQueueWorker:
     | {
         started: boolean;

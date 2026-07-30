@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireWorkspace, isAdmin } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { encryptSecret } from "@/lib/crypto";
+import { assertPublicUrl, SsrfError } from "@/lib/ssrf";
 
 // `recapSettings` is intentionally permissive — the nested shape is
 // documented in schema.prisma and validated at consumption time. We just
@@ -53,6 +54,19 @@ export async function PATCH(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "bad input" }, { status: 400 });
 
   const d = parsed.data;
+
+  // SSRF guard: a custom AI base URL is fetched server-side (OpenAI-compatible
+  // endpoints, self-hosted Ollama, etc). Block private/reserved targets — but
+  // note the dev default allows localhost so a local Ollama still works.
+  if (d.baseUrl) {
+    try {
+      await assertPublicUrl(d.baseUrl);
+    } catch (e) {
+      const msg = e instanceof SsrfError ? e.message : "Invalid base URL";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+  }
+
   const data: any = {};
   if (d.provider) data.provider = d.provider;
   if (d.model) data.model = d.model;

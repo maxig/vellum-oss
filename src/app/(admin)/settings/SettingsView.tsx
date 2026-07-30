@@ -9,6 +9,7 @@ import { Glass, Chip, AIPill, Icons, WorkspaceMark } from "@/components/primitiv
 import { ACCENTS, AI_PROVIDERS, AI_FEATURES } from "@/lib/design";
 import { applyPrefs } from "@/components/ThemeBoot";
 import Wysiwyg from "@/components/Wysiwyg";
+import InterviewKitsTab from "./InterviewKitsTab";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -22,6 +23,7 @@ type Tab =
   | "career"
   | "team"
   | "ai"
+  | "interviewKits"
   | "email"
   | "calendar"
   | "appearance"
@@ -29,15 +31,16 @@ type Tab =
   | "danger";
 
 const TABS: { id: Tab; label: string; icon: keyof typeof Icons }[] = [
-  { id: "workspace",  label: "Workspace",         icon: "Settings" },
-  { id: "appearance", label: "Appearance",        icon: "Sun" },
-  { id: "career",     label: "Career site",       icon: "Globe" },
-  { id: "ai",         label: "AI & integrations", icon: "Sparkle" },
-  { id: "team",       label: "Team & roles",      icon: "Users" },
-  { id: "email",      label: "Email",             icon: "Mail" },
-  { id: "calendar",   label: "Calendar",          icon: "Calendar" },
-  { id: "cookies",    label: "Cookies & consent", icon: "Lock" },
-  { id: "danger",     label: "Danger zone",       icon: "Trash" },
+  { id: "workspace",     label: "Workspace",         icon: "Settings" },
+  { id: "appearance",    label: "Appearance",        icon: "Sun" },
+  { id: "career",        label: "Career site",       icon: "Globe" },
+  { id: "ai",            label: "AI & integrations", icon: "Sparkle" },
+  { id: "team",          label: "Team & roles",      icon: "Users" },
+  { id: "interviewKits", label: "Interview kits",    icon: "Star" },
+  { id: "email",         label: "Email",             icon: "Mail" },
+  { id: "calendar",      label: "Calendar",          icon: "Calendar" },
+  { id: "cookies",       label: "Cookies & consent", icon: "Lock" },
+  { id: "danger",        label: "Danger zone",       icon: "Trash" },
 ];
 
 type Role = "owner" | "admin" | "member";
@@ -51,15 +54,16 @@ type Role = "owner" | "admin" | "member";
 // admin/owner-only. The owner-only action — delete workspace — lives inside
 // the Danger tab and is gated on its own, below.
 const TAB_MIN_ROLE: Record<Tab, Role> = {
-  workspace:  "admin",
-  appearance: "member",
-  career:     "admin",
-  ai:         "admin",
-  team:       "admin",
-  email:      "admin",
-  calendar:   "member",
-  cookies:    "admin",
-  danger:     "admin",
+  workspace:     "admin",
+  appearance:    "member",
+  career:        "admin",
+  ai:            "admin",
+  team:          "admin",
+  interviewKits: "admin",
+  email:         "admin",
+  calendar:      "member",
+  cookies:       "admin",
+  danger:        "admin",
 };
 
 const ROLE_RANK: Record<Role, number> = { member: 0, admin: 1, owner: 2 };
@@ -132,8 +136,9 @@ export default function SettingsView(props: {
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
           {tab === "workspace"  && <WorkspaceTab {...props} />}
           {tab === "career"     && <CareerTab {...props} />}
-          {tab === "team"       && <TeamTab {...props} inviteLinkBase={inviteLinkBase} />}
-          {tab === "ai"         && <AITab {...props} />}
+          {tab === "team"          && <TeamTab {...props} inviteLinkBase={inviteLinkBase} />}
+          {tab === "ai"            && <AITab {...props} />}
+          {tab === "interviewKits" && <InterviewKitsTab />}
           {tab === "email"      && <EmailTab {...props} />}
           {tab === "calendar"   && <CalendarTab {...props} />}
           {tab === "appearance" && <AppearanceTab {...props} />}

@@ -20,7 +20,7 @@ import { pollWorkspaceInbox } from "@/lib/email";
 const INTERVAL_MS = Number(process.env.EMAIL_POLL_INTERVAL_MS || 3 * 60 * 1000);
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __vellumEmailWorker: { started: boolean; running: boolean; timer: NodeJS.Timeout | null; tickCount: number } | undefined;
 }
 

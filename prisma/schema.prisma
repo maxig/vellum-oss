@@ -15,47 +15,50 @@ datasource db {
 
 // ─── Auth ─────────────────────────────────────────────────────────────
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
   emailVerified DateTime?
-  password      String?  // bcrypt hash for credentials login
+  password      String? // bcrypt hash for credentials login
   name          String?
   image         String?
-  title         String?  // job title — shown to teammates
-  pronouns      String?  // e.g. "she/her"
-  location      String?  // city / country
-  timezone      String?  // IANA tz, e.g. "Europe/Berlin"
-  workingHours  String?  // free-text "Mon–Fri 9–17 CET" shown when teammates book with you
-  bio           String?  @db.Text
-  signature     String?  @db.Text // default email signature (overrides workspace default)
-  createdAt     DateTime @default(now())
+  title         String? // job title — shown to teammates
+  pronouns      String? // e.g. "she/her"
+  location      String? // city / country
+  timezone      String? // IANA tz, e.g. "Europe/Berlin"
+  workingHours  String? // free-text "Mon–Fri 9–17 CET" shown when teammates book with you
+  bio           String?   @db.Text
+  signature     String?   @db.Text // default email signature (overrides workspace default)
+  createdAt     DateTime  @default(now())
 
-  memberships         Membership[]
-  invitesSent         Invite[]                @relation("invitesSent")
-  notes               Note[]
-  activities          Activity[]
-  notifications       Notification[]
-  preferences         UserPreference?
-  messagesSent        Message[]               @relation("messagesSent")
-  reviewingApps       Application[]           @relation("applicationReviewer")
-  stageMovesActor     CandidateStageHistory[] @relation("stageHistoryActor")
-  interviewDebriefs   InterviewDebrief[]
-  leadingJobs         Job[]                   @relation("jobLeadReviewer")
-  hiringTeamRoles     JobHiringTeamMember[]   @relation("jobHiringTeam")
-  interviewSlots      InterviewParticipant[]  @relation("interviewParticipant")
-  calendarAccounts    CalendarAccount[]
-  followUps           FollowUp[]
+  memberships       Membership[]
+  invitesSent       Invite[]                @relation("invitesSent")
+  notes             Note[]
+  activities        Activity[]
+  notifications     Notification[]
+  preferences       UserPreference?
+  messagesSent      Message[]               @relation("messagesSent")
+  reviewingApps     Application[]           @relation("applicationReviewer")
+  stageMovesActor   CandidateStageHistory[] @relation("stageHistoryActor")
+  interviewDebriefs InterviewDebrief[]
+  leadingJobs       Job[]                   @relation("jobLeadReviewer")
+  hiringTeamRoles   JobHiringTeamMember[]   @relation("jobHiringTeam")
+  interviewSlots    InterviewParticipant[]  @relation("interviewParticipant")
+  calendarAccounts  CalendarAccount[]
+  followUps         FollowUp[]
+  ratings           Rating[]
+  todosCreated      Todo[]                  @relation("todosCreated")
+  todosAssigned     Todo[]                  @relation("todosAssigned")
 }
 
 model UserPreference {
   userId         String  @id
   user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  theme          String  @default("light")    // light | dark
-  density        String  @default("cozy")     // compact | cozy
-  accent         String  @default("indigo")   // indigo | aurora | cyan | sage | graphite
+  theme          String  @default("light") // light | dark
+  density        String  @default("cozy") // compact | cozy
+  accent         String  @default("indigo") // indigo | aurora | cyan | sage | graphite
   glassIntensity Float   @default(1.0)
   lastWorkspace  String?
-  notifications  Json    @default("{}")       // {emailNewApplication, emailCandidateReply, emailMention, emailInterviewReminder, emailFollowedCandidate, emailWeeklyDigest, pushDesktop, soundsOn, dnd}
+  notifications  Json    @default("{}") // {emailNewApplication, emailCandidateReply, emailMention, emailInterviewReminder, emailFollowedCandidate, emailWeeklyDigest, pushDesktop, soundsOn, dnd}
   // Review queue per-user scope override. Null = workspace default
   // (driven by role in resolveRules()). Otherwise: "mine" or "workspace".
   // See REVIEW_QUEUE_FEATURE.md §6.2.
@@ -67,42 +70,45 @@ model Workspace {
   id          String   @id // ws_<slug>_<hash>
   slug        String   @unique // used for public subdomain
   name        String
-  domain      String   // careers.<domain>
+  domain      String // careers.<domain>
   color       String   @default("conic")
   industry    String?
   size        String?
   currency    String   @default("EUR") // ISO 4217 — applied to every salary input + public career site listings
-  departments Json     @default("[]")  // string[] — selectable list shown in the New job wizard, editable in Settings
+  departments Json     @default("[]") // string[] — selectable list shown in the New job wizard, editable in Settings
   timezone    String   @default("Europe/Berlin")
   signature   String?  @db.Text // default reply signature used as a starter when composing in the inbox
-  defaults    Json     @default("{}")  // {autoSendConfirmations: bool, aiRejectionDrafts: bool, showSalaryPublicly: bool, …}
+  defaults    Json     @default("{}") // {autoSendConfirmations: bool, aiRejectionDrafts: bool, showSalaryPublicly: bool, …}
   createdAt   DateTime @default(now())
 
-  memberships     Membership[]
-  invites         Invite[]
-  jobs            Job[]
-  candidates      Candidate[]
-  applications    Application[]
-  threads         Thread[]
-  notes           Note[]
-  interviews      Interview[]
-  stages          Stage[]
-  notifications   Notification[]
-  activities      Activity[]
-  aiConfig        AIConfig?
-  careerSite      CareerSite?
-  emailAccount    EmailAccount?
-  careerEvents    CareerSiteEvent[]
-  stageHistory    CandidateStageHistory[]
+  memberships      Membership[]
+  invites          Invite[]
+  jobs             Job[]
+  candidates       Candidate[]
+  applications     Application[]
+  threads          Thread[]
+  notes            Note[]
+  interviews       Interview[]
+  stages           Stage[]
+  notifications    Notification[]
+  activities       Activity[]
+  aiConfig         AIConfig?
+  careerSite       CareerSite?
+  emailAccount     EmailAccount?
+  careerEvents     CareerSiteEvent[]
+  stageHistory     CandidateStageHistory[]
   sentimentResults SentimentResult[]
   calendarAccounts CalendarAccount[]
-  followUps       FollowUp[]
+  followUps        FollowUp[]
+  interviewKits    InterviewKit[]
+  ratings          Rating[]
+  todos            Todo[]
   // CALENDAR_FEATURE.md §10.2 — JSON blob to avoid migrations as the shape evolves.
   // { workHours?: { start: "08:00", end: "19:00" },
   //   workDays?: number[], timezone?: string,
   //   defaultInterviewKind?: "phone"|"video"|"onsite"|"panel",
   //   allowPersonalCalendars?: bool, requireSso?: bool }
-  calendarSettings Json @default("{}")
+  calendarSettings Json                    @default("{}")
 
   // Cookie consent & 3rd-party script injection on the public career site.
   // { enabled: bool, banner: { title, message },
@@ -126,29 +132,29 @@ model Membership {
 }
 
 model Invite {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
   email       String
-  role        String   @default("member")
-  token       String   @unique
+  role        String    @default("member")
+  token       String    @unique
   invitedById String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   expiresAt   DateTime
   acceptedAt  DateTime?
 
-  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  invitedBy  User      @relation("invitesSent", fields: [invitedById], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation("invitesSent", fields: [invitedById], references: [id])
 
   @@index([workspaceId])
 }
 
 // ─── Pipeline stages (per workspace) ──────────────────────────────────
 model Stage {
-  id          String   @id @default(cuid())
+  id          String @id @default(cuid())
   workspaceId String
-  key         String   // applied | screen | interview | offer | hired | rejected
+  key         String // applied | screen | interview | offer | hired | rejected
   name        String
-  color       String   // oklch(...) string
+  color       String // oklch(...) string
   position    Int
 
   workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -160,40 +166,40 @@ model Stage {
 
 // ─── Jobs ─────────────────────────────────────────────────────────────
 model Job {
-  id            String   @id @default(cuid())
-  workspaceId   String
-  slug          String
-  title         String
-  department    String?
-  location      String?
-  employment    String?  // Full-time | Contract | etc.
-  status        String   @default("Draft") // Draft | Open | Closed
-  pitch         String?  @db.Text
-  description   String?  @db.Text
-  requirements  Json     @default("[]")
-  niceToHave    Json     @default("[]")
-  salaryMin     Int?
-  salaryMax     Int?
-  salaryCurrency String? @default("EUR")
-  salaryDisplay String?
-  processSteps  Json     @default("[]") // [{n, who, d}]
-  channels      Json     @default("{}") // {vellum: true, linkedin: false, ...}
+  id             String    @id @default(cuid())
+  workspaceId    String
+  slug           String
+  title          String
+  department     String?
+  location       String?
+  employment     String? // Full-time | Contract | etc.
+  status         String    @default("Draft") // Draft | Open | Closed
+  pitch          String?   @db.Text
+  description    String?   @db.Text
+  requirements   Json      @default("[]")
+  niceToHave     Json      @default("[]")
+  salaryMin      Int?
+  salaryMax      Int?
+  salaryCurrency String?   @default("EUR")
+  salaryDisplay  String?
+  processSteps   Json      @default("[]") // [{n, who, d}]
+  channels       Json      @default("{}") // {vellum: true, linkedin: false, ...}
   // Lead reviewer — the recruiter who "owns" triaging candidates for
   // this role. New applications inherit this as their default
   // Application.reviewerId. Nullable so the seed and pre-existing rows
   // don't break; new jobs are populated from the creator's userId.
   leadReviewerId String?
-  createdAt     DateTime @default(now())
-  publishedAt   DateTime?
-  closedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  publishedAt    DateTime?
+  closedAt       DateTime?
 
-  workspace     Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  leadReviewer  User?                @relation("jobLeadReviewer", fields: [leadReviewerId], references: [id], onDelete: SetNull)
-  applications  Application[]
-  threads       Thread[]
-  screening     ScreeningQuestion[]
-  hiringTeam    JobHiringTeamMember[]
-  careerEvents  CareerSiteEvent[]
+  workspace    Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  leadReviewer User?                 @relation("jobLeadReviewer", fields: [leadReviewerId], references: [id], onDelete: SetNull)
+  applications Application[]
+  threads      Thread[]
+  screening    ScreeningQuestion[]
+  hiringTeam   JobHiringTeamMember[]
+  careerEvents CareerSiteEvent[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -210,11 +216,11 @@ model Job {
 // `role` is free-text (e.g. "Recruiter (lead)", "Hiring manager") so
 // the public page can keep its existing flexibility.
 model JobHiringTeamMember {
-  id          String   @id @default(cuid())
-  jobId       String
-  userId      String
-  role        String   // free-text label, e.g. "Hiring manager"
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  jobId     String
+  userId    String
+  role      String // free-text label, e.g. "Hiring manager"
+  createdAt DateTime @default(now())
 
   job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
   user User @relation("jobHiringTeam", fields: [userId], references: [id], onDelete: Cascade)
@@ -238,34 +244,36 @@ model ScreeningQuestion {
 
 // ─── Candidates & Applications ────────────────────────────────────────
 model Candidate {
-  id           String   @id @default(cuid())
-  workspaceId  String
-  name         String
-  email        String?
-  location     String?
-  photoUrl     String?
-  linkedin     String?
-  portfolio    String?
-  github       String?
-  currentRole  String?
-  years        Int?
-  source       String?  @default("Career site")
-  skills       Json     @default("[]")
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  email       String?
+  location    String?
+  photoUrl    String?
+  linkedin    String?
+  portfolio   String?
+  github      String?
+  currentRole String?
+  years       Int?
+  source      String?  @default("Career site")
+  skills      Json     @default("[]")
+  createdAt   DateTime @default(now())
 
   // ── Pulse (engagement signal) ──────────────────────────────────────
   // See PULSE_FEATURE.md. Score is workspace-scoped; recomputed by the
   // pulse_recompute path whenever a signal lands. Band is derived and
   // stored to make filtering and pill rendering O(1).
-  pulseScore   Int?     // 0..100, null until first compute
-  pulseBand    String?  // hot | warm | cool | cold | silent | locked
+  pulseScore     Int? // 0..100, null until first compute
+  pulseBand      String? // hot | warm | cool | cold | silent | locked
   pulseUpdatedAt DateTime?
 
-  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  applications  Application[]
-  threads       Thread[]
-  notes         Note[]
-  pulseSignals  PulseSignal[]
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  applications Application[]
+  threads      Thread[]
+  notes        Note[]
+  pulseSignals PulseSignal[]
+  ratings      Rating[]
+  todos        Todo[]
 
   @@index([workspaceId])
   @@index([workspaceId, email])
@@ -280,15 +288,15 @@ model PulseSignal {
   id          String   @id @default(cuid())
   workspaceId String
   candidateId String
-  kind        String   // message_received | message_fast_reply | email_opened | link_clicked | positive_sentiment | negative_sentiment | no_reply_overdue | interview_no_show | unsubscribe | stage_advanced | offer_sent | ...
-  polarity    String   // pos | neg
-  weight      Int      // base weight before decay; 1..10
+  kind        String // message_received | message_fast_reply | email_opened | link_clicked | positive_sentiment | negative_sentiment | no_reply_overdue | interview_no_show | unsubscribe | stage_advanced | offer_sent | ...
+  polarity    String // pos | neg
+  weight      Int // base weight before decay; 1..10
   source      String   @default("system") // email | site | calendar | inbox | system | ai_sentiment
   evidence    Json     @default("{}") // {threadId?, messageId?, url?, confidence?}
   redacted    Boolean  @default(false)
   at          DateTime @default(now())
 
-  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, candidateId, at])
   @@index([candidateId, at])
@@ -301,8 +309,8 @@ model PulseSignal {
 // indexed lookup.
 model RecapCache {
   workspaceId String
-  scope       String   // today | week | month
-  bucket      String   // 2026-05-26 | 2026-W22 | 2026-05
+  scope       String // today | week | month
+  bucket      String // 2026-05-26 | 2026-W22 | 2026-05
   items       Json     @default("[]") // RecapItem[]
   hasAI       Boolean  @default(false)
   generatedAt DateTime @default(now())
@@ -320,9 +328,9 @@ model RecapCache {
 model RecapDelivery {
   id          String   @id @default(cuid())
   workspaceId String
-  scope       String   // today | week | month
-  bucket      String   // matches RecapCache.bucket
-  recipient   String   // email address
+  scope       String // today | week | month
+  bucket      String // matches RecapCache.bucket
+  recipient   String // email address
   sentAt      DateTime @default(now())
   status      String   @default("sent") // sent | failed
   error       String?  @db.Text
@@ -342,7 +350,7 @@ model ReviewQueueCache {
   userId      String
   builtAt     DateTime @default(now())
   refreshing  Boolean  @default(false)
-  rulesHash   String   // sha1 of ReviewRules at build time
+  rulesHash   String // sha1 of ReviewRules at build time
   items       Json     @default("[]") // ReviewQueueItem[] (pre-ranked, ready to render)
   aiState     String   @default("disabled") // ok | disabled | error | empty
   aiError     String?  @db.Text
@@ -352,49 +360,59 @@ model ReviewQueueCache {
 }
 
 model Application {
-  id              String   @id @default(cuid())
-  workspaceId     String
-  candidateId     String
-  jobId           String
-  stageId         String?
+  id               String    @id @default(cuid())
+  workspaceId      String
+  candidateId      String
+  jobId            String
+  stageId          String?
   // Optional reviewer assignment — drives the recap `review_load` item.
-  reviewerId      String?
-  resumeUrl       String?
-  resumeName      String?
-  resumeText      String?  @db.Text // text extracted from the uploaded resume; fed to the AI summary
-  whyUs           String?  @db.Text
-  screeningAnswers Json    @default("{}")
-  aiFit           Int?
-  aiSummary       String?  @db.Text
-  archived        Boolean  @default(false)
+  reviewerId       String?
+  resumeUrl        String?
+  resumeName       String?
+  resumeText       String?   @db.Text // text extracted from the uploaded resume; fed to the AI summary
+  whyUs            String?   @db.Text
+  screeningAnswers Json      @default("{}")
+  aiFit            Int?
+  aiSummary        String?   @db.Text
+  archived         Boolean   @default(false)
   // GDPR consent — the apply form requires it, this records when it was
   // explicitly given. Null = legacy application predating the field; the
   // recap `missing_consent` item surfaces these.
-  consentGivenAt  DateTime?
-  consentNotes    String?  @db.Text
-  appliedAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  consentGivenAt   DateTime?
+  consentNotes     String?   @db.Text
+  appliedAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Outcome of the application, set when the recruiter decides. Drives the
   // `send_rejection` follow-up (Application.outcome = rejected and no
   // rejection thread). Null until a decision is recorded.
-  outcome          String?  // hired | rejected | withdrawn
-  outcomeAt        DateTime?
-  offerExtendedAt  DateTime?
+  outcome         String? // hired | rejected | withdrawn
+  outcomeAt       DateTime?
+  // Why the application was rejected — free text / a Settings taxonomy value.
+  // Powers the reject-reason analytics breakdown.
+  rejectReason    String?
+  offerExtendedAt DateTime?
 
-  workspace      Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  candidate      Candidate               @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  job            Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  stage          Stage?                  @relation(fields: [stageId], references: [id])
-  reviewer       User?                   @relation("applicationReviewer", fields: [reviewerId], references: [id])
-  interviews     Interview[]
-  stageHistory   CandidateStageHistory[]
-  followUps      FollowUp[]
+  workspace    Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  candidate    Candidate               @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job          Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  stage        Stage?                  @relation(fields: [stageId], references: [id])
+  reviewer     User?                   @relation("applicationReviewer", fields: [reviewerId], references: [id])
+  interviews   Interview[]
+  stageHistory CandidateStageHistory[]
+  followUps    FollowUp[]
+  ratings      Rating[]
+  todos        Todo[]
 
   @@unique([candidateId, jobId])
   @@index([workspaceId])
   @@index([jobId, stageId])
   @@index([workspaceId, reviewerId])
+  // Serves the board/dashboard/candidates "active pipeline, newest first"
+  // scans (workspaceId + archived filter, appliedAt sort) and the per-stage
+  // count/groupBy shape — previously workspace-wide sequential scans.
+  @@index([workspaceId, archived, appliedAt])
+  @@index([workspaceId, stageId])
 }
 
 // ─── Communication ────────────────────────────────────────────────────
@@ -416,23 +434,31 @@ model Thread {
 
   @@index([workspaceId])
   @@index([candidateId])
+  // Inbox lists threads newest-activity first — this serves the sort so it
+  // isn't a full workspace thread scan on every open.
+  @@index([workspaceId, lastAt])
 }
 
 model Message {
   id                String   @id @default(cuid())
   threadId          String
-  direction         String   // in | out | system
+  direction         String // in | out | system
   body              String   @db.Text
   fromUserId        String?
-  fromName          String?  // candidate name for inbound
-  externalMessageId String?  // RFC822 Message-Id (for dedupe + threading)
-  externalUid       Int?     // IMAP UID for inbound (per-folder INBOX)
+  fromName          String? // candidate name for inbound
+  externalMessageId String? // RFC822 Message-Id (for dedupe + threading)
+  externalUid       Int? // IMAP UID for inbound (per-folder INBOX)
   createdAt         DateTime @default(now())
 
   thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   fromUser User?  @relation("messagesSent", fields: [fromUserId], references: [id])
 
-  @@index([threadId])
+  // Idempotent ingestion: the same RFC822 Message-Id can never land twice in
+  // one thread, so concurrent IMAP polls can't create duplicates. NULLs (system
+  // / outbound-before-send rows) are treated as distinct by Postgres, so this
+  // only constrains real message-ids. Leading-column threadId also serves the
+  // "load a thread's messages" query, so no separate @@index([threadId]).
+  @@unique([threadId, externalMessageId])
   @@index([externalMessageId])
 }
 
@@ -453,17 +479,17 @@ model Note {
 
 // ─── Interviews ───────────────────────────────────────────────────────
 model Interview {
-  id            String   @id @default(cuid())
-  workspaceId   String
-  applicationId String
-  kind          String   @default("video") // phone | video | onsite | panel
-  scheduledAt   DateTime
-  durationMin   Int      @default(45)
-  agenda        String?  @db.Text
-  location      String?
-  meetingUrl    String?
-  status        String   @default("scheduled") // scheduled | done | cancelled | no_show
-  createdAt     DateTime @default(now())
+  id                String   @id @default(cuid())
+  workspaceId       String
+  applicationId     String
+  kind              String   @default("video") // phone | video | onsite | panel
+  scheduledAt       DateTime
+  durationMin       Int      @default(45)
+  agenda            String?  @db.Text
+  location          String?
+  meetingUrl        String?
+  status            String   @default("scheduled") // scheduled | done | cancelled | no_show
+  createdAt         DateTime @default(now())
   // External calendar push state — see CALENDAR_FEATURE.md §11.2. When set,
   // (externalAccountId, externalEventId) is the unique handle on the
   // provider's side so we know which event to PATCH/DELETE.
@@ -472,8 +498,8 @@ model Interview {
   syncStatus        String   @default("pending") // pending | ok | error | manual
   syncError         String?  @db.Text
 
-  workspace    Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  application  Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  workspace    Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  application  Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   participants InterviewParticipant[]
   debrief      InterviewDebrief?
 
@@ -514,49 +540,127 @@ model InterviewDebrief {
   pros        String?  @db.Text
   cons        String?  @db.Text
   sentiment   String   @default("neutral") // positive | neutral | negative | mixed
-  rating      Int?     // 1..5
-  recommend   String?  // strong_yes | yes | maybe | no | strong_no
+  rating      Int? // 1..5 — overall interview rating
+  recommend   String? // strong_yes | yes | maybe | no | strong_no
+  // Interview kit this debrief was scored against (nullable = free-form
+  // debrief with no kit). SetNull so deleting a kit template doesn't wipe
+  // historical feedback — the per-criterion answers live in `criteria`.
+  kitId       String?
+  // Snapshot of the kit's criteria + this author's answers, captured at
+  // save time so the debrief stays readable even if the kit is later
+  // edited or removed. Shape:
+  //   [{ itemId, label, kind: "rating"|"text"|"yesno", score?, text?, yesno? }]
+  criteria    Json     @default("[]")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  author    User      @relation(fields: [authorId], references: [id])
+  interview Interview     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  author    User          @relation(fields: [authorId], references: [id])
+  kit       InterviewKit? @relation(fields: [kitId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, createdAt])
+  @@index([kitId])
+}
+
+// ─── Interview kits (scorecard templates) ─────────────────────────────
+// A named set of evaluation criteria the hiring team scores a candidate
+// against. Workspace-level templates, optionally the default kit for a
+// pipeline stage (stageKey). Interviewers fill one in via the debrief;
+// the answers snapshot onto InterviewDebrief.criteria. Managed in
+// Settings → Interview kits (admin only).
+model InterviewKit {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?  @db.Text
+  // Default kit for a pipeline stage (matches Stage.key). Null = general
+  // kit, selectable for any interview. Not unique — a stage can have more
+  // than one kit; the debrief modal defaults to the first for the stage.
+  stageKey    String?
+  archived    Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  items     InterviewKitItem[]
+  debriefs  InterviewDebrief[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, stageKey])
+}
+
+model InterviewKitItem {
+  id       String  @id @default(cuid())
+  kitId    String
+  label    String
+  hint     String? @db.Text // guidance shown to the interviewer
+  kind     String  @default("rating") // rating | text | yesno
+  position Int     @default(0)
+
+  kit InterviewKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
+  @@index([kitId])
+}
+
+// ─── Ratings (quick per-application star reviews) ──────────────────────
+// A lightweight 1–5 star assessment of an application by a team member,
+// distinct from the structured InterviewDebrief. One rating per (author,
+// application) — upserted, so a reviewer revising their score updates in
+// place. Cards/lists/profile show the workspace average + count.
+model Rating {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  applicationId String
+  candidateId   String // denormalized so "top rated" candidate queries skip the join
+  authorId      String
+  score         Int // 1..5
+  comment       String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  candidate   Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, authorId])
+  @@index([workspaceId, applicationId])
+  @@index([candidateId])
 }
 
 // ─── Career site content ──────────────────────────────────────────────
 model CareerSite {
-  workspaceId  String   @id
-  brand        Json     @default("{}")
-  hero         Json     @default("{}")
-  about        Json     @default("{}")
-  values       Json     @default("[]")
-  offices      Json     @default("[]") // [{ city, country, address, employees }]
-  stories      Json     @default("[]") // [{ name, role, years, quote, photoUrl }]
-  cta          Json     @default("{}")
-  footer       Json     @default("{}")
-  customDomain String?  // careers.example.com
+  workspaceId  String    @id
+  brand        Json      @default("{}")
+  hero         Json      @default("{}")
+  about        Json      @default("{}")
+  values       Json      @default("[]")
+  offices      Json      @default("[]") // [{ city, country, address, employees }]
+  stories      Json      @default("[]") // [{ name, role, years, quote, photoUrl }]
+  cta          Json      @default("{}")
+  footer       Json      @default("{}")
+  customDomain String? // careers.example.com
   verifiedAt   DateTime?
   publishedAt  DateTime?
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime  @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 // ─── AI ───────────────────────────────────────────────────────────────
 model AIConfig {
-  workspaceId    String  @id
-  provider       String  @default("anthropic") // anthropic | openai | google | ollama
-  apiKeyEncrypted String?
-  baseUrl        String? // ollama base URL (e.g. http://localhost:11434); ignored for hosted providers
-  model          String  @default("claude-sonnet-4-5")
-  features       Json    @default("{}") // {summary: true, draft: true, jd: true, screen: true, rejection: true, recap: true, pulse: true, ...}
-  redactPII      Boolean @default(true)
-  noLog          Boolean @default(true)
-  cacheEnabled   Boolean @default(true)
-  tokensUsed     Int     @default(0)
-  tokensQuota    Int     @default(100000)
+  workspaceId              String   @id
+  provider                 String   @default("anthropic") // anthropic | openai | google | ollama
+  apiKeyEncrypted          String?
+  baseUrl                  String? // ollama base URL (e.g. http://localhost:11434); ignored for hosted providers
+  model                    String   @default("claude-sonnet-4-5")
+  features                 Json     @default("{}") // {summary: true, draft: true, jd: true, screen: true, rejection: true, recap: true, pulse: true, ...}
+  redactPII                Boolean  @default(true)
+  noLog                    Boolean  @default(true)
+  cacheEnabled             Boolean  @default(true)
+  tokensUsed               Int      @default(0)
+  tokensQuota              Int      @default(100000)
   // Rich recap settings — see RECAP_FEATURE.md §11. Lives in its own Json
   // blob because we need nested shapes (timing, thresholds, recipients) that
   // don't fit the boolean-flag-only `features` map.
@@ -566,7 +670,7 @@ model AIConfig {
   //   thresholds?: { staleStageDays: number, awaitingReplyHours: number, retentionWarningDays: number },
   //   recipients?: string[] // user ids; null/undefined = all owners+admins
   // }
-  recapSettings  Json    @default("{}")
+  recapSettings            Json     @default("{}")
   // Rich review-queue settings — see REVIEW_QUEUE_FEATURE.md §6. Same JSON-blob
   // pattern as recapSettings so the rule shape can evolve without migrations.
   // Shape: {
@@ -576,45 +680,45 @@ model AIConfig {
   //   excludeRules?: ExcludeRule[],
   //   aiOverlay?: { enabled: bool, maxItems: 1-4 },
   // }
-  reviewRules    Json    @default("{}")
+  reviewRules              Json     @default("{}")
   // CALENDAR_FEATURE.md §5 — follow-up SLAs that feed both the calendar
   // chip strip and the review queue thresholds.
-  followupReplyHours      Int @default(24)
-  followupDecideHours     Int @default(48)
-  followupRejectionHours  Int @default(24)
-  followupDebriefHours    Int @default(4)
-  followupOfferNudgeDays  Int @default(3)
-  followupReferenceSlaDays Int @default(5)
-  updatedAt      DateTime @updatedAt
+  followupReplyHours       Int      @default(24)
+  followupDecideHours      Int      @default(48)
+  followupRejectionHours   Int      @default(24)
+  followupDebriefHours     Int      @default(4)
+  followupOfferNudgeDays   Int      @default(3)
+  followupReferenceSlaDays Int      @default(5)
+  updatedAt                DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 // ─── Email integration (IMAP/SMTP) ────────────────────────────────────
 model EmailAccount {
-  workspaceId           String   @id
+  workspaceId           String    @id
   // IMAP — inbound
   imapHost              String
-  imapPort              Int      @default(993)
+  imapPort              Int       @default(993)
   imapUser              String
-  imapPasswordEncrypted String   @db.Text
-  imapTls               Boolean  @default(true)
+  imapPasswordEncrypted String    @db.Text
+  imapTls               Boolean   @default(true)
   // SMTP — outbound
   smtpHost              String
-  smtpPort              Int      @default(587)
+  smtpPort              Int       @default(587)
   smtpUser              String
-  smtpPasswordEncrypted String   @db.Text
-  smtpTls               Boolean  @default(true)
+  smtpPasswordEncrypted String    @db.Text
+  smtpTls               Boolean   @default(true)
   // From identity
   fromAddress           String
   fromName              String?
   // State
-  enabled               Boolean  @default(true)
+  enabled               Boolean   @default(true)
   lastPolledAt          DateTime?
-  lastError             String?  @db.Text
-  lastUid               Int      @default(0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  lastError             String?   @db.Text
+  lastUid               Int       @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
@@ -624,7 +728,7 @@ model Notification {
   id          String   @id @default(cuid())
   workspaceId String
   userId      String
-  kind        String   // application | reply | mention | offer | interview | ai | system
+  kind        String // application | reply | mention | offer | interview | ai | system
   title       String
   body        String
   icon        String   @default("Bell")
@@ -637,6 +741,9 @@ model Notification {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, userId, read])
+  // The bell/panel reads a user's notifications newest-first; the read-only
+  // index above doesn't serve the createdAt sort.
+  @@index([workspaceId, userId, createdAt])
 }
 
 model Activity {
@@ -644,7 +751,7 @@ model Activity {
   workspaceId String
   actorId     String?
   actorName   String?
-  kind        String   // moved | noted | scheduled | applied | ai | published
+  kind        String // moved | noted | scheduled | applied | ai | published
   body        String   @db.Text
   candidateId String?
   jobId       String?
@@ -666,11 +773,11 @@ model CareerSiteEvent {
   id          String   @id @default(cuid())
   workspaceId String
   jobId       String?
-  kind        String   // page_view | form_start | form_submit | apply_complete
-  sessionId   String?  // anon visitor session (cookie set on first hit)
-  country     String?  // ISO 3166-1 alpha-2, from request headers
+  kind        String // page_view | form_start | form_submit | apply_complete
+  sessionId   String? // anon visitor session (cookie set on first hit)
+  country     String? // ISO 3166-1 alpha-2, from request headers
   referrer    String?
-  path        String?  // e.g. /jobs/senior-product-designer
+  path        String? // e.g. /jobs/senior-product-designer
   // Coarse device class derived from the User-Agent at write time:
   //   desktop | mobile | tablet | bot
   // Stored as a column (instead of computed on read) so the analytics
@@ -697,7 +804,7 @@ model CareerSiteEvent {
 // reader picks up a fresh summary even if the hour hasn't elapsed.
 model AnalyticsSummaryCache {
   workspaceId String
-  rangeDays   Int      // 7 | 30
+  rangeDays   Int // 7 | 30
   metricsHash String
   // Insight[] — { tone: "good" | "risk" | "neutral", body: string }
   insights    Json     @default("[]")
@@ -721,11 +828,11 @@ model AnalyticsSummaryCache {
 model CandidateStageHistory {
   id            String   @id @default(cuid())
   workspaceId   String
-  applicationId String?  // null = the application has been deleted/anonymized
-  candidateId   String?  // null = the candidate has been deleted/anonymized
+  applicationId String? // null = the application has been deleted/anonymized
+  candidateId   String? // null = the candidate has been deleted/anonymized
   jobId         String
-  fromStageId   String?  // null on the initial create
-  toStageId     String?  // null on archive/delete
+  fromStageId   String? // null on the initial create
+  toStageId     String? // null on archive/delete
   fromStageKey  String?
   toStageKey    String?
   actorId       String?
@@ -752,11 +859,11 @@ model SentimentResult {
   workspaceId String
   candidateId String?
   messageId   String   @unique
-  sentiment   String   // positive | neutral | negative | mixed
+  sentiment   String // positive | neutral | negative | mixed
   concerns    Json     @default("[]") // string[] from a fixed enum
   confidence  Float    @default(0)
-  model       String   // e.g. claude-sonnet-4-5 — the provider model used
-  promptHash  String   // sha-256 of system+user prompt, for reproducibility
+  model       String // e.g. claude-sonnet-4-5 — the provider model used
+  promptHash  String // sha-256 of system+user prompt, for reproducibility
   createdAt   DateTime @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -770,38 +877,38 @@ model SentimentResult {
 // encrypted at rest with the same KMS path as EmailAccount. See
 // CALENDAR_FEATURE.md §11.1.
 model CalendarAccount {
-  id                    String   @id @default(cuid())
+  id                    String    @id @default(cuid())
   workspaceId           String
   userId                String
-  provider              String   // google | microsoft | caldav
+  provider              String // google | microsoft | caldav
   email                 String
   displayName           String?
   // OAuth (google, microsoft) — encrypted blobs
-  accessTokenEnc        String?  @db.Text
-  refreshTokenEnc       String?  @db.Text
+  accessTokenEnc        String?   @db.Text
+  refreshTokenEnc       String?   @db.Text
   tokenExpiresAt        DateTime?
   // CalDAV — basic-auth password, encrypted
-  passwordEnc           String?  @db.Text
+  passwordEnc           String?   @db.Text
   serverUrl             String?
   // Provider-specific identifiers
-  homeAccountId         String?  // microsoft MSAL silent-cache key
-  defaultCalendarId     String?  // google / microsoft
-  defaultCalendarUrl    String?  // caldav
+  homeAccountId         String? // microsoft MSAL silent-cache key
+  defaultCalendarId     String? // google / microsoft
+  defaultCalendarUrl    String? // caldav
   // Sync state
-  syncToken             String?  // google
-  deltaLink             String?  @db.Text // microsoft
-  ctag                  String?  // caldav
+  syncToken             String? // google
+  deltaLink             String?   @db.Text // microsoft
+  ctag                  String? // caldav
   webhookChannelId      String?
   webhookResourceId     String?
   subscriptionId        String?
   subscriptionExpiresAt DateTime?
-  pollIntervalSec       Int      @default(300)
+  pollIntervalSec       Int       @default(300)
   lastPolledAt          DateTime?
-  lastError             String?  @db.Text
-  consecutiveErrors     Int      @default(0)
-  enabled               Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  lastError             String?   @db.Text
+  consecutiveErrors     Int       @default(0)
+  enabled               Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   workspace Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -819,16 +926,16 @@ model CalendarAccount {
 // conflicts. `kind = vellum_owned_echo` is our own event coming back
 // to us via the provider's change feed; the merge step (§4.2) drops it.
 model CalendarEventMirror {
-  id          String   @id @default(cuid())
-  accountId   String
-  externalId  String
-  kind        String   @default("busy") // busy | event | vellum_owned_echo
-  startsAt    DateTime
-  endsAt      DateTime
-  title       String?
-  location    String?
-  url         String?
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  accountId  String
+  externalId String
+  kind       String   @default("busy") // busy | event | vellum_owned_echo
+  startsAt   DateTime
+  endsAt     DateTime
+  title      String?
+  location   String?
+  url        String?
+  updatedAt  DateTime @updatedAt
 
   account CalendarAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
@@ -840,14 +947,14 @@ model CalendarEventMirror {
 // Async outbox for Vellum-initiated mutations. The calendar-sync-worker
 // drains this every minute. Retries with exponential backoff.
 model CalendarSyncJob {
-  id          String   @id @default(cuid())
-  accountId   String
-  kind        String   // push | patch | cancel | mirror_pull | freebusy_refresh | renew_subscription
-  payload     Json     @default("{}")
-  attempts    Int      @default(0)
-  lastError   String?  @db.Text
-  nextRunAt   DateTime @default(now())
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  accountId String
+  kind      String // push | patch | cancel | mirror_pull | freebusy_refresh | renew_subscription
+  payload   Json     @default("{}")
+  attempts  Int      @default(0)
+  lastError String?  @db.Text
+  nextRunAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
   account CalendarAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
@@ -862,14 +969,14 @@ model CalendarSyncJob {
 model FollowUp {
   id            String   @id @default(cuid())
   workspaceId   String
-  userId        String   // who is on the hook
+  userId        String // who is on the hook
   applicationId String
   candidateId   String
-  kind          String   // reply | decide | send_rejection | debrief | reference | nudge_offer | ai_suggested
+  kind          String // reply | decide | send_rejection | debrief | reference | nudge_offer | ai_suggested
   dueAt         DateTime
   reason        String   @db.Text
   state         String   @default("active") // active | dismissed | done
-  source        String   @default("rule")   // rule | ai
+  source        String   @default("rule") // rule | ai
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -883,4 +990,38 @@ model FollowUp {
   @@unique([userId, applicationId, kind])
   @@index([userId, state, dueAt])
   @@index([workspaceId, dueAt])
+}
+
+// ─── To-dos (manual tasks) ────────────────────────────────────────────
+// User-created tasks, distinct from FollowUp (which the worker derives from
+// pipeline state). A recruiter assigns a to-do to themselves or a teammate,
+// optionally pinned to a candidate/application. Surfaced in the top-bar
+// popover (My / Assigned tabs), the dashboard widget, and the candidate
+// drawer's To-dos tab.
+model Todo {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  creatorId     String
+  assigneeId    String
+  title         String    @db.Text
+  done          Boolean   @default(false)
+  dueAt         DateTime?
+  doneAt        DateTime?
+  candidateId   String?
+  applicationId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator     User         @relation("todosCreated", fields: [creatorId], references: [id], onDelete: Cascade)
+  assignee    User         @relation("todosAssigned", fields: [assigneeId], references: [id], onDelete: Cascade)
+  // Candidate-scoped to-dos are cleaned up with the candidate; the (rarer)
+  // application link is detached so a to-do survives one application being
+  // removed while the candidate stays.
+  candidate   Candidate?   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, assigneeId, done, dueAt])
+  @@index([workspaceId, creatorId, done])
+  @@index([candidateId])
 }

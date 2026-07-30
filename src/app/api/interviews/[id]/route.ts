@@ -104,21 +104,23 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     }
   }
 
-  await db.activity.create({
-    data: {
-      workspaceId: workspace.id,
-      actorId: user.id,
-      actorName: user.name || user.email,
-      kind: parsed.data.status === "cancelled" ? "cancelled" : "scheduled",
-      icon: "Calendar",
-      body:
-        parsed.data.status === "cancelled"
-          ? `Interview with ${iv.application.candidate.name} cancelled`
-          : `Interview with ${iv.application.candidate.name} updated`,
-      candidateId: iv.application.candidateId,
-      jobId: iv.application.jobId,
-    },
-  });
+  await db.activity
+    .create({
+      data: {
+        workspaceId: workspace.id,
+        actorId: user.id,
+        actorName: user.name || user.email,
+        kind: parsed.data.status === "cancelled" ? "cancelled" : "scheduled",
+        icon: "Calendar",
+        body:
+          parsed.data.status === "cancelled"
+            ? `Interview with ${iv.application.candidate.name} cancelled`
+            : `Interview with ${iv.application.candidate.name} updated`,
+        candidateId: iv.application.candidateId,
+        jobId: iv.application.jobId,
+      },
+    })
+    .catch(() => null);
 
   return NextResponse.json({ ok: true });
 }
@@ -145,17 +147,19 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
 
   await db.interview.delete({ where: { id } });
 
-  await db.activity.create({
-    data: {
-      workspaceId: workspace.id,
-      actorId: user.id,
-      actorName: user.name || user.email,
-      kind: "cancelled",
-      icon: "Calendar",
-      body: `Interview with ${iv.application.candidate.name} deleted`,
-      candidateId: iv.application.candidateId,
-      jobId: iv.application.jobId,
-    },
-  });
+  await db.activity
+    .create({
+      data: {
+        workspaceId: workspace.id,
+        actorId: user.id,
+        actorName: user.name || user.email,
+        kind: "cancelled",
+        icon: "Calendar",
+        body: `Interview with ${iv.application.candidate.name} deleted`,
+        candidateId: iv.application.candidateId,
+        jobId: iv.application.jobId,
+      },
+    })
+    .catch(() => null);
   return NextResponse.json({ ok: true });
 }

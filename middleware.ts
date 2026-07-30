@@ -4,17 +4,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAppHost } from "@/lib/app-host";
 
-const PUBLIC_PATHS = [
-  "/_next",
-  "/api",
-  "/favicon.ico",
-  "/uploads",
-  "/login",
-  "/signup",
-  "/invite",
-  "/onboarding",
-];
-
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
   const url = req.nextUrl.clone();

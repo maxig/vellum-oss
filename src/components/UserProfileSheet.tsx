@@ -29,6 +29,7 @@ type NotificationPrefs = {
   emailInterviewReminder: boolean;
   emailFollowedCandidate: boolean;
   emailWeeklyDigest: boolean;
+  notifyTodoAssigned: boolean;
   pushDesktop: boolean;
   soundsOn: boolean;
   dnd: boolean;
@@ -41,6 +42,7 @@ const NOTIFICATION_DEFAULTS: NotificationPrefs = {
   emailInterviewReminder: true,
   emailFollowedCandidate: false,
   emailWeeklyDigest: true,
+  notifyTodoAssigned: true,
   pushDesktop: false,
   soundsOn: true,
   dnd: false,
@@ -359,6 +361,12 @@ export default function UserProfileSheet({
               />
 
               <h4 style={{ marginTop: 22, marginBottom: 8 }}>In-app</h4>
+              <UPToggle
+                title="Someone assigns you a to-do"
+                sub="Shows in your notifications panel"
+                on={notif.notifyTodoAssigned}
+                onChange={(v) => setNotifKey("notifyTodoAssigned", v)}
+              />
               <UPToggle
                 title="Desktop push notifications"
                 on={notif.pushDesktop}

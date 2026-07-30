@@ -26,7 +26,7 @@ const Patch = z.object({
   workingHours: z.string().max(120).nullish(),
   bio: z.string().max(2000).nullish(),
   signature: z.string().max(2000).nullish(),
-  password: z.string().min(6).optional(),
+  password: z.string().min(10, "Password must be at least 10 characters").optional(),
   notifications: z.record(z.string(), z.union([z.boolean(), z.string()])).optional(),
 });
 

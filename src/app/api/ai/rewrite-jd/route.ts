@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/workspace";
+import { aiRateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { rewriteJobDescription } from "@/lib/ai";
 
@@ -19,7 +20,9 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user } = await requireWorkspace();
+  const rl = aiRateLimit(workspace.id, user.id);
+  if (!rl.ok) return NextResponse.json({ error: "Too many AI requests." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(

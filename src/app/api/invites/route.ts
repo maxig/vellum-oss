@@ -32,6 +32,10 @@ export async function POST(req: Request) {
   });
 
   const url = `${process.env.APP_ORIGIN || "http://localhost:3000"}/invite/${token}`;
-  console.log(`\n[vellum] 📨 INVITE for ${email} to ${workspace.name}:\n   ${url}\n`);
+  // Dev convenience only — the invite URL is a bearer token, so never write it
+  // to production logs (it's already returned in the response for the UI).
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`\n[vellum] 📨 INVITE for ${email} to ${workspace.name}:\n   ${url}\n`);
+  }
   return NextResponse.json({ id: invite.id, token, url });
 }

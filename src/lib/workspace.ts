@@ -36,7 +36,7 @@ export async function currentWorkspaceId(): Promise<string | null> {
 
 export async function setCurrentWorkspaceCookie(workspaceId: string) {
   const c = await cookies();
-  c.set(COOKIE, workspaceId, { httpOnly: false, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 90 });
+  c.set(COOKIE, workspaceId, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 90 });
 }
 
 export async function requireWorkspace() {
@@ -44,7 +44,7 @@ export async function requireWorkspace() {
   if (!user.memberships.length) redirect("/onboarding");
 
   const wanted = await currentWorkspaceId();
-  let membership =
+  const membership =
     user.memberships.find((m) => m.workspaceId === wanted) ?? user.memberships[0];
 
   if (!membership) redirect("/onboarding");

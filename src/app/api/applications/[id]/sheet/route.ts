@@ -3,6 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { requireWorkspace } from "@/lib/workspace";
+import { canReadApplication } from "@/lib/permissions";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +11,16 @@ export const dynamic = "force-dynamic";
 // GET /api/applications/[id]/sheet
 // Returns everything ProfileSheet needs in one round-trip.
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user, membership } = await requireWorkspace();
   const { id } = await params;
+
+  // Per-member read gate: this route returns the candidate's resume text,
+  // private notes, the full email thread, interviews and ratings — the same
+  // rule the resume-file and rating routes enforce. Without it any member
+  // could read every candidate across teams (ROLES.md §3.3).
+  if (!(await canReadApplication(user.id, id, workspace.id, membership.role))) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
 
   const app = await db.application.findFirst({
     where: { id, workspaceId: workspace.id },
@@ -32,8 +41,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         orderBy: { scheduledAt: "asc" },
         include: {
           participants: { include: { user: { select: { id: true, name: true, email: true } } } },
-          debrief: { include: { author: { select: { id: true, name: true, email: true } } } },
+          debrief: {
+            include: {
+              author: { select: { id: true, name: true, email: true } },
+              kit: { select: { id: true, name: true } },
+            },
+          },
         },
+      },
+      ratings: {
+        orderBy: { updatedAt: "desc" },
+        include: { author: { select: { id: true, name: true, email: true } } },
       },
     },
   });
@@ -51,6 +69,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     where: { workspaceId: workspace.id, candidateId: app.candidateId },
     orderBy: { createdAt: "desc" },
     take: 24,
+  });
+
+  // Open-todo count for the drawer's To-dos tab badge (the tab fetches the
+  // full list itself so it can refresh on add/toggle without a sheet reload).
+  const todosOpen = await db.todo.count({
+    where: { workspaceId: workspace.id, candidateId: app.candidateId, done: false },
   });
 
   return NextResponse.json({
@@ -75,6 +99,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       screeningQuestions: app.job.screening.map((q) => ({ id: q.id, label: q.label, kind: q.kind })),
       screeningAnswers: normalizeJsonObject(app.screeningAnswers),
       archived: app.archived,
+      outcome: app.outcome,
+      rejectReason: app.rejectReason,
       appliedAt: app.appliedAt.toISOString(),
       updatedAt: app.updatedAt.toISOString(),
     },
@@ -123,12 +149,23 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             sentiment: iv.debrief.sentiment,
             rating: iv.debrief.rating,
             recommend: iv.debrief.recommend,
+            kitId: iv.debrief.kitId,
+            kitName: iv.debrief.kit?.name || null,
+            criteria: normalizeCriteria(iv.debrief.criteria),
             authorId: iv.debrief.authorId,
             authorName: iv.debrief.author.name || iv.debrief.author.email,
             updatedAt: iv.debrief.updatedAt.toISOString(),
           }
         : null,
       status: iv.status,
+    })),
+    ratings: app.ratings.map((r) => ({
+      id: r.id,
+      authorId: r.authorId,
+      authorName: r.author.name || r.author.email,
+      score: r.score,
+      comment: r.comment,
+      updatedAt: r.updatedAt.toISOString(),
     })),
     notes: app.candidate.notes.map((n) => ({
       id: n.id,
@@ -157,6 +194,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       actorName: a.actorName,
       createdAt: a.createdAt.toISOString(),
     })),
+    todosOpen,
   });
 }
 
@@ -166,4 +204,12 @@ function normalizeStringArray(value: unknown) {
 
 function normalizeJsonObject(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+// InterviewDebrief.criteria — the snapshotted per-criterion answers.
+// Shape: [{ itemId, label, kind, score?, text?, yesno? }]. Kept loose;
+// the client renders defensively.
+function normalizeCriteria(value: unknown) {
+  if (!Array.isArray(value)) return [] as Record<string, unknown>[];
+  return value.filter((v): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v));
 }

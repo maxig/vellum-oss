@@ -7,6 +7,7 @@ import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { encryptSecret } from "@/lib/crypto";
 import { probeAccount } from "@/lib/caldav";
+import { assertPublicUrl, SsrfError } from "@/lib/ssrf";
 
 const Body = z.object({
   serverUrl: z.string().url(),
@@ -26,6 +27,17 @@ const ProbeBody = z.object({
 export async function POST(req: Request) {
   const { workspace, user } = await requireWorkspace();
   const json = await req.json().catch(() => ({}));
+
+  // SSRF guard: the server is about to connect to this URL. Reject targets that
+  // resolve to private/link-local/reserved ranges before probing or persisting.
+  if (typeof json.serverUrl === "string" && json.serverUrl) {
+    try {
+      await assertPublicUrl(json.serverUrl);
+    } catch (e) {
+      const msg = e instanceof SsrfError ? e.message : "Invalid server URL";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+  }
 
   // If no defaultCalendarUrl is provided, treat this as a probe + return the list.
   if (!json.defaultCalendarUrl) {

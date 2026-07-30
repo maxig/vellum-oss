@@ -73,6 +73,34 @@ export async function canReadApplication(
 }
 
 /**
+ * Can this user read this candidate's data (Pulse, AI summary, to-dos,
+ * thread drafts)? Candidate-level analogue of canReadApplication: true when
+ * they're an admin, or connected to ANY of the candidate's applications
+ * (reviewer, hiring team, or interviewer). One indexed query.
+ */
+export async function canReadCandidate(
+  userId: string,
+  candidateId: string,
+  workspaceId: string,
+  role: Role | string,
+): Promise<boolean> {
+  if (isAdmin(role)) return true;
+  const app = await db.application.findFirst({
+    where: {
+      candidateId,
+      workspaceId,
+      OR: [
+        { reviewerId: userId },
+        { job: { hiringTeam: { some: { userId } } } },
+        { interviews: { some: { participants: { some: { userId } } } } },
+      ],
+    },
+    select: { id: true },
+  });
+  return !!app;
+}
+
+/**
  * Can this user write to the application (move stages, archive,
  * change reviewer)? Stricter than read:
  *   - admins/owners always can

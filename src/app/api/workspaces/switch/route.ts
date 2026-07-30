@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   if (!membership) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const c = await cookies();
-  c.set("vellum_ws", parsed.data.workspaceId, { httpOnly: false, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 90 });
+  c.set("vellum_ws", parsed.data.workspaceId, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 90 });
   await db.userPreference.upsert({
     where: { userId: session.user.id },
     create: { userId: session.user.id, lastWorkspace: parsed.data.workspaceId },

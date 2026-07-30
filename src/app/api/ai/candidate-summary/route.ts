@@ -4,6 +4,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWorkspace } from "@/lib/workspace";
+import { canReadApplication } from "@/lib/permissions";
+import { aiRateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { summarizeCandidate } from "@/lib/ai";
 
@@ -13,13 +15,21 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user, membership } = await requireWorkspace();
+  const rl = aiRateLimit(workspace.id, user.id);
+  if (!rl.ok) return NextResponse.json({ error: "Too many AI requests." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(
       { error: "candidate-summary expects { candidateId, applicationId }.", details: parsed.error.flatten() },
       { status: 400 },
     );
+  }
+
+  // A member can only summarize (and overwrite the stored summary of) an
+  // application they're connected to — this feeds resume PII to the AI.
+  if (!(await canReadApplication(user.id, parsed.data.applicationId, workspace.id, membership.role))) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
   const app = await db.application.findFirst({

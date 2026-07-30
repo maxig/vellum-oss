@@ -191,9 +191,9 @@ export async function pollWorkspaceInbox(workspaceId: string): Promise<{ ingeste
   }
 
   const client = imapClient(acctRow);
-  let ingested = 0;
-  let highestUid = acctRow.lastUid;
-  let checked = 0;
+  const ingested = 0;
+  const highestUid = acctRow.lastUid;
+  const checked = 0;
 
   // Resolve the lower bound for this scan.
   //   - last polled  → lastPolledAt - 1h grace window
@@ -287,7 +287,6 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
         tag = `[email-poll/${workspaceId}]`;
   let checked = 0, ingested = 0;
 
-  console.log('Email msg=', JSON.stringify(msg));
   if (Number.isNaN(uid)) return;
   // Belt-and-braces filter: drop anything older than our grace window
   // regardless of what the IMAP server returned, since SINCE is fuzzy.
@@ -314,8 +313,12 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
       return;
     }
 
-    // Dedupe by external message-id, then ingest.
-    const already = await db.message.findFirst({ where: { externalMessageId: messageId } });
+    // Dedupe by external message-id — scoped to THIS workspace. A global lookup
+    // would let the same Message-ID (mailing lists, shared threads, BCC) that
+    // legitimately arrives in two tenants get silently dropped in the second.
+    const already = await db.message.findFirst({
+      where: { externalMessageId: messageId, thread: { workspaceId } },
+    });
     if (already) {
       console.log(`${tag} uid=${uid} skip · already ingested as message ${already.id} (msgId=${messageId})`);
       return;
@@ -443,16 +446,29 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
     }
     if (!candidate) return;
 
-    const ingestedMsg = await db.message.create({
-      data: {
-        threadId: thread.id,
-        direction: "in",
-        body: (body || "").trim().slice(0, 20_000),
-        fromName: parsed.from?.value?.[0]?.name || candidate.name,
-        externalMessageId: messageId,
-        externalUid: uid,
-      },
-    });
+    let ingestedMsg;
+    try {
+      ingestedMsg = await db.message.create({
+        data: {
+          threadId: thread.id,
+          direction: "in",
+          body: (body || "").trim().slice(0, 20_000),
+          fromName: parsed.from?.value?.[0]?.name || candidate.name,
+          externalMessageId: messageId,
+          externalUid: uid,
+        },
+      });
+    } catch (e) {
+      // Unique (threadId, externalMessageId) violation → a concurrent poll won
+      // the race and already ingested this exact message. Idempotent skip, not
+      // an error: the find-first dedup above handles the common case; this
+      // catches the check-then-insert gap.
+      if ((e as { code?: string }).code === "P2002") {
+        console.log(`${tag} uid=${uid} skip · raced, already ingested (msgId=${messageId})`);
+        return;
+      }
+      throw e;
+    }
 
     await db.thread.update({
       where: { id: thread.id },

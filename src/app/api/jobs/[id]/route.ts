@@ -74,7 +74,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // Always clear `closedAt` when transitioning back to Open or Draft so the
   // closed-at timestamp can't go stale after a Closed → Draft → Open cycle.
   if (body.data.status === "Open" || body.data.status === "Draft") data.closedAt = null;
-  if (leadReviewerId !== undefined) data.leadReviewerId = leadReviewerId;
+  if (leadReviewerId !== undefined) {
+    // Reject a leadReviewerId that isn't a member of this workspace — the FK
+    // is to User (not workspace-constrained), so an unvalidated id could point
+    // at a user in another workspace.
+    if (leadReviewerId) {
+      const ok = await db.membership.findFirst({
+        where: { workspaceId: workspace.id, userId: leadReviewerId },
+        select: { userId: true },
+      });
+      if (!ok) return NextResponse.json({ error: "lead reviewer must be a workspace member" }, { status: 400 });
+    }
+    data.leadReviewerId = leadReviewerId;
+  }
 
   await db.job.update({ where: { id }, data });
 
@@ -82,10 +94,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // works whether the caller passes the field or not, and so a bad
   // userId in the list doesn't roll back the rest of the patch.
   if (hiringTeam) {
+    // Only keep userIds that are actually members of this workspace, so a
+    // client can't attach phantom/foreign ACL rows (mirrors interviews/route).
+    const memberIds = new Set(
+      (
+        await db.membership.findMany({
+          where: { workspaceId: workspace.id, userId: { in: hiringTeam.map((m) => m.userId) } },
+          select: { userId: true },
+        })
+      ).map((m) => m.userId),
+    );
+    const validTeam = hiringTeam.filter((m) => memberIds.has(m.userId));
     await db.$transaction([
       db.jobHiringTeamMember.deleteMany({ where: { jobId: id } }),
       db.jobHiringTeamMember.createMany({
-        data: hiringTeam.map((m) => ({ jobId: id, userId: m.userId, role: m.role })),
+        data: validTeam.map((m) => ({ jobId: id, userId: m.userId, role: m.role })),
         skipDuplicates: true,
       }),
     ]);

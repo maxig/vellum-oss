@@ -13,12 +13,28 @@ import { parseResume } from "@/lib/resume";
 import { isAIEnabled, summarizeCandidate, extractResumeProfile } from "@/lib/ai";
 import { recordCareerEvent } from "@/lib/career-events";
 import { recordStageMove } from "@/lib/stage-history";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "/app/uploads";
+// Resumes are parsed and fed to a paid AI call, so bound what we accept.
+const MAX_RESUME_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_RESUME_EXT = new Set(["pdf", "doc", "docx", "txt", "rtf", "odt"]);
 
 export async function POST(req: Request) {
+  // This endpoint is unauthenticated and does real work per call: writes a file
+  // to disk, runs AI enrichment/summary, and sends SMTP mail. Throttle by IP so
+  // it can't be turned into a spam / disk-fill / AI-cost-drain vector.
+  const ip = clientIp(req);
+  const ipLimit = rateLimit(`apply:ip:${ip}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+  if (!ipLimit.ok) {
+    return NextResponse.json(
+      { error: "Too many applications from this network. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSec) } },
+    );
+  }
+
   const form = await req.formData().catch(() => null);
   if (!form) return NextResponse.json({ error: "bad form" }, { status: 400 });
 
@@ -46,6 +62,31 @@ export async function POST(req: Request) {
   const resume = form.get("resume") as File | null;
 
   if (!name || !email || !jobId) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+
+  // Stricter cap for repeated submissions to the *same* job from one IP — a few
+  // are legitimate (re-applying with an updated CV), a flood is not.
+  const jobLimit = rateLimit(`apply:ipjob:${ip}:${jobId}`, { limit: 3, windowMs: 60 * 60 * 1000 });
+  if (!jobLimit.ok) {
+    return NextResponse.json(
+      { error: "You've already applied to this role recently. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(jobLimit.retryAfterSec) } },
+    );
+  }
+
+  // Validate the upload before doing any work — bound size (it gets parsed and
+  // sent to a paid AI call) and reject formats we can't handle.
+  if (resume && resume.size > 0) {
+    if (resume.size > MAX_RESUME_BYTES) {
+      return NextResponse.json({ error: "Resume exceeds the 10 MB limit." }, { status: 400 });
+    }
+    const ext = (resume.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!ALLOWED_RESUME_EXT.has(ext)) {
+      return NextResponse.json(
+        { error: "Unsupported resume format. Upload a PDF, Word, or text document." },
+        { status: 400 },
+      );
+    }
+  }
 
   const job = await db.job.findUnique({ where: { id: jobId }, include: { workspace: true, screening: { orderBy: { position: "asc" } } } });
   if (!job || job.status !== "Open") return NextResponse.json({ error: "Job is not accepting applications" }, { status: 404 });
@@ -118,13 +159,6 @@ export async function POST(req: Request) {
     if (linkedin && linkedin !== candidate.linkedin) patch.linkedin = linkedin;
     if (portfolio && portfolio !== candidate.portfolio) patch.portfolio = portfolio;
     if (location && location !== candidate.location) patch.location = location;
-    console.log("[apply] returning candidate", {
-      id: candidate.id,
-      email: candidate.email,
-      form: { linkedin, portfolio, location },
-      stored: { linkedin: candidate.linkedin, portfolio: candidate.portfolio, location: candidate.location },
-      patch,
-    });
     if (Object.keys(patch).length) {
       candidate = await db.candidate.update({ where: { id: candidate.id }, data: patch });
     }
@@ -156,31 +190,97 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, duplicate: true, updated: !!resumeUrl });
   }
 
-  const application = await db.application.create({
-    data: {
-      workspaceId: job.workspaceId,
-      candidateId: candidate.id,
-      jobId: job.id,
-      stageId: appliedStage?.id || null,
-      // Default the per-application reviewer to whoever owns the job.
-      // Without this, every new application would land with no reviewer
-      // and never surface in the recruiter's Review Queue "Mine" view.
-      // Recruiters can reassign per-application from the candidate
-      // profile sheet.
-      reviewerId: job.leadReviewerId || null,
-      resumeUrl,
-      resumeName,
-      resumeText,
-      whyUs: whyUs || null,
-      screeningAnswers: screeningAnswers as any,
-      // GDPR consent is required by the apply form — record the timestamp
-      // so the recap `missing_consent` item can flag legacy gaps cleanly.
-      consentGivenAt: new Date(),
-    },
+  // Acknowledgement copy — computed up front so the whole core record
+  // (application + activity + notifications + ack thread + first message) can
+  // be written in one transaction below.
+  const subject = `${job.title} — application received`;
+  const ackBody = `Hi ${name.split(" ")[0] || name},
+
+Thanks for applying to the ${job.title} role at ${job.workspace.name}. We've received your application and will review it within a few business days. If your background looks like a fit we'll be in touch from this address to set up a first conversation.
+
+In the meantime, you don't need to do anything.
+
+— ${job.workspace.name} hiring team`;
+
+  const members = await db.membership.findMany({
+    where: { workspaceId: job.workspaceId },
+    select: { userId: true },
+  });
+
+  // Write the core record atomically. Previously these ran as independent
+  // awaited calls, so a failure midway could leave (e.g.) an application with
+  // no acknowledgement thread. The transaction makes it all-or-nothing.
+  const { application, thread } = await db.$transaction(async (tx) => {
+    const application = await tx.application.create({
+      data: {
+        workspaceId: job.workspaceId,
+        candidateId: candidate.id,
+        jobId: job.id,
+        stageId: appliedStage?.id || null,
+        // Default the per-application reviewer to whoever owns the job.
+        // Without this, every new application would land with no reviewer
+        // and never surface in the recruiter's Review Queue "Mine" view.
+        // Recruiters can reassign per-application from the candidate
+        // profile sheet.
+        reviewerId: job.leadReviewerId || null,
+        resumeUrl,
+        resumeName,
+        resumeText,
+        whyUs: whyUs || null,
+        screeningAnswers: screeningAnswers as any,
+        // GDPR consent is required by the apply form — record the timestamp
+        // so the recap `missing_consent` item can flag legacy gaps cleanly.
+        consentGivenAt: new Date(),
+      },
+    });
+
+    await tx.activity.create({
+      data: {
+        workspaceId: job.workspaceId,
+        actorName: name,
+        kind: "applied",
+        icon: "Users",
+        body: `${name} applied for ${job.title}`,
+        candidateId: candidate.id,
+        jobId: job.id,
+      },
+    });
+
+    if (members.length) {
+      await tx.notification.createMany({
+        data: members.map((m) => ({
+          workspaceId: job.workspaceId,
+          userId: m.userId,
+          kind: "application",
+          title: "New application",
+          body: `${name} applied for ${job.title}`,
+          candidateId: candidate.id,
+          jobId: job.id,
+          icon: "Users",
+        })),
+      });
+    }
+
+    const thread = await tx.thread.create({
+      data: {
+        workspaceId: job.workspaceId,
+        candidateId: candidate.id,
+        jobId: job.id,
+        subject,
+        lastAt: new Date(),
+      },
+    });
+    await tx.message.create({
+      data: { threadId: thread.id, direction: "system", body: ackBody },
+    });
+
+    return { application, thread };
   });
 
   // Stage history — `to_applied` from null. The recap relies on this for
   // stage_moves + median time-in-stage; the apply path is the genesis row.
+  // Kept outside the transaction: it's best-effort audit/recap data (uses the
+  // module db client) and must not roll back the core record if it hiccups.
   if (appliedStage) {
     await recordStageMove({
       workspaceId: job.workspaceId,
@@ -217,61 +317,6 @@ export async function POST(req: Request) {
     } catch (e) {
       console.warn("[apply] background summary failed:", (e as Error).message);
     }
-  });
-
-  // Activity + notification
-  await db.activity.create({
-    data: {
-      workspaceId: job.workspaceId,
-      actorName: name,
-      kind: "applied",
-      icon: "Users",
-      body: `${name} applied for ${job.title}`,
-      candidateId: candidate.id,
-      jobId: job.id,
-    },
-  });
-  const owners = await db.membership.findMany({ where: { workspaceId: job.workspaceId } });
-  for (const m of owners) {
-    await db.notification.create({
-      data: {
-        workspaceId: job.workspaceId,
-        userId: m.userId,
-        kind: "application",
-        title: "New application",
-        body: `${name} applied for ${job.title}`,
-        candidateId: candidate.id,
-        jobId: job.id,
-        icon: "Users",
-      },
-    });
-  }
-
-  // Also start a system-thread acknowledging receipt
-  const subject = `${job.title} — application received`;
-  const ackBody = `Hi ${name.split(" ")[0] || name},
-
-Thanks for applying to the ${job.title} role at ${job.workspace.name}. We've received your application and will review it within a few business days. If your background looks like a fit we'll be in touch from this address to set up a first conversation.
-
-In the meantime, you don't need to do anything.
-
-— ${job.workspace.name} hiring team`;
-
-  const thread = await db.thread.create({
-    data: {
-      workspaceId: job.workspaceId,
-      candidateId: candidate.id,
-      jobId: job.id,
-      subject,
-      lastAt: new Date(),
-    },
-  });
-  await db.message.create({
-    data: {
-      threadId: thread.id,
-      direction: "system",
-      body: ackBody,
-    },
   });
 
   // Send a transactional confirmation by SMTP when the workspace has email
@@ -338,19 +383,6 @@ async function enrichCandidateFromResume(
   }
 
   const profile = await extractResumeProfile(workspaceId, resumeText);
-  console.log("[apply.enrich] extracted", {
-    candidateId,
-    mocked: profile.mocked,
-    profile,
-    stored: {
-      currentRole: candidate.currentRole,
-      years: candidate.years,
-      location: candidate.location,
-      linkedin: candidate.linkedin,
-      github: candidate.github,
-      portfolio: candidate.portfolio,
-    },
-  });
   if (profile.mocked) return;
 
   const patch: {
@@ -374,7 +406,8 @@ async function enrichCandidateFromResume(
   }
 
   await db.candidate.update({ where: { id: candidateId }, data: patch });
-  console.log("[apply.enrich] patched", { candidateId, patch });
+  // Log which fields were filled, never their PII values.
+  console.log("[apply.enrich] patched", { candidateId, fields: Object.keys(patch) });
   await db.activity.create({
     data: {
       workspaceId,

@@ -9,6 +9,7 @@ import { Glass, Avatar, Icons } from "@/components/primitives";
 import { relativeTime } from "@/lib/utils";
 import { readCachedRecap } from "@/lib/recap";
 import RecapCard from "@/components/RecapCard";
+import DashboardTodos from "@/components/DashboardTodos";
 
 export const dynamic = "force-dynamic";
 
@@ -408,6 +409,8 @@ export default async function DashboardPage() {
               </div>
             )}
           </Glass>
+
+          <DashboardTodos />
 
           <Glass className="card" style={{ padding: 22 }}>
             <div className="row" style={{ marginBottom: 12, alignItems: "baseline" }}>

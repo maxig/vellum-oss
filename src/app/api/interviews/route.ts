@@ -82,18 +82,20 @@ export async function POST(req: Request) {
     },
   });
 
-  await db.activity.create({
-    data: {
-      workspaceId: workspace.id,
-      actorId: user.id,
-      actorName: user.name || user.email,
-      kind: "scheduled",
-      icon: "Calendar",
-      body: `Interview with ${app.candidate.name} · ${scheduledAt.toLocaleDateString()}`,
-      candidateId: app.candidateId,
-      jobId: app.jobId,
-    },
-  });
+  await db.activity
+    .create({
+      data: {
+        workspaceId: workspace.id,
+        actorId: user.id,
+        actorName: user.name || user.email,
+        kind: "scheduled",
+        icon: "Calendar",
+        body: `Interview with ${app.candidate.name} · ${scheduledAt.toLocaleDateString()}`,
+        candidateId: app.candidateId,
+        jobId: app.jobId,
+      },
+    })
+    .catch(() => null);
 
   // ── Calendar invite + email ──────────────────────────────────────────────
   // Honour both the per-action "Send now" toggle and the workspace-level

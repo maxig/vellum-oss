@@ -6,6 +6,7 @@ import * as React from "react";
 import { Glass, Avatar, Icons } from "@/components/primitives";
 import Wysiwyg from "@/components/Wysiwyg";
 import { markdownToHtml } from "@/lib/markdown";
+import { useDialogA11y } from "@/components/useDialogA11y";
 
 // Interview types — icon + default duration. Matches view-schedule.jsx's
 // "Type" card grid (Phone / Video / On-site / Panel).
@@ -61,7 +62,10 @@ export default function ScheduleModal({
   const [meetingUrl, setMeetingUrl] = React.useState("");
   const [sendNow, setSendNow] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const [aiBusy, setAiBusy] = React.useState(false);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  useDialogA11y(dialogRef);
   // Real busy windows pulled from connected calendars + Vellum's own
   // scheduled interviews. The slot-grid below cross-references this list
   // to determine the line-through state. Replaces the hard-coded demo list.
@@ -198,11 +202,12 @@ export default function ScheduleModal({
 
   async function save() {
     setBusy(true);
+    setError(null);
     const [h, m] = slot.split(":").map(Number);
     const d = new Date(selectedDate);
     d.setHours(h, m, 0, 0);
     try {
-      await fetch("/api/interviews", {
+      const res = await fetch("/api/interviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -219,10 +224,17 @@ export default function ScheduleModal({
           interviewerIds: pickedIds,
           sendNow,
         }),
-      });
+      }).catch(() => null);
+      // Only close on success — previously onDone() ran in `finally`, so a
+      // failed POST closed the modal as if the interview had been booked.
+      if (!res?.ok) {
+        const j = await res?.json().catch(() => ({}));
+        setError(j?.error || "Couldn't schedule the interview. Please try again.");
+        return;
+      }
+      onDone();
     } finally {
       setBusy(false);
-      onDone();
     }
   }
 
@@ -256,7 +268,11 @@ export default function ScheduleModal({
     <>
       <div className="scrim" onClick={onClose} />
       <div
+        ref={dialogRef}
         className="sheet glass glass-strong schedule-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Schedule interview with ${candidate.name}`}
         style={{
           width: "min(820px, calc(100vw - 48px))",
           height: "auto",
@@ -579,10 +595,10 @@ export default function ScheduleModal({
 
         {/* Footer */}
         <div className="row" style={{ padding: "12px 22px", borderTop: "0.5px solid var(--line)", gap: 8 }}>
-          <span className="tiny" style={{ flex: 1, color: "var(--ink-2)" }}>
-            {typeMeta.label} · {duration} min ·{" "}
-            {selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}{" "}
-            {slot} · {pickedMembers.length} interviewer{pickedMembers.length === 1 ? "" : "s"}
+          <span className="tiny" style={{ flex: 1, color: error ? "oklch(60% 0.18 28)" : "var(--ink-2)" }} role={error ? "alert" : undefined}>
+            {error
+              ? error
+              : `${typeMeta.label} · ${duration} min · ${selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} ${slot} · ${pickedMembers.length} interviewer${pickedMembers.length === 1 ? "" : "s"}`}
           </span>
           <button className="btn btn-sm btn-ghost" onClick={onClose}>
             Cancel

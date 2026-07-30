@@ -14,6 +14,10 @@ const Patch = z.object({
   aiFit: z.number().int().min(0).max(100).optional(),
   archived: z.boolean().optional(),
   reviewerId: z.string().nullable().optional(),
+  // Decision outcome. Setting `rejected` here is what the recap's
+  // `send_rejection` follow-up keys off; we stamp outcomeAt server-side.
+  outcome: z.enum(["hired", "rejected", "withdrawn"]).nullable().optional(),
+  rejectReason: z.string().max(300).nullable().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -37,6 +41,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   });
   if (!app) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+  // A reviewer must be a member of this workspace — the FK is to User, so an
+  // unvalidated id could assign the application to someone in another tenant.
+  if (body.data.reviewerId) {
+    const ok = await db.membership.findFirst({
+      where: { workspaceId: workspace.id, userId: body.data.reviewerId },
+      select: { userId: true },
+    });
+    if (!ok) return NextResponse.json({ error: "reviewer must be a workspace member" }, { status: 400 });
+  }
+
   let newStage: { id: string; key: string; name: string } | null = null;
   if (body.data.stageId) {
     const ns = await db.stage.findFirst({ where: { id: body.data.stageId, workspaceId: workspace.id } });
@@ -44,10 +58,41 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     newStage = { id: ns.id, key: ns.key, name: ns.name };
   }
 
+  // Stamp outcomeAt alongside any outcome change so the recap and reporting
+  // have a decision timestamp (cleared when outcome is unset).
+  const updateData: Record<string, unknown> = { ...body.data };
+  if (body.data.outcome !== undefined) {
+    updateData.outcomeAt = body.data.outcome ? new Date() : null;
+    // A reject reason only makes sense on a rejection — clear it otherwise.
+    if (body.data.outcome !== "rejected") updateData.rejectReason = null;
+  }
+
   await db.application.update({
     where: { id },
-    data: body.data,
+    data: updateData,
   });
+
+  if (body.data.outcome !== undefined && body.data.outcome !== app.outcome) {
+    if (body.data.outcome) {
+      // Best-effort: the outcome is already committed above, so a failed
+      // activity insert must not 500 the request (which would make the client
+      // roll back a change that actually persisted).
+      await db.activity
+        .create({
+          data: {
+            workspaceId: workspace.id,
+            actorId: user.id,
+            actorName: user.name || user.email,
+            kind: body.data.outcome,
+            body: `${app.candidate.name} marked ${body.data.outcome}`,
+            candidateId: app.candidateId,
+            jobId: app.jobId,
+            icon: body.data.outcome === "rejected" ? "X" : body.data.outcome === "hired" ? "Check" : "Logout",
+          },
+        })
+        .catch(() => null);
+    }
+  }
 
   if (newStage && newStage.id !== app.stageId) {
     // Stage history — captures from → to with the actor. Powers the
@@ -85,18 +130,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }).catch(() => null);
     }
 
-    await db.activity.create({
-      data: {
-        workspaceId: workspace.id,
-        actorId: user.id,
-        actorName: user.name || user.email,
-        kind: "moved",
-        body: `${app.candidate.name} → ${newStage.name}`,
-        candidateId: app.candidateId,
-        jobId: app.jobId,
-        icon: "Pipeline",
-      },
-    });
+    await db.activity
+      .create({
+        data: {
+          workspaceId: workspace.id,
+          actorId: user.id,
+          actorName: user.name || user.email,
+          kind: "moved",
+          body: `${app.candidate.name} → ${newStage.name}`,
+          candidateId: app.candidateId,
+          jobId: app.jobId,
+          icon: "Pipeline",
+        },
+      })
+      .catch(() => null);
   }
 
   return NextResponse.json({ ok: true });

@@ -9,6 +9,7 @@ import { Icons } from "@/components/Icons";
 import { Glass, WorkspaceMark, AIPill, Avatar } from "@/components/primitives";
 import { useProfileSheet } from "@/components/SheetHost";
 import { useReviewQueueCount } from "@/components/useReviewQueueCount";
+import { closeMobileNav } from "@/lib/mobile-nav";
 
 type Workspace = { id: string; slug: string; name: string; domain: string; color: string };
 type SidebarUser = { id: string; name: string | null; email: string };
@@ -78,7 +79,8 @@ export default function Sidebar({
   }
 
   const items = [
-    { id: "dashboard",  href: "/dashboard",  icon: Icons.Home,      label: "Dashboard" },
+    { id: "dashboard",    href: "/dashboard",    icon: Icons.Home,     label: "Dashboard" },
+    { id: "applications", href: "/applications", icon: Icons.Board,    label: "Applications" },
     { id: "pipeline",   href: "/pipeline",   icon: Icons.Pipeline,  label: "Pipeline",  badge: `${jobsOpen} active` },
     { id: "jobs",       href: "/jobs",       icon: Icons.Briefcase, label: "Jobs" },
     { id: "candidates", href: "/candidates", icon: Icons.Users,     label: "Candidates" },
@@ -94,7 +96,11 @@ export default function Sidebar({
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <aside className="sidebar glass">
+    <>
+      {/* Tap-outside scrim for the mobile off-canvas drawer (CSS shows it only
+          under 860px when .app.nav-open). */}
+      <div className="mobile-nav-scrim" onClick={closeMobileNav} aria-hidden="true" />
+      <aside className="sidebar glass">
       <div className="sidebar-brand">
         <div className="sidebar-brand-logo">V</div>
         <div className="sidebar-brand-name">Vellum</div>
@@ -153,7 +159,7 @@ export default function Sidebar({
       </div>
 
       {items.map((it) => (
-        <Link key={it.id} href={it.href} className={`nav-item ${isActive(it.href) ? "active" : ""}`}>
+        <Link key={it.id} href={it.href} onClick={closeMobileNav} className={`nav-item ${isActive(it.href) ? "active" : ""}`}>
           <it.icon size={15} className="nav-icon" />
           <span>{it.label}</span>
           {it.badge && <span className="nav-badge">{it.badge}</span>}
@@ -163,7 +169,7 @@ export default function Sidebar({
       <div style={{ height: 12 }} />
       <div className="section-h" style={{ padding: "6px 10px" }}>Company</div>
       {lower.map((it) => (
-        <Link key={it.id} href={it.href} className={`nav-item ${isActive(it.href) ? "active" : ""}`}>
+        <Link key={it.id} href={it.href} onClick={closeMobileNav} className={`nav-item ${isActive(it.href) ? "active" : ""}`}>
           <it.icon size={15} className="nav-icon" />
           <span>{it.label}</span>
         </Link>
@@ -246,6 +252,7 @@ export default function Sidebar({
         </div>
         <Icons.MoreH size={14} style={{ color: "var(--ink-2)" }} />
       </button>
-    </aside>
+      </aside>
+    </>
   );
 }
