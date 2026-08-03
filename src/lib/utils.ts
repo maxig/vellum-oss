@@ -90,3 +90,22 @@ export function safe<T>(fn: () => T, fallback: T): T {
     return fallback;
   }
 }
+
+/**
+ * Parse a millisecond interval coming from an env var.
+ *
+ * `Number(process.env.X || 60_000)` looks safe and isn't: "0" is a *truthy*
+ * string, so the `||` fallback never fires and you get 0; anything
+ * non-numeric ("60s", "3m") gives NaN. Both land in setInterval, which clamps
+ * 0/NaN to 1ms — a ~1000×/second hot loop. Each spin logs, so it fills the
+ * disk, which takes Postgres down with it.
+ *
+ * Unparseable, zero, or negative → `defaultMs`. Valid values are floored at
+ * `minMs`, so a typo can't melt the box either. These are all background
+ * pollers; nothing here has any business running more than once every 5s.
+ */
+export function envInterval(raw: string | undefined, defaultMs: number, minMs = 5_000) {
+  const n = Number(raw);
+  if (!raw || !Number.isFinite(n) || n <= 0) return defaultMs;
+  return Math.max(minMs, n);
+}

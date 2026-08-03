@@ -25,9 +25,10 @@ import { db } from "@/lib/db";
 import { buildRecap, personalizeRecap, type RecapScope } from "@/lib/recap";
 import { renderRecapEmail } from "@/lib/recap-email";
 import { sendOutboundEmail } from "@/lib/email";
+import { envInterval } from "@/lib/utils";
 
-const CACHE_INTERVAL_MS = Number(process.env.RECAP_CACHE_INTERVAL_MS || 60 * 60 * 1000);
-const DISPATCH_INTERVAL_MS = Number(process.env.RECAP_DISPATCH_INTERVAL_MS || 5 * 60 * 1000);
+const CACHE_INTERVAL_MS = envInterval(process.env.RECAP_CACHE_INTERVAL_MS, 60 * 60 * 1000);
+const DISPATCH_INTERVAL_MS = envInterval(process.env.RECAP_DISPATCH_INTERVAL_MS, 5 * 60 * 1000);
 const DAILY_HOUR = Number(process.env.RECAP_DAILY_HOUR || 8);  // 08:00 workspace-local
 const WEEKLY_DAY = Number(process.env.RECAP_WEEKLY_DAY || 1);  // Monday (1) in workspace-local
 const MONTHLY_DAY = Number(process.env.RECAP_MONTHLY_DAY || 1); // 1st of month in workspace-local

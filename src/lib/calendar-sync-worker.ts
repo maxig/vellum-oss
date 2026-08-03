@@ -18,9 +18,10 @@
 import { db } from "@/lib/db";
 import * as provider from "@/lib/calendar-provider";
 import { syncFollowUps } from "@/lib/follow-ups";
+import { envInterval } from "@/lib/utils";
 
-const TICK_MS = Number(process.env.CALENDAR_WORKER_TICK_MS || 60 * 1000);
-const FOLLOWUP_TICK_MS = Number(process.env.CALENDAR_FOLLOWUP_TICK_MS || 10 * 60 * 1000);
+const TICK_MS = envInterval(process.env.CALENDAR_WORKER_TICK_MS, 60 * 1000);
+const FOLLOWUP_TICK_MS = envInterval(process.env.CALENDAR_FOLLOWUP_TICK_MS, 10 * 60 * 1000);
 const MIRROR_WINDOW_DAYS = 90;
 const MAX_JOBS_PER_TICK = 8;
 

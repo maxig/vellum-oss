@@ -23,8 +23,9 @@
 
 import { db } from "@/lib/db";
 import { buildReviewQueue, eligibleUsersForBuild } from "@/lib/review-queue";
+import { envInterval } from "@/lib/utils";
 
-const CACHE_INTERVAL_MS = Number(process.env.REVIEW_QUEUE_INTERVAL_MS || 60 * 60 * 1000);
+const CACHE_INTERVAL_MS = envInterval(process.env.REVIEW_QUEUE_INTERVAL_MS, 60 * 60 * 1000);
 
 declare global {
    

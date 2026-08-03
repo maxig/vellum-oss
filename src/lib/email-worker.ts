@@ -16,8 +16,9 @@
  */
 import { db } from "@/lib/db";
 import { pollWorkspaceInbox } from "@/lib/email";
+import { envInterval } from "@/lib/utils";
 
-const INTERVAL_MS = Number(process.env.EMAIL_POLL_INTERVAL_MS || 3 * 60 * 1000);
+const INTERVAL_MS = envInterval(process.env.EMAIL_POLL_INTERVAL_MS, 3 * 60 * 1000);
 
 declare global {
    

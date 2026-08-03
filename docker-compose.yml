@@ -1,7 +1,19 @@
+# Cap container logs. Docker's default json-file driver does NO rotation, so on
+# a long-running install the background workers' per-tick output (calendar every
+# 60s, email every 3m, recap) grows without bound until the disk is full — which
+# takes Postgres down with it and 500s every DB-backed page. 10MB × 3 files is
+# ~30MB per container, plenty for debugging a recent incident.
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-vellum}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vellum}
@@ -28,6 +40,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     depends_on:
       db:
         condition: service_healthy
@@ -100,6 +113,7 @@ services:
       dockerfile: Dockerfile.caddy
     image: ${CADDY_IMAGE:-vellum-caddy:local}
     restart: unless-stopped
+    logging: *default-logging
     depends_on:
       - app
     environment:
@@ -125,6 +139,7 @@ services:
     profiles: ["watchtower"]
     image: nickfedor/watchtower
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
