@@ -61,6 +61,40 @@ fi
 # Drop dangling images from the previous version
 docker image prune -f >/dev/null 2>&1 || true
 
+# The app image updates itself; the Caddyfile does not. It was written once by
+# setup.sh and is never touched again, so an instance that predates a Caddy-side
+# feature keeps running the old config and the feature silently does nothing.
+# Warn rather than rewrite — operators customise this file, and clobbering a
+# hand-tuned proxy config during a routine update would be worse than a stale one.
+if [ -f Caddyfile ] && ! grep -q "on_demand_tls" Caddyfile; then
+  echo
+  warn "Caddyfile predates custom career-site domains — that feature won't work yet."
+  cat <<'CADDYHINT'
+  Workspaces can serve their career site from their own domain (careers.acme.com),
+  but Caddy needs two additions to issue certificates for those hostnames.
+
+  Add inside the top-level { … } block:
+
+      on_demand_tls {
+          ask http://app:3000/api/public/domain-check
+      }
+
+  and append as the last block in the file:
+
+      https:// {
+          encode zstd gzip
+          tls {
+              on_demand
+          }
+          reverse_proxy app:3000
+      }
+
+  Then: docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+  (Re-running ./setup.sh regenerates the file with both, but re-answers the
+  whole wizard — editing by hand is usually quicker.)
+CADDYHINT
+fi
+
 echo
 ok "Update complete."
 info "Logs: $COMPOSE logs -f app"

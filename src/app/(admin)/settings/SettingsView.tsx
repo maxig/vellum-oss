@@ -440,18 +440,27 @@ function CareerTab({ workspace, careerSite, publicDomain, publicScheme }: any) {
     stories: (careerSite?.stories as Story[]) || [],
     cta: careerSite?.cta || { headline: "Don't see your role?", body: "<p>Tell us what you'd want to work on.</p>", button_1: "Send us a note", button_2: "Read our handbook" },
     footer: careerSite?.footer || { email: `careers@${workspace.domain}`, company: `© ${workspace.name}` },
+    customDomain: careerSite?.customDomain || "",
   }));
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   async function save() {
     setSaving(true);
+    setError(null);
     const res = await fetch("/api/career-site", { method: "PATCH", body: JSON.stringify(state) });
     setSaving(false);
     if (res.ok) {
       setSavedAt(Date.now());
       router.refresh();
+      return;
     }
+    // The domain field rejects duplicates and malformed hosts with a message
+    // worth reading — silently doing nothing here just looks like a dead
+    // Save button.
+    const body = await res.json().catch(() => null);
+    setError(body?.error || "Could not save. Please try again.");
   }
 
   const apex = publicDomain;
@@ -465,15 +474,38 @@ function CareerTab({ workspace, careerSite, publicDomain, publicScheme }: any) {
           <a className="btn btn-sm" href={publicUrl} target="_blank" rel="noreferrer">Open site <Icons.ArrowUpRight size={11}/></a>
         </div>
         <Row label="Public URL"><a className="mono" href={publicUrl} target="_blank" rel="noreferrer" style={{ color: "var(--accent-solid)" }}>{publicUrl}</a></Row>
-        <Row label="Custom CNAME">
-          <div className="col" style={{ gap: 6, alignItems: "flex-start" }}>
-            <div className="row" style={{ gap: 6, fontSize: 12.5 }}>
-              <span className="chip">CNAME</span>
-              <span className="mono">careers.{workspace.domain}</span>
-              <Icons.ArrowRight size={12} />
-              <span className="mono">{workspace.slug}.{apex}</span>
-            </div>
-            <Chip warn dot>Add this DNS record at your registrar, then click verify</Chip>
+        <Row label="Your own domain">
+          <div className="col" style={{ gap: 6, alignItems: "stretch" }}>
+            <input
+              className="input"
+              placeholder={`careers.${workspace.domain} — leave empty to use the address above`}
+              value={state.customDomain}
+              onChange={(e) => setState({ ...state, customDomain: e.target.value })}
+            />
+            {state.customDomain.trim() ? (
+              <>
+                <div className="row" style={{ gap: 6, fontSize: 12.5, flexWrap: "wrap" }}>
+                  <span className="chip">CNAME</span>
+                  <span className="mono">{state.customDomain.trim()}</span>
+                  <Icons.ArrowRight size={12} />
+                  <span className="mono">{workspace.slug}.{apex}</span>
+                </div>
+                {careerSite?.verifiedAt && state.customDomain.trim() === (careerSite?.customDomain || "") ? (
+                  <Chip good dot>Live — we&apos;ve had visitors on this address</Chip>
+                ) : (
+                  <Chip warn dot>
+                    Save, then add this record at your registrar. The address starts
+                    working on its first visit — the security certificate is issued
+                    automatically, so the very first page load takes a few seconds.
+                  </Chip>
+                )}
+              </>
+            ) : (
+              <span className="tiny" style={{ color: "var(--ink-3)" }}>
+                Your career site is always reachable at the address above. Add a
+                domain here to serve it from your own instead.
+              </span>
+            )}
           </div>
         </Row>
         <Row label="Company name">
@@ -634,7 +666,8 @@ function CareerTab({ workspace, careerSite, publicDomain, publicScheme }: any) {
       </Glass>
 
       <div className="row" style={{ justifyContent: "flex-end", gap: 10 }}>
-        {savedAt && <span className="tiny" style={{ color: "var(--accent-solid)" }}>Saved · view site to preview changes</span>}
+        {error && <span className="tiny" style={{ color: "oklch(50% 0.18 28)" }}>{error}</span>}
+        {savedAt && !error && <span className="tiny" style={{ color: "var(--accent-solid)" }}>Saved · view site to preview changes</span>}
         <button className="btn btn-primary" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save & publish"}</button>
       </div>
     </>
