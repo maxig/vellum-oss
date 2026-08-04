@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireWorkspace, isAdmin } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { sanitizeRichText, stripHtml } from "@/lib/sanitize";
+import { normalizeCustomDomain, isReservedDomain } from "@/lib/custom-domain";
 
 const StringOrNull = z.union([z.string(), z.null()]).optional();
 
@@ -130,7 +131,45 @@ export async function PATCH(req: Request) {
       company: input.footer.company != null ? stripHtml(input.footer.company) : input.footer.company,
     };
   }
-  if (input.customDomain !== undefined) data.customDomain = input.customDomain;
+  if (input.customDomain !== undefined) {
+    const raw = (input.customDomain ?? "").trim();
+    if (!raw) {
+      data.customDomain = null;
+      data.verifiedAt = null;
+    } else {
+      const domain = normalizeCustomDomain(raw);
+      if (!domain) {
+        return NextResponse.json(
+          { error: "That doesn't look like a domain. Use something like careers.yourcompany.com." },
+          { status: 400 },
+        );
+      }
+      if (isReservedDomain(domain)) {
+        return NextResponse.json(
+          { error: "That address is already used by Vellum itself. Pick a domain you own." },
+          { status: 400 },
+        );
+      }
+      const claimed = await db.careerSite.findUnique({
+        where: { customDomain: domain },
+        select: { workspaceId: true },
+      });
+      if (claimed && claimed.workspaceId !== workspace.id) {
+        return NextResponse.json(
+          { error: "Another workspace is already using that domain." },
+          { status: 409 },
+        );
+      }
+      data.customDomain = domain;
+      // Pointing at a different host means the old proof of a live CNAME no
+      // longer applies; /api/public/domain-check re-stamps it on first hit.
+      const current = await db.careerSite.findUnique({
+        where: { workspaceId: workspace.id },
+        select: { customDomain: true },
+      });
+      if (current?.customDomain !== domain) data.verifiedAt = null;
+    }
+  }
 
   await db.careerSite.upsert({
     where: { workspaceId: workspace.id },

@@ -4,6 +4,9 @@
 "use client";
 
 import * as React from "react";
+import { logger } from "@/lib/log";
+
+const log = logger("global");
 
 // Last-resort boundary: catches errors thrown by the root layout itself, so it
 // must render its own <html>/<body> and can't rely on globals.css being
@@ -16,7 +19,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   React.useEffect(() => {
-    console.error("[global] fatal render error:", error);
+    log.error("fatal render error:", error);
   }, [error]);
 
   return (

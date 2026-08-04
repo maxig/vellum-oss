@@ -1,13 +1,24 @@
-# Cap container logs. Docker's default json-file driver does NO rotation, so on
-# a long-running install the background workers' per-tick output (calendar every
-# 60s, email every 3m, recap) grows without bound until the disk is full — which
-# takes Postgres down with it and 500s every DB-backed page. 10MB × 3 files is
-# ~30MB per container, plenty for debugging a recent incident.
-x-logging: &default-logging
+# Cap container logs. Docker's default json-file driver does NO rotation, so
+# without this a chatty or crash-looping container grows without bound until the
+# disk is full — which takes Postgres down with it and 500s every DB-backed page.
+#
+# Total budget is ~1GB, split by who actually writes: during one incident the app
+# produced 71GB while Postgres produced 84KB, so the app gets 900MB and the quiet
+# services 30MB each (990MB ceiling). Tune per-install via the env vars below.
+#
+# See LOG_LEVEL in .env.example to control how much the app writes in the first
+# place — this is the ceiling, not the dial.
+x-logging: &default-logging # db, caddy, watchtower — near-silent
   driver: "json-file"
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILE:-3}"
+
+x-logging-app: &app-logging # the app carries essentially all the volume
+  driver: "json-file"
+  options:
+    max-size: "${APP_LOG_MAX_SIZE:-100m}"
+    max-file: "${APP_LOG_MAX_FILE:-9}"
 
 services:
   db:
@@ -40,7 +51,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    logging: *default-logging
+    logging: *app-logging
     depends_on:
       db:
         condition: service_healthy
@@ -92,6 +103,10 @@ services:
       # EMAIL_POLL_DISABLED=1 to turn it off, or override the poll cadence.
       EMAIL_POLL_DISABLED: ${EMAIL_POLL_DISABLED:-}
       EMAIL_POLL_INTERVAL_MS: ${EMAIL_POLL_INTERVAL_MS:-}
+      # How much the app writes: error | warn | info | debug | trace | silent.
+      # Defaults to "info" in production — startup and real problems only.
+      # Raise to "debug" to follow worker ticks, "trace" for per-message detail.
+      LOG_LEVEL: ${LOG_LEVEL:-}
       NODE_ENV: production
     ports:
       # When Caddy is the front door (proxy profile) the app only needs to be

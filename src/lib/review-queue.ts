@@ -26,6 +26,9 @@ import type { Prisma } from "@prisma/client";
 import { buildAIOverlay } from "@/lib/review-queue-ai";
 import { isAIEnabled } from "@/lib/ai";
 import { emit } from "@/lib/review-queue-telemetry";
+import { logger } from "@/lib/log";
+
+const log = logger("review-queue");
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -408,7 +411,7 @@ export function tryScheduleBackgroundBuild(workspaceId: string, userId: string):
   // Always call buildReviewQueueDeduped — it'll either spawn or share.
   // We only care about the "was it new?" answer for telemetry/callers.
   buildReviewQueueDeduped({ workspaceId, userId }).catch((e) =>
-    console.warn(`[review-queue] background rebuild failed (${key}):`, (e as Error).message),
+    log.warn(`background rebuild failed (${key}):`, (e as Error).message),
   );
   return !alreadyRunning;
 }
@@ -521,7 +524,7 @@ export async function buildReviewQueue(ctx: {
       } catch (e) {
         aiState = "error";
         aiError = (e as Error).message;
-        console.warn(`[review-queue] AI overlay failed (${workspaceId}/${userId}):`, aiError);
+        log.warn(`AI overlay failed (${workspaceId}/${userId}):`, aiError);
       }
       emit("review_queue.ai_overlay", {
         workspaceId,

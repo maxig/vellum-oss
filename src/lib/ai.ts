@@ -4,6 +4,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/lib/db";
 import { decryptSecret } from "@/lib/crypto";
+import { logger } from "@/lib/log";
+
+const log = logger("ai");
 
 type Provider = "anthropic" | "openai" | "google" | "ollama";
 
@@ -233,7 +236,11 @@ export async function complete(
       await recordUsage(workspaceId, (json?.prompt_eval_count || 0) + (json?.eval_count || 0));
       return { text, mocked: false, provider };
     } catch (e) {
-      console.error("[ai] ollama call failed:", e);
+      // Handled: we fall back to the mock. The raw error can echo the prompt
+      // back (resume text, candidate names), so the reportable line carries
+      // the message only and the full object goes to trace.
+      log.warn("ollama call failed:", (e as Error).message);
+      log.trace("ollama call failed:", e);
       return { text: mockResponse(user), mocked: true, provider: "mock" };
     }
   }
@@ -264,7 +271,8 @@ export async function complete(
       await recordUsage(workspaceId, (resp.usage?.input_tokens ?? 0) + (resp.usage?.output_tokens ?? 0));
       return { text, mocked: false, provider };
     } catch (e) {
-      console.error("[ai] anthropic call failed:", e);
+      log.warn("anthropic call failed:", (e as Error).message);
+      log.trace("anthropic call failed:", e);
       return { text: mockResponse(user), mocked: true, provider: "mock" };
     }
   }
@@ -302,7 +310,8 @@ export async function complete(
       );
       return { text, mocked: false, provider };
     } catch (e) {
-      console.error("[ai] openai call failed:", e);
+      log.warn("openai call failed:", (e as Error).message);
+      log.trace("openai call failed:", e);
       return { text: mockResponse(user), mocked: true, provider: "mock" };
     }
   }
@@ -434,7 +443,7 @@ You'll work closely with modellers and engineers to design interfaces that make 
     }
     return JSON.parse(text) as JobWizardResult;
   } catch (e) {
-    console.error("[ai] failed to parse job wizard json:", e);
+    log.warn("failed to parse job wizard json:", e);
     // Return a fallback or throw? For now fallback.
     return {
       pitch: "",
@@ -583,7 +592,7 @@ export async function suggestScreeningQuestions(
       suggestions: (parsed.suggestions || []).slice(0, 5)
     };
   } catch (e) {
-    console.error("[ai] failed to parse screening questions suggestions json:", e);
+    log.warn("failed to parse screening questions suggestions json:", e);
     return { suggestions: [] };
   }
 }

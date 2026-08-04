@@ -11,6 +11,9 @@
 // Idempotent: if the from/to keys are identical we don't record a no-op.
 
 import { db } from "@/lib/db";
+import { logger } from "@/lib/log";
+
+const log = logger("stage-history");
 
 export async function recordStageMove(args: {
   workspaceId: string;
@@ -44,7 +47,7 @@ export async function recordStageMove(args: {
     });
   } catch (e) {
     // Never block a stage-change request on history logging.
-    console.warn("[stage-history] write failed:", (e as Error).message);
+    log.warn("write failed:", (e as Error).message);
   }
 }
 

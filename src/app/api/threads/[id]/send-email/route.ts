@@ -7,6 +7,9 @@ import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { sendOutboundEmail } from "@/lib/email";
 import { emailToText, sanitizeRichText } from "@/lib/sanitize";
+import { logger } from "@/lib/log";
+
+const log = logger("send-email");
 
 const Body = z.object({
   body: z.string().min(1).max(20_000),
@@ -60,7 +63,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     });
   } catch (e) {
     const msg = (e as Error).message || "unknown error";
-    console.error("[send-email]", msg);
+    // SMTP rejections routinely quote the recipient address, so the operator
+    // line stays PII-free and the raw text goes to trace.
+    log.error("outbound send failed");
+    log.trace(msg);
     // Persist so the recruiter sees it in Settings → Email "Last error".
     await db.emailAccount
       .updateMany({

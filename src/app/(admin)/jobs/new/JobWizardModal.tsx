@@ -7,6 +7,9 @@ import { Glass, Chip, AIPill, Icons } from "@/components/primitives";
 import Wysiwyg from "@/components/Wysiwyg";
 import { currencySymbol } from "@/lib/utils";
 import { markdownToHtml } from "@/lib/markdown";
+import { logger } from "@/lib/log";
+
+const log = logger("job-wizard");
 
 function Segmented({ value, onChange, options, size = "md" }: { value: string; onChange: (v: string) => void; options: string[]; size?: "sm" | "md" }) {
   const small = size === "sm";
@@ -140,7 +143,7 @@ export default function JobWizardModal({
       const j = await r.json();
       if (j.suggestions) setSuggestions(j.suggestions);
     } catch (e) {
-      console.error("Failed to fetch suggestions:", e);
+      log.warn("Failed to fetch suggestions:", e);
     } finally {
       setSuggestionsBusy(false);
     }

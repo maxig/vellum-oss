@@ -4,7 +4,7 @@
 /**
  * Review queue telemetry — structured-log events per §12.
  *
- * Phase 1 ships these to console.log as JSON so the operator can grep
+ * Phase 1 ships these to the debug log as JSON so the operator can grep
  * them and so any downstream log aggregator can index them without code
  * changes. When the project gets a real analytics sink (Phase 3) the
  * `emit` function becomes the single replacement point — every event
@@ -14,6 +14,10 @@
  * candidate ID only because it's already a server-side identifier;
  * names and emails never appear here.
  */
+
+import { logger } from "@/lib/log";
+
+const log = logger("telemetry");
 
 type EventName =
   | "review_queue.cache_hit"
@@ -28,14 +32,17 @@ type EventName =
 type Props = Record<string, unknown>;
 
 export function emit(event: EventName, props: Props = {}): void {
+  // One event per request/action, so this is debug: a healthy production
+  // box stays quiet, and an operator debugging the queue turns it up.
+  // Serialising is skipped entirely when the level is off.
+  if (!log.enabled("debug")) return;
   // One line per event. JSON.stringify so commas in values don't break
-  // log parsers; console.log so we benefit from Next's structured log
-  // formatting in dev and production.
+  // log parsers.
   try {
-    console.log(`[telemetry] ${event} ${JSON.stringify(props)}`);
+    log.debug(`${event} ${JSON.stringify(props)}`);
   } catch {
     // Defensive: if a prop contained a circular ref, fall back to a
     // plain key list rather than crashing the request.
-    console.log(`[telemetry] ${event} <unserializable> keys=${Object.keys(props).join(",")}`);
+    log.debug(`${event} <unserializable> keys=${Object.keys(props).join(",")}`);
   }
 }

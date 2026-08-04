@@ -23,6 +23,9 @@ import {
 import { db } from "@/lib/db";
 import { decryptSecret } from "@/lib/crypto";
 import { buildIcs } from "@/lib/calendar";
+import { logger } from "@/lib/log";
+
+const log = logger("caldav");
 
 type Probe = {
   serverUrl: string;
@@ -184,7 +187,7 @@ export async function listEventsForMirror(
     })) as DAVCalendarObject[];
   }
 
-  console.log(`[caldav] account=${accountId} fetched ${objects.length} objects from ${account.defaultCalendarUrl}`);
+  log.debug(`account=${accountId} fetched ${objects.length} objects from ${account.defaultCalendarUrl}`);
 
   const out: {
     externalId: string;
@@ -202,15 +205,17 @@ export async function listEventsForMirror(
     const ev = parseSingleVEvent(ics);
     if (!ev) {
       skipped += 1;
-      console.log(`[caldav] unparseable object url=${o.url}`);
+      log.trace(`unparseable object url=${o.url}`);
       continue;
     }
     // Filter to the requested window client-side. We're generous on the
     // bounds (overlap, not strict containment) so multi-day events show up.
     if (ev.end <= from || ev.start >= to) {
       filteredOut += 1;
-      console.log(
-        `[caldav] outside window: "${ev.summary || "(no title)"}" ${ev.start.toISOString()} → ${ev.end.toISOString()}`,
+      // Event titles routinely carry candidate names, so this stays at
+      // trace — the per-item count is reported PII-free below.
+      log.trace(
+        `outside window: "${ev.summary || "(no title)"}" ${ev.start.toISOString()} → ${ev.end.toISOString()}`,
       );
       continue;
     }
@@ -225,8 +230,8 @@ export async function listEventsForMirror(
       kind: ourEcho ? "vellum_owned_echo" : "event",
     });
   }
-  console.log(
-    `[caldav] account=${accountId} parsed ${out.length} kept (${skipped} unparseable, ${filteredOut} outside window)`,
+  log.debug(
+    `account=${accountId} parsed ${out.length} kept (${skipped} unparseable, ${filteredOut} outside window)`,
   );
   return out;
 }

@@ -7,6 +7,9 @@ import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { sanitizeRichText, stripHtml } from "@/lib/sanitize";
 import { sendInterviewInvite } from "@/lib/email";
+import { logger } from "@/lib/log";
+
+const log = logger("interviews");
 
 const KIND_LABELS: Record<string, string> = {
   phone: "Phone screen",
@@ -163,7 +166,10 @@ export async function POST(req: Request) {
       }
     } catch (e) {
       const msg = (e as Error).message || "unknown SMTP error";
-      console.warn("[interviews] invite email failed:", msg);
+      // SMTP rejections routinely quote the candidate's address, so the
+      // operator line stays PII-free and the raw text goes to trace.
+      log.warn("invite email failed");
+      log.trace("invite email failed:", msg);
       invite = { sent: false, error: msg };
     }
   }

@@ -6,6 +6,9 @@ import { z } from "zod";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { token as makeToken } from "@/lib/utils";
+import { logger } from "@/lib/log";
+
+const log = logger("vellum");
 
 const Body = z.object({ email: z.string().email(), role: z.enum(["member", "admin"]).default("member") });
 
@@ -35,7 +38,10 @@ export async function POST(req: Request) {
   // Dev convenience only — the invite URL is a bearer token, so never write it
   // to production logs (it's already returned in the response for the UI).
   if (process.env.NODE_ENV !== "production") {
-    console.log(`\n[vellum] 📨 INVITE for ${email} to ${workspace.name}:\n   ${url}\n`);
+    // debug, not trace: `debug` is the default level outside production, so
+    // this keeps printing for developers exactly as it did before. At trace it
+    // would have gone silent unless LOG_LEVEL was raised by hand.
+    log.debug(`\n📨 INVITE for ${email} to ${workspace.name}:\n   ${url}\n`);
   }
   return NextResponse.json({ id: invite.id, token, url });
 }

@@ -19,6 +19,9 @@ import { db } from "@/lib/db";
 import * as provider from "@/lib/calendar-provider";
 import { syncFollowUps } from "@/lib/follow-ups";
 import { envInterval } from "@/lib/utils";
+import { logger } from "@/lib/log";
+
+const log = logger("calendar-worker");
 
 const TICK_MS = envInterval(process.env.CALENDAR_WORKER_TICK_MS, 60 * 1000);
 const FOLLOWUP_TICK_MS = envInterval(process.env.CALENDAR_FOLLOWUP_TICK_MS, 10 * 60 * 1000);
@@ -217,7 +220,7 @@ async function refreshFollowUps() {
     try {
       await syncFollowUps(w.id);
     } catch (e) {
-      console.warn(`[calendar-worker] followups failed for ws=${w.id}:`, (e as Error).message);
+      log.warn(`followups failed for ws=${w.id}:`, (e as Error).message);
     }
   }
 }
@@ -236,11 +239,11 @@ async function tick() {
       await refreshFollowUps();
       s.lastFollowupAt = Date.now();
     }
-    console.log(
-      `[calendar-worker] tick #${tickId} · ${Date.now() - startedAt}ms · jobs ok=${drained.ok} failed=${drained.failed}`,
+    log.debug(
+      `tick #${tickId} · ${Date.now() - startedAt}ms · jobs ok=${drained.ok} failed=${drained.failed}`,
     );
   } catch (e) {
-    console.warn("[calendar-worker] tick error:", (e as Error).message);
+    log.warn("tick error:", (e as Error).message);
   } finally {
     s.running = false;
   }
@@ -251,9 +254,9 @@ export function startCalendarWorker() {
   if (s.started) return;
   s.started = true;
   s.timer = setInterval(() => {
-    tick().catch((e) => console.warn("[calendar-worker] tick crashed:", e));
+    tick().catch((e) => log.warn("tick crashed:", e));
   }, TICK_MS);
   // Fire one immediately so a fresh boot doesn't wait a minute.
   setTimeout(() => tick().catch(() => null), 4_000);
-  console.log(`[calendar-worker] started · tick=${TICK_MS}ms`);
+  log.info(`started · tick=${TICK_MS}ms`);
 }

@@ -13,6 +13,9 @@ import { db } from "@/lib/db";
 import * as google from "@/lib/google-calendar";
 import * as microsoft from "@/lib/microsoft-calendar";
 import * as caldav from "@/lib/caldav";
+import { logger } from "@/lib/log";
+
+const log = logger("calendar-provider");
 
 export type InterviewPushPayload = {
   interviewId: string;
@@ -148,12 +151,12 @@ export async function pullMirror(accountId: string, from: Date, to: Date): Promi
       where: { id: accountId },
       data: { consecutiveErrors: { increment: 1 }, lastError: msg, lastPolledAt: new Date() },
     });
-    console.warn(`[calendar-provider] pullMirror failed for ${account.provider} ${accountId}: ${msg}`);
+    log.warn(`pullMirror failed for ${account.provider} ${accountId}: ${msg}`);
     throw e;
   }
 
-  console.log(
-    `[calendar-provider] pullMirror ${account.provider} ${accountId} → ${events.length} events in [${from.toISOString()}, ${to.toISOString()}]`,
+  log.debug(
+    `pullMirror ${account.provider} ${accountId} → ${events.length} events in [${from.toISOString()}, ${to.toISOString()}]`,
   );
 
   // Upsert in one transaction so the read side stays consistent. We

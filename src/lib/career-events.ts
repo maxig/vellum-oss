@@ -16,6 +16,9 @@
 import { db } from "@/lib/db";
 import { headers, cookies } from "next/headers";
 import { hasConsent, sweepDeniedCookies } from "@/lib/consent";
+import { logger } from "@/lib/log";
+
+const log = logger("career-events");
 
 export type CareerEventKind = "page_view" | "form_start" | "form_submit" | "apply_complete";
 
@@ -89,7 +92,7 @@ export async function recordCareerEvent(args: {
   } catch (e) {
     // Career-site events are best-effort — a failure here must never
     // break the public site.
-    console.warn("[career-events] record failed:", (e as Error).message);
+    log.warn("record failed:", (e as Error).message);
   }
 }
 

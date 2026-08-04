@@ -640,7 +640,13 @@ model CareerSite {
   stories      Json      @default("[]") // [{ name, role, years, quote, photoUrl }]
   cta          Json      @default("{}")
   footer       Json      @default("{}")
-  customDomain String? // careers.example.com
+  // Workspace's own career-site host, e.g. careers.example.com — normalized to
+  // lowercase with no scheme or port (src/lib/custom-domain.ts). Unique because
+  // a hostname must resolve to exactly one workspace: middleware.ts and Caddy's
+  // on-demand TLS both look the request host up by this column.
+  customDomain String?   @unique
+  // Last time a request actually arrived on customDomain — i.e. proof the
+  // CNAME is live. Stamped by /api/public/domain-check.
   verifiedAt   DateTime?
   publishedAt  DateTime?
   updatedAt    DateTime  @updatedAt

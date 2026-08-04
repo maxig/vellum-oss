@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 MG Tech AS
 
+import { logger } from "@/lib/log";
+
+const log = logger("instrumentation");
+
 /**
  * Next.js instrumentation hook — runs once when the server boots.
  *
@@ -12,7 +16,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") {
     return;
   }
-  console.log(`[instrumentation] register · runtime=${process.env.NEXT_RUNTIME}`);
+  log.info(`register · runtime=${process.env.NEXT_RUNTIME}`);
   const { startEmailWorker } = await import("@/lib/email-worker");
   startEmailWorker();
 

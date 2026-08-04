@@ -26,6 +26,9 @@ import { buildRecap, personalizeRecap, type RecapScope } from "@/lib/recap";
 import { renderRecapEmail } from "@/lib/recap-email";
 import { sendOutboundEmail } from "@/lib/email";
 import { envInterval } from "@/lib/utils";
+import { logger } from "@/lib/log";
+
+const log = logger("recap-worker");
 
 const CACHE_INTERVAL_MS = envInterval(process.env.RECAP_CACHE_INTERVAL_MS, 60 * 60 * 1000);
 const DISPATCH_INTERVAL_MS = envInterval(process.env.RECAP_DISPATCH_INTERVAL_MS, 5 * 60 * 1000);
@@ -67,7 +70,7 @@ function state() {
 async function cacheTick() {
   const s = state();
   if (s.cacheRunning) {
-    console.log("[recap-worker] cache tick skipped — previous run still in flight");
+    log.debug("cache tick skipped — previous run still in flight");
     return;
   }
   s.cacheRunning = true;
@@ -76,24 +79,24 @@ async function cacheTick() {
   const startedAt = Date.now();
   try {
     const workspaces = await db.workspace.findMany({ select: { id: true, name: true } });
-    console.log(
-      `[recap-worker] cache tick #${tickId} starting · ${workspaces.length} workspace${workspaces.length === 1 ? "" : "s"}`,
+    log.debug(
+      `cache tick #${tickId} starting · ${workspaces.length} workspace${workspaces.length === 1 ? "" : "s"}`,
     );
     for (const ws of workspaces) {
       try {
         // `force: true` always rebuilds, even when there's a fresh cache row,
         // so the next dashboard load sees the most recent data.
         const result = await buildRecap(ws.id, "today", { force: true });
-        console.log(
-          `[recap-worker] cache tick #${tickId} ${ws.id} OK · items=${result.items.length} hasAI=${result.hasAI}`,
+        log.trace(
+          `cache tick #${tickId} ${ws.id} OK · items=${result.items.length} hasAI=${result.hasAI}`,
         );
       } catch (e) {
-        console.warn(`[recap-worker] cache tick #${tickId} ${ws.id} FAILED:`, (e as Error).message);
+        log.warn(`cache tick #${tickId} ${ws.id} FAILED:`, (e as Error).message);
       }
     }
   } finally {
     s.cacheRunning = false;
-    console.log(`[recap-worker] cache tick #${tickId} finished in ${Date.now() - startedAt}ms`);
+    log.debug(`cache tick #${tickId} finished in ${Date.now() - startedAt}ms`);
   }
 }
 
@@ -135,7 +138,7 @@ async function policyFor(workspaceId: string): Promise<WorkspaceRecapPolicy> {
 async function dispatchTick() {
   const s = state();
   if (s.dispatchRunning) {
-    console.log("[recap-worker] dispatch tick skipped — previous run still in flight");
+    log.debug("dispatch tick skipped — previous run still in flight");
     return;
   }
   s.dispatchRunning = true;
@@ -146,8 +149,8 @@ async function dispatchTick() {
     const workspaces = await db.workspace.findMany({
       select: { id: true, name: true, timezone: true },
     });
-    console.log(
-      `[recap-worker] dispatch tick #${tickId} starting · ${workspaces.length} workspace${workspaces.length === 1 ? "" : "s"}`,
+    log.debug(
+      `dispatch tick #${tickId} starting · ${workspaces.length} workspace${workspaces.length === 1 ? "" : "s"}`,
     );
     for (const ws of workspaces) {
       try {
@@ -157,12 +160,12 @@ async function dispatchTick() {
           await dispatchScope(ws.id, ws.name, ws.timezone || "UTC", scope, tickId);
         }
       } catch (e) {
-        console.warn(`[recap-worker] dispatch tick #${tickId} ${ws.id} FAILED:`, (e as Error).message);
+        log.warn(`dispatch tick #${tickId} ${ws.id} FAILED:`, (e as Error).message);
       }
     }
   } finally {
     s.dispatchRunning = false;
-    console.log(`[recap-worker] dispatch tick #${tickId} finished in ${Date.now() - startedAt}ms`);
+    log.debug(`dispatch tick #${tickId} finished in ${Date.now() - startedAt}ms`);
   }
 }
 
@@ -243,13 +246,17 @@ async function dispatchScope(
 
   const recipients = await recipientsFor(workspaceId);
   if (recipients.length === 0) {
-    console.log(`[recap-worker] dispatch #${tickId} ${workspaceId}/${scope} no recipients`);
+    log.debug(`dispatch #${tickId} ${workspaceId}/${scope} no recipients`);
     return;
   }
 
   const acct = await db.emailAccount.findUnique({ where: { workspaceId } });
   if (!acct || !acct.enabled) {
-    console.log(`[recap-worker] dispatch #${tickId} ${workspaceId}/${scope} no email account — skipping`);
+    // Not a failure: the workspace simply never configured outbound mail.
+    // This is timer-driven and per-workspace, so at warn it would repeat
+    // every single day, forever, on an otherwise healthy box. Same level as
+    // the "no recipients" skip above.
+    log.debug(`dispatch #${tickId} ${workspaceId}/${scope} no email account — skipping`);
     return;
   }
 
@@ -309,7 +316,15 @@ async function dispatchScope(
     } catch (e) {
       failed += 1;
       const msg = (e as Error).message;
-      console.warn(`[recap-worker] dispatch #${tickId} ${workspaceId}/${scope} → ${email} FAILED:`, msg);
+      // Recipient address is PII, so it only ever appears on the trace line —
+      // and that includes `msg`: nodemailer builds its message from the SMTP
+      // response ("Message failed for recipient <addr>", "550 …: Recipient
+      // address rejected"), so the rejected address is embedded in the error
+      // text itself. Same treatment as the other three sendOutboundEmail call
+      // sites. The operator still gets the full text in Settings → Recaps via
+      // the RecapDelivery.error column written just below.
+      log.warn(`dispatch #${tickId} ${workspaceId}/${scope} → recipient FAILED`);
+      log.trace(`dispatch #${tickId} ${workspaceId}/${scope} → ${email} FAILED:`, msg);
       await db.recapDelivery
         .upsert({
           where: {
@@ -327,9 +342,12 @@ async function dispatchScope(
     }
   }
 
-  console.log(
-    `[recap-worker] dispatch #${tickId} ${workspaceId}/${scope} tz=${timezone} bucket=${recap.bucket} · sent=${sent} skipped=${skipped} failed=${failed}`,
-  );
+  // Reached from the dispatch setInterval, so it must not chatter. A digest
+  // that actually left the building is a real, roughly-daily event worth one
+  // info line; a tick that only re-confirmed an already-sent bucket is not.
+  const summary = `dispatch #${tickId} ${workspaceId}/${scope} tz=${timezone} bucket=${recap.bucket} · sent=${sent} skipped=${skipped} failed=${failed}`;
+  if (sent > 0 || failed > 0) log.info(summary);
+  else log.debug(summary);
 }
 
 type Recipient = { userId: string; email: string };
@@ -369,31 +387,31 @@ async function recipientsFor(workspaceId: string): Promise<Recipient[]> {
 // ── Public start function ────────────────────────────────────────────
 export function startRecapWorker() {
   if (process.env.RECAP_WORKER_DISABLED === "1") {
-    console.log("[recap-worker] disabled by RECAP_WORKER_DISABLED=1");
+    log.info("disabled by RECAP_WORKER_DISABLED=1");
     return;
   }
   const s = state();
   if (s.started) {
-    console.log("[recap-worker] startup called more than once — keeping existing intervals");
+    log.warn("startup called more than once — keeping existing intervals");
     return;
   }
   s.started = true;
-  console.log(
-    `[recap-worker] startup · cache=${Math.round(CACHE_INTERVAL_MS / 1000)}s dispatch=${Math.round(
+  log.info(
+    `startup · cache=${Math.round(CACHE_INTERVAL_MS / 1000)}s dispatch=${Math.round(
       DISPATCH_INTERVAL_MS / 1000,
     )}s daily@${DAILY_HOUR}:00 (workspace-local)`,
   );
 
   // Fire both ticks shortly after boot so a fresh start sees real data
   // without waiting a full interval.
-  setTimeout(() => cacheTick().catch((e) => console.warn("[recap-worker] initial cache failed:", e)), 12_000);
-  setTimeout(() => dispatchTick().catch((e) => console.warn("[recap-worker] initial dispatch failed:", e)), 25_000);
+  setTimeout(() => cacheTick().catch((e) => log.warn("initial cache failed:", e)), 12_000);
+  setTimeout(() => dispatchTick().catch((e) => log.warn("initial dispatch failed:", e)), 25_000);
 
   s.cacheTimer = setInterval(() => {
-    cacheTick().catch((e) => console.warn("[recap-worker] cache tick failed:", e));
+    cacheTick().catch((e) => log.warn("cache tick failed:", e));
   }, CACHE_INTERVAL_MS);
   s.dispatchTimer = setInterval(() => {
-    dispatchTick().catch((e) => console.warn("[recap-worker] dispatch tick failed:", e));
+    dispatchTick().catch((e) => log.warn("dispatch tick failed:", e));
   }, DISPATCH_INTERVAL_MS);
 
   // Don't block graceful shutdown.

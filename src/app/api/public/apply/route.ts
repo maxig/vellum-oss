@@ -14,6 +14,13 @@ import { isAIEnabled, summarizeCandidate, extractResumeProfile } from "@/lib/ai"
 import { recordCareerEvent } from "@/lib/career-events";
 import { recordStageMove } from "@/lib/stage-history";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { logger } from "@/lib/log";
+
+const log = logger("apply");
+// The enrichment helper logs under its own `[apply.enrich]` prefix; keep it a
+// separate logger rather than `log.child()` so the literal prefix (and any
+// existing `grep '[apply.enrich]'`) stays byte-identical.
+const enrichLog = logger("apply.enrich");
 
 export const runtime = "nodejs";
 
@@ -124,10 +131,10 @@ export async function POST(req: Request) {
       } catch (e) {
         // Parsing failures shouldn't block the application — the file is
         // already on disk and recruiters can review it manually.
-        console.warn("[apply] resume parse failed:", (e as Error).message);
+        log.warn("resume parse failed:", (e as Error).message);
       }
     } catch (e) {
-      console.error("[apply] resume upload failed:", e);
+      log.error("resume upload failed:", e);
     }
   }
 
@@ -183,7 +190,7 @@ export async function POST(req: Request) {
           await enrichCandidateFromResume(candidate.id, job.workspaceId, resumeText);
           await generateApplicationSummary(existing.id, job.workspaceId);
         } catch (e) {
-          console.warn("[apply] background summary failed:", (e as Error).message);
+          log.warn("background summary failed:", (e as Error).message);
         }
       });
     }
@@ -315,7 +322,7 @@ In the meantime, you don't need to do anything.
       await enrichCandidateFromResume(candidate.id, job.workspaceId, resumeText);
       await generateApplicationSummary(application.id, job.workspaceId);
     } catch (e) {
-      console.warn("[apply] background summary failed:", (e as Error).message);
+      log.warn("background summary failed:", (e as Error).message);
     }
   });
 
@@ -345,7 +352,11 @@ In the meantime, you don't need to do anything.
       });
     }
   } catch (e) {
-    console.warn("[apply] confirmation email failed:", (e as Error).message);
+    // SMTP rejections routinely quote the recipient address back at us
+    // ("550 5.1.1 <…> user unknown"), so the operator-facing line stays
+    // PII-free and the detail goes to trace.
+    log.warn("confirmation email failed");
+    log.trace(`confirmation email to ${email} failed: ${(e as Error).message}`);
     await db.emailAccount
       .updateMany({
         where: { workspaceId: job.workspaceId },
@@ -368,17 +379,17 @@ async function enrichCandidateFromResume(
   resumeText: string | null,
 ) {
   if (!resumeText || !resumeText.trim()) {
-    console.log("[apply.enrich] skipped: no resume text", { candidateId, hasText: !!resumeText });
+    enrichLog.debug("skipped: no resume text", { candidateId, hasText: !!resumeText });
     return;
   }
   if (!(await isAIEnabled(workspaceId, "summary"))) {
-    console.log("[apply.enrich] skipped: AI disabled for workspace", { candidateId, workspaceId });
+    enrichLog.debug("skipped: AI disabled for workspace", { candidateId, workspaceId });
     return;
   }
 
   const candidate = await db.candidate.findUnique({ where: { id: candidateId } });
   if (!candidate) {
-    console.log("[apply.enrich] skipped: candidate not found", { candidateId });
+    enrichLog.warn("skipped: candidate not found", { candidateId });
     return;
   }
 
@@ -401,13 +412,13 @@ async function enrichCandidateFromResume(
   if (!candidate.portfolio && profile.portfolio) patch.portfolio = profile.portfolio;
 
   if (!Object.keys(patch).length) {
-    console.log("[apply.enrich] no fields to fill (all already set or AI returned nothing)", { candidateId });
+    enrichLog.debug("no fields to fill (all already set or AI returned nothing)", { candidateId });
     return;
   }
 
   await db.candidate.update({ where: { id: candidateId }, data: patch });
   // Log which fields were filled, never their PII values.
-  console.log("[apply.enrich] patched", { candidateId, fields: Object.keys(patch) });
+  enrichLog.debug("patched", { candidateId, fields: Object.keys(patch) });
   await db.activity.create({
     data: {
       workspaceId,

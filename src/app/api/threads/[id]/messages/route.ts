@@ -8,6 +8,9 @@ import { db } from "@/lib/db";
 import { sanitizeRichText, stripHtml } from "@/lib/sanitize";
 import { recordSignal } from "@/lib/pulse";
 import { classifyAndRecordSentiment } from "@/lib/pulse-sentiment";
+import { logger } from "@/lib/log";
+
+const log = logger("sentiment");
 
 const Body = z.object({
   body: z.string().min(1).max(20_000),
@@ -84,7 +87,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           ? stripHtml(previousOutbound).slice(0, 600)
           : null,
         threadSubject: t.subject,
-      }).catch((e) => console.warn("[sentiment] classify failed:", (e as Error).message));
+      }).catch((e) => log.warn("classify failed:", (e as Error).message));
     });
   }
 

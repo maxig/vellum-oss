@@ -8,6 +8,9 @@ import { db } from "@/lib/db";
 import { encryptSecret } from "@/lib/crypto";
 import { exchangeCode } from "@/lib/microsoft-calendar";
 import { getAppOrigin } from "@/lib/app-host";
+import { logger } from "@/lib/log";
+
+const log = logger("oauth microsoft");
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -70,7 +73,7 @@ export async function GET(req: Request) {
     });
     settingsUrl.searchParams.set("calendar_connected", "microsoft");
   } catch (e) {
-    console.warn("[oauth microsoft] callback failed:", (e as Error).message);
+    log.warn("callback failed:", (e as Error).message);
     settingsUrl.searchParams.set("calendar_error", "exchange_failed");
   }
   return NextResponse.redirect(settingsUrl);

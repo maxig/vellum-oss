@@ -13,6 +13,9 @@ import crypto from "node:crypto";
 import { db } from "@/lib/db";
 import { complete, isAIEnabled } from "@/lib/ai";
 import type { AnalyticsBundle, AnalyticsRange } from "@/lib/analytics";
+import { logger } from "@/lib/log";
+
+const log = logger("analytics-summary");
 
 export type InsightTone = "good" | "risk" | "neutral";
 
@@ -89,7 +92,7 @@ export async function getOrBuildSummary(
       },
     })
     .catch((e) => {
-      console.warn("[analytics-summary] cache write failed:", (e as Error).message);
+      log.warn("cache write failed:", (e as Error).message);
     });
 
   return {

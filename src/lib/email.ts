@@ -21,6 +21,9 @@ import nodemailer from "nodemailer";
 import { simpleParser } from "mailparser";
 import { db } from "@/lib/db";
 import { decryptSecret } from "@/lib/crypto";
+// This file builds its own runtime prefix (`[email-poll/<workspaceId>]`), so it
+// uses the unprefixed logger rather than a namespaced one.
+import { log } from "@/lib/log";
 
 type EmailAccount = {
   workspaceId: string;
@@ -186,7 +189,7 @@ export async function pollWorkspaceInbox(workspaceId: string): Promise<{ ingeste
 
   const acctRow = (await db.emailAccount.findUnique({ where: { workspaceId } })) as EmailAccount | null;
   if (!acctRow || !acctRow.enabled) {
-    console.log(`${tag} skipped — no account or disabled`);
+    log.debug(`${tag} skipped — no account or disabled`);
     return { ingested: 0, lastUid: 0, checked: 0, since: new Date(0).toISOString() };
   }
 
@@ -206,30 +209,32 @@ export async function pollWorkspaceInbox(workspaceId: string): Promise<{ ingeste
   // to midnight in UTC. We over-fetch slightly and filter in JS.
   const sinceTs = since.getTime();
 
-  console.log(
-    `${tag} starting · host=${acctRow.imapHost} user=${acctRow.imapUser} ` +
+  log.debug(
+    `${tag} starting · host=${acctRow.imapHost} ` +
       `lastPolledAt=${acctRow.lastPolledAt?.toISOString() || "(never)"} ` +
       `since=${since.toISOString()} lastUid=${acctRow.lastUid}`,
   );
+  // The mailbox login is an address — kept out of the debug line above.
+  log.trace(`${tag} starting · user=${acctRow.imapUser}`);
 
   try {
     await client.connect();
-    console.log(`${tag} IMAP connected`);
+    log.debug(`${tag} IMAP connected`);
     const lock = await client.getMailboxLock("INBOX");
     try {
       // Ask the server for UIDs of messages since the cutoff date.
       const searchResult = await client.search({ since }).catch((e) => {
-        console.warn(`${tag} IMAP search failed:`, (e as Error).message);
+        log.warn(`${tag} IMAP search failed:`, (e as Error).message);
         return null;
       });
-      console.log('Email searchResult=', JSON.stringify(searchResult));
+      if (log.enabled("trace")) log.trace(`${tag} searchResult=`, JSON.stringify(searchResult));
       const uidList = Array.isArray(searchResult) ? searchResult.slice(-200) : null;
-      console.log(
+      log.debug(
         `${tag} search returned ${uidList ? uidList.length : "0 (fallback to SINCE fetch)"} candidate UIDs`,
       );
       const fetchQuery = uidList && uidList.length > 0 ? { uid: uidList.join(",") } : { since };
       const ids: number[] = [];
-      console.log('Email fetchQuery=', JSON.stringify(fetchQuery));
+      if (log.enabled("trace")) log.trace(`${tag} fetchQuery=`, JSON.stringify(fetchQuery));
 
       const messages = await client.fetchAll((uidList || []), {
         uid: true,
@@ -239,12 +244,12 @@ export async function pollWorkspaceInbox(workspaceId: string): Promise<{ ingeste
       });
 
       for (const msg of messages) {
-        console.log(`UID: ${msg.uid}`);
-        console.log(`Subject: ${msg.envelope?.subject}`);
-
-        // 2. Convert the raw source Buffer into a readable string
-        const rawEmailText = msg.source?.toString('utf-8');
-        console.log(rawEmailText);
+        if (log.enabled("trace")) {
+          log.trace(`${tag} uid=${msg.uid} subject=${msg.envelope?.subject}`);
+          // Convert the raw source Buffer into a readable string. Guarded:
+          // this materialises the whole message, body and all.
+          log.trace(`${tag} uid=${msg.uid} raw=`, msg.source?.toString("utf-8"));
+        }
 
         await processMessage(msg, since, workspaceId, highestUid);
       }
@@ -268,7 +273,7 @@ export async function pollWorkspaceInbox(workspaceId: string): Promise<{ ingeste
     data: { lastPolledAt: polledAt, lastUid: highestUid, lastError: null },
   });
   const elapsedMs = Date.now() - startedAt;
-  console.log(
+  log.debug(
     `${tag} DONE · checked=${checked} ingested=${ingested} highestUid=${highestUid} ` +
       `elapsed=${elapsedMs}ms lastPolledAt=${polledAt.toISOString()}`,
   );
@@ -292,7 +297,7 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
   // regardless of what the IMAP server returned, since SINCE is fuzzy.
   const internal = msg.internalDate ? new Date(msg.internalDate as Date | string).getTime() : Number.NaN;
   if (Number.isFinite(internal) && internal < sinceTs) {
-    console.log(`${tag} uid=${uid} skip · internalDate ${new Date(internal).toISOString()} < cutoff`);
+    log.trace(`${tag} uid=${uid} skip · internalDate ${new Date(internal).toISOString()} < cutoff`);
     return;
   }
   checked++;
@@ -305,11 +310,11 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
     const subject = parsed.subject || "(no subject)";
     const body = parsed.text || stripHtmlBody(parsed.html || "");
     const subjLabel = subject.length > 60 ? subject.slice(0, 57) + "…" : subject;
-    console.log(
+    log.trace(
       `${tag} uid=${uid} read · from="${fromName ? `${fromName} <${fromAddr}>` : fromAddr || "?"}" subject="${subjLabel}"`,
     );
     if (!fromAddr) {
-      console.log(`${tag} uid=${uid} skip · no From address`);
+      log.trace(`${tag} uid=${uid} skip · no From address`);
       return;
     }
 
@@ -320,7 +325,7 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
       where: { externalMessageId: messageId, thread: { workspaceId } },
     });
     if (already) {
-      console.log(`${tag} uid=${uid} skip · already ingested as message ${already.id} (msgId=${messageId})`);
+      log.trace(`${tag} uid=${uid} skip · already ingested as message ${already.id} (msgId=${messageId})`);
       return;
     }
 
@@ -349,11 +354,11 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
     let matchedJob: { id: string; title: string } | null = null;
     let matchSource: "header" | "sender" | "sender+subject" | "subject" | "none" = thread ? "header" : "none";
     if (thread) {
-      console.log(
+      log.trace(
         `${tag} uid=${uid} match=HEADER · thread=${thread.id} candidate=${candidate?.name || "(missing)"} refs=[${headerRefs.join(", ")}]`,
       );
     } else if (headerRefs.length) {
-      console.log(
+      log.trace(
         `${tag} uid=${uid} header refs present but no thread matched · refs=[${headerRefs.join(", ")}]`,
       );
     }
@@ -365,9 +370,9 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
       });
       if (candidate) {
         matchSource = "sender";
-        console.log(`${tag} uid=${uid} match=SENDER · candidate=${candidate.name} (${candidate.id})`);
+        log.trace(`${tag} uid=${uid} match=SENDER · candidate=${candidate.name} (${candidate.id})`);
       } else {
-        console.log(`${tag} uid=${uid} no candidate with email=${fromAddr}`);
+        log.trace(`${tag} uid=${uid} no candidate with email=${fromAddr}`);
       }
 
       // 2) Secondary match: when the sender isn't in our candidate table
@@ -380,20 +385,20 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
       if (!candidate) {
         matchedJob = await findJobBySubject(workspaceId, subject);
         if (matchedJob) {
-          console.log(`${tag} uid=${uid} subject hits job="${matchedJob.title}" (${matchedJob.id})`);
+          log.trace(`${tag} uid=${uid} subject hits job="${matchedJob.title}" (${matchedJob.id})`);
           candidate = await findCandidateBySenderName(workspaceId, matchedJob.id, fromName, fromAddr);
           if (candidate) {
             matchSource = "subject";
-            console.log(
+            log.trace(
               `${tag} uid=${uid} match=SUBJECT · candidate=${candidate.name} (${candidate.id}) job="${matchedJob.title}"`,
             );
           } else {
-            console.log(
+            log.trace(
               `${tag} uid=${uid} job matched but no applicant name match · fromName="${fromName}" fromAddr=${fromAddr}`,
             );
           }
         } else {
-          console.log(`${tag} uid=${uid} no job title found in subject`);
+          log.trace(`${tag} uid=${uid} no job title found in subject`);
         }
       } else {
         // Sender is known — still use the subject to pick the right
@@ -403,13 +408,13 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
         matchedJob = await findJobBySubject(workspaceId, subject);
         if (matchedJob) {
           matchSource = "sender+subject";
-          console.log(
+          log.trace(
             `${tag} uid=${uid} also matched job="${matchedJob.title}" → will thread under candidate↔job`,
           );
         }
       }
       if (!candidate) {
-        console.log(`${tag} uid=${uid} DROP · no match (from=${fromAddr}, subject="${subjLabel}")`);
+        log.trace(`${tag} uid=${uid} DROP · no match (from=${fromAddr}, subject="${subjLabel}")`);
         return;
       }
 
@@ -439,9 +444,9 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
             unread: true,
           },
         });
-        console.log(`${tag} uid=${uid} created new thread=${thread.id} for candidate=${candidate.name}`);
+        log.trace(`${tag} uid=${uid} created new thread=${thread.id} for candidate=${candidate.name}`);
       } else {
-        console.log(`${tag} uid=${uid} reusing thread=${thread.id} ("${thread.subject}")`);
+        log.trace(`${tag} uid=${uid} reusing thread=${thread.id} ("${thread.subject}")`);
       }
     }
     if (!candidate) return;
@@ -464,7 +469,7 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
       // an error: the find-first dedup above handles the common case; this
       // catches the check-then-insert gap.
       if ((e as { code?: string }).code === "P2002") {
-        console.log(`${tag} uid=${uid} skip · raced, already ingested (msgId=${messageId})`);
+        log.trace(`${tag} uid=${uid} skip · raced, already ingested (msgId=${messageId})`);
         return;
       }
       throw e;
@@ -474,7 +479,7 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
       where: { id: thread.id },
       data: { lastAt: new Date(), unread: true },
     });
-    console.log(
+    log.trace(
       `${tag} uid=${uid} INGESTED · via=${matchSource} message=${ingestedMsg.id} thread=${thread.id} candidate=${candidate.name}`,
     );
 
@@ -492,7 +497,7 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
         evidence: { threadId: thread.id, messageId: ingestedMsg.id },
       });
     } catch (e) {
-      console.warn(`${tag} pulse signal failed:`, e);
+      log.warn(`${tag} pulse signal failed:`, e);
     }
 
     // Sentiment — async classifier. Idempotent on messageId, gated on the
@@ -515,7 +520,7 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
           threadSubject: thread.subject,
         });
       } catch (e) {
-        console.warn(`${tag} sentiment classify failed:`, (e as Error).message);
+        log.warn(`${tag} sentiment classify failed:`, (e as Error).message);
       }
     });
 
@@ -534,7 +539,7 @@ async function processMessage(msg: any, since: any, workspaceId: any, highestUid
     ingested++;
   } catch (perMsgError) {
     // Don't let one malformed message poison the whole batch.
-    console.warn(`${tag} uid=${uid} parse error:`, (perMsgError as Error).message);
+    log.warn(`${tag} uid=${uid} parse error:`, (perMsgError as Error).message);
   }
 }
 

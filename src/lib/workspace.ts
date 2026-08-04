@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { isAppHost } from "@/lib/app-host";
+import { normalizeCustomDomain } from "@/lib/custom-domain";
 
 const COOKIE = "vellum_ws";
 
@@ -92,8 +93,13 @@ export function isAdmin(role: string): boolean {
 }
 
 /**
- * Resolve a workspace from the public host (subdomain).
- * If host is "<slug>.localhost:3000" → returns the matching workspace, else null.
+ * Resolve a workspace from the public host.
+ *
+ * Two shapes route to a career site, matching middleware.ts:
+ *   • "<slug>.<PUBLIC_DOMAIN>"  — e.g. acme.localhost:3000, resolved by suffix
+ *   • a workspace's own domain  — e.g. careers.acme.com, looked up in
+ *     CareerSite.customDomain
+ * Anything else (the apex, the admin host, an unclaimed domain) → null.
  */
 export async function workspaceFromHost(): Promise<{ slug: string; workspaceId: string } | null> {
   const h = await headers();
@@ -106,7 +112,19 @@ export async function workspaceFromHost(): Promise<{ slug: string; workspaceId: 
   // The admin app may be served from a subdomain of the same apex; never
   // resolve that host to a workspace career site.
   if (isAppHost(hostBare)) return null;
-  if (!hostBare.endsWith("." + apexBare)) return null;
+
+  if (!hostBare.endsWith("." + apexBare)) {
+    // Not under the apex at all — the only way this can be a career site is if
+    // some workspace has claimed it as its custom domain.
+    const domain = normalizeCustomDomain(hostBare);
+    if (!domain) return null;
+    const site = await db.careerSite.findUnique({
+      where: { customDomain: domain },
+      select: { workspace: { select: { id: true, slug: true } } },
+    });
+    return site ? { slug: site.workspace.slug, workspaceId: site.workspace.id } : null;
+  }
+
   const slug = hostBare.slice(0, hostBare.length - ("." + apexBare).length);
   if (!slug) return null;
   const ws = await db.workspace.findUnique({ where: { slug } });

@@ -4,6 +4,9 @@
 "use client";
 
 import * as React from "react";
+import { logger } from "@/lib/log";
+
+const log = logger("careers");
 
 export default function CareersError({
   error,
@@ -13,7 +16,7 @@ export default function CareersError({
   reset: () => void;
 }) {
   React.useEffect(() => {
-    console.error("[careers] render error:", error);
+    log.error("render error:", error);
   }, [error]);
 
   return (

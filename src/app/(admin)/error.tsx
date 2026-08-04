@@ -5,6 +5,9 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { logger } from "@/lib/log";
+
+const log = logger("admin");
 
 export default function AdminError({
   error,
@@ -16,7 +19,7 @@ export default function AdminError({
   React.useEffect(() => {
     // Keep the technical detail in the console for operators; never surface a
     // raw error string in the UI.
-    console.error("[admin] render error:", error);
+    log.error("render error:", error);
   }, [error]);
 
   return (
