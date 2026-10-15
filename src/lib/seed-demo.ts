@@ -3,6 +3,15 @@
 
 import { db } from "@/lib/db";
 
+// Offices double as the location options in the job wizard (see
+// src/app/(admin)/layout.tsx), so they cover every city the demo jobs use.
+const DEMO_OFFICES = [
+  { city: "Berlin", country: "Germany", address: "Torstraße 161", employees: "22" },
+  { city: "Lisbon", country: "Portugal", address: "Av. da Liberdade 110", employees: "9" },
+  { city: "London", country: "United Kingdom", address: "", employees: "" },
+  { city: "Remote", country: "EU/UK", address: "Across 7 timezones", employees: "7" },
+];
+
 /**
  * Seed a workspace with the demo "goscore" dataset from the design prototype.
  * Safe to call multiple times — relies on counts to detect prior seeding.
@@ -40,6 +49,7 @@ export async function seedDemoData(workspaceId: string, ownerId: string, brandNa
         { t: "Kind in feedback", b: "Direct, specific, and on the work — never the person. We protect this." },
         { t: "Built in public-ish", b: "We share our roadmap with customers and our craft with peers. Pull requests welcome." },
       ],
+      offices: DEMO_OFFICES,
       cta: {
         headline: "Don't see your role?",
         body: "Tell us what you'd want to work on. We read everything that comes in.",
@@ -60,6 +70,7 @@ export async function seedDemoData(workspaceId: string, ownerId: string, brandNa
       },
       about: { eyebrow: "About", headline: "We build excellent software.", body_1: "", body_2: "", stats: [] },
       values: [],
+      offices: DEMO_OFFICES,
       cta: { headline: "Don't see your role?", body: "We read everything.", button_1: "Send us a note", button_2: "" },
       footer: { email: `careers@${brandName}.io`, company: `© ${brandName}` },
     },

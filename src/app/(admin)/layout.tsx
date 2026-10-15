@@ -20,7 +20,7 @@ const DEFAULT_PREFS: Prefs = {
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, workspace, membership, workspaces } = await requireWorkspace();
 
-  const [stages, unreadCount, jobs, prefsData, notifications] = await Promise.all([
+  const [stages, unreadCount, jobs, prefsData, notifications, careerSite] = await Promise.all([
     db.stage.findMany({ where: { workspaceId: workspace.id }, orderBy: { position: "asc" } }),
     db.thread.count({ where: { workspaceId: workspace.id, unread: true } }),
     db.job.findMany({ where: { workspaceId: workspace.id } }),
@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
+    db.careerSite.findUnique({ where: { workspaceId: workspace.id }, select: { offices: true } }),
   ]);
 
   const prefs: Prefs = {
@@ -41,13 +42,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const openJobsCount = jobs.filter((j) => j.status === "Published" || j.status === "published").length;
 
+  const offices = Array.isArray(careerSite?.offices) ? (careerSite.offices as { city?: string }[]) : [];
   const locationOptions = Array.from(
-    new Set(
-      jobs
-        .map((j) => j.location)
-        .filter(Boolean)
-        .concat(["Remote", "London", "New York", "Berlin", "San Francisco"]) as string[]
-    )
+    new Set(offices.map((o) => (o.city || "").trim()).filter(Boolean))
   );
 
   const departments = (workspace.departments as string[]) || [];
