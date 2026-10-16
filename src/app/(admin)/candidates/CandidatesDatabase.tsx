@@ -5,8 +5,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useValueLabels } from "@/i18n/labels";
 import { Glass, Chip, Avatar, Stars, Icons } from "@/components/primitives";
-import { relativeTime } from "@/lib/utils";
+import { useRelativeTime } from "@/i18n/format";
 import ProfileSheet from "@/components/ProfileSheet";
 
 type Stage = { id: string; key: string; name: string; color: string };
@@ -40,13 +42,14 @@ type CandidateRow = {
   };
 };
 
-const BAND_META: Record<PulseBand, { label: string; emoji: string; dot: string; tint: string; ink: string }> = {
-  hot: { label: "Hot", emoji: "🔥", dot: "oklch(70% 0.18 28)", tint: "color-mix(in oklab, oklch(70% 0.18 28) 14%, transparent)", ink: "oklch(55% 0.18 28)" },
-  warm: { label: "Warm", emoji: "☀", dot: "oklch(72% 0.13 80)", tint: "color-mix(in oklab, oklch(72% 0.13 80) 12%, transparent)", ink: "oklch(50% 0.14 80)" },
-  cool: { label: "Cool", emoji: "🌤", dot: "oklch(72% 0.12 230)", tint: "color-mix(in oklab, oklch(72% 0.12 230) 14%, transparent)", ink: "oklch(50% 0.14 230)" },
-  cold: { label: "Cold", emoji: "❄️", dot: "oklch(60% 0.16 28)", tint: "color-mix(in oklab, oklch(60% 0.16 28) 16%, transparent)", ink: "oklch(50% 0.18 28)" },
-  silent: { label: "Silent", emoji: "💤", dot: "oklch(70% 0.02 250)", tint: "var(--glass-bg-faint)", ink: "var(--ink-2)" },
-  locked: { label: "Withdrew", emoji: "✖", dot: "oklch(50% 0.02 250)", tint: "var(--glass-bg-faint)", ink: "var(--ink-2)" },
+// Labels: common.pulse.bands.<band>
+const BAND_META: Record<PulseBand, { emoji: string; dot: string; tint: string; ink: string }> = {
+  hot: { emoji: "🔥", dot: "oklch(70% 0.18 28)", tint: "color-mix(in oklab, oklch(70% 0.18 28) 14%, transparent)", ink: "oklch(55% 0.18 28)" },
+  warm: { emoji: "☀", dot: "oklch(72% 0.13 80)", tint: "color-mix(in oklab, oklch(72% 0.13 80) 12%, transparent)", ink: "oklch(50% 0.14 80)" },
+  cool: { emoji: "🌤", dot: "oklch(72% 0.12 230)", tint: "color-mix(in oklab, oklch(72% 0.12 230) 14%, transparent)", ink: "oklch(50% 0.14 230)" },
+  cold: { emoji: "❄️", dot: "oklch(60% 0.16 28)", tint: "color-mix(in oklab, oklch(60% 0.16 28) 16%, transparent)", ink: "oklch(50% 0.18 28)" },
+  silent: { emoji: "💤", dot: "oklch(70% 0.02 250)", tint: "var(--glass-bg-faint)", ink: "var(--ink-2)" },
+  locked: { emoji: "✖", dot: "oklch(50% 0.02 250)", tint: "var(--glass-bg-faint)", ink: "var(--ink-2)" },
 };
 
 type Sort = "recent" | "score" | "rated" | "name";
@@ -66,6 +69,8 @@ export default function CandidatesDatabase({
 }) {
   const canDelete = currentRole === "owner" || currentRole === "admin";
   const router = useRouter();
+  const t = useTranslations("candidates.db");
+  const tc = useTranslations("common");
   const [rows, setRows] = React.useState(candidates);
   const [q, setQ] = React.useState("");
   const [stage, setStage] = React.useState("any");
@@ -164,8 +169,8 @@ export default function CandidatesDatabase({
       setSelected(new Set());
       flash(
         movedIds.size < apps.length
-          ? `Moved ${movedIds.size} of ${apps.length} (some need admin or reviewer access)`
-          : `Moved ${movedIds.size} candidate${movedIds.size === 1 ? "" : "s"}`,
+          ? t("movedPartial", { done: movedIds.size, total: apps.length })
+          : t("moved", { count: movedIds.size }),
       );
     } finally {
       setBusy(null);
@@ -175,10 +180,7 @@ export default function CandidatesDatabase({
 
   async function deleteSelected() {
     if (selectedRows.length === 0) return;
-    const ok = window.confirm(
-      `Permanently delete ${selectedRows.length} candidate${selectedRows.length === 1 ? "" : "s"}? ` +
-        `Their PII, notes, threads, and applications will be removed. Funnel and stage analytics stay intact.`,
-    );
+    const ok = window.confirm(t("confirmDeleteMany", { count: selectedRows.length }));
     if (!ok) return;
     setBusy("delete");
     try {
@@ -196,8 +198,8 @@ export default function CandidatesDatabase({
       setSelected(new Set());
       flash(
         okIds.size < selectedRows.length
-          ? `Removed ${okIds.size} of ${selectedRows.length} (some required admin)`
-          : `Removed ${okIds.size} candidate${okIds.size === 1 ? "" : "s"}`,
+          ? t("removedPartial", { done: okIds.size, total: selectedRows.length })
+          : t("removed", { count: okIds.size }),
       );
     } finally {
       setBusy(null);
@@ -206,19 +208,16 @@ export default function CandidatesDatabase({
   }
 
   async function deleteCandidate(candidateId: string, name: string) {
-    const ok = window.confirm(
-      `Permanently delete ${name}? Their PII, notes, threads, and applications will be removed. ` +
-        `Funnel and stage analytics stay intact.`,
-    );
+    const ok = window.confirm(t("confirmDelete", { name }));
     if (!ok) return;
     const res = await fetch(`/api/candidates/${candidateId}`, { method: "DELETE" });
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      flash(json?.error === "forbidden" ? "Only admins can delete candidates." : "Could not delete.");
+      flash(json?.error === "forbidden" ? t("deleteForbidden") : t("deleteFailed"));
       return;
     }
     setRows((current) => current.filter((row) => row.id !== candidateId));
-    flash(`Removed ${name}`);
+    flash(t("removedOne", { name }));
     router.refresh();
   }
 
@@ -242,8 +241,8 @@ export default function CandidatesDatabase({
       setSelected(new Set());
       flash(
         okIds.size < selectedRows.length
-          ? `Tagged ${okIds.size} of ${selectedRows.length}`
-          : `Added ${tag} to ${okIds.size} candidate${okIds.size === 1 ? "" : "s"}`,
+          ? t("taggedPartial", { done: okIds.size, total: selectedRows.length })
+          : t("tagged", { tag, count: okIds.size }),
       );
     } finally {
       setBusy(null);
@@ -263,7 +262,7 @@ export default function CandidatesDatabase({
           body: JSON.stringify({
             candidateId: row.id,
             jobId: row.application?.jobId,
-            subject: `Re: ${row.application?.jobTitle || "Application"}`,
+            subject: `Re: ${row.application?.jobTitle || t("application")}`,
           }),
         }).catch(() => null);
         if (!res?.ok) continue;
@@ -271,7 +270,7 @@ export default function CandidatesDatabase({
         if (!firstThread && json?.id) firstThread = json.id;
       }
       if (firstThread) router.push(`/inbox?thread=${firstThread}`);
-      else flash("Could not open a conversation.");
+      else flash(t("messageFailed"));
     } finally {
       setBusy(null);
     }
@@ -291,13 +290,13 @@ export default function CandidatesDatabase({
     <div className="page">
       <div className="row" style={{ marginBottom: 22, alignItems: "flex-end", gap: 10 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 28 }}>Candidates</h1>
+          <h1 style={{ fontSize: 28 }}>{t("title")}</h1>
           <p className="muted" style={{ fontSize: 14, marginTop: 4 }}>
-            {activeRows.length} total across all jobs · {activeRows.filter((c) => c.application?.stageKey !== "hired").length} active
+            {t("summary", { total: activeRows.length, active: activeRows.filter((c) => c.application?.stageKey !== "hired").length })}
           </p>
         </div>
-        <button className="btn" onClick={() => setAddOpen(true)}><Icons.Plus size={13} stroke={2} /> Add candidate</button>
-        <button className="btn" onClick={() => window.open("/api/workspace/export", "_blank")}><Icons.ArrowUpRight size={12} stroke={2} /> Export</button>
+        <button className="btn" onClick={() => setAddOpen(true)}><Icons.Plus size={13} stroke={2} /> {t("add")}</button>
+        <button className="btn" onClick={() => window.open("/api/workspace/export", "_blank")}><Icons.ArrowUpRight size={12} stroke={2} /> {t("export")}</button>
       </div>
 
       <Glass style={{ padding: 12, marginBottom: 14, borderRadius: 14 }}>
@@ -307,21 +306,21 @@ export default function CandidatesDatabase({
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by name, skills, location, role…"
+              placeholder={t("searchPlaceholder")}
               style={{ background: "transparent", border: 0, outline: 0, color: "var(--ink-0)", fontSize: 13, width: "100%" }}
             />
           </Glass>
-          <FilterSelect label="Stage" value={stage} onChange={setStage} options={[{ value: "any", label: "Any stage" }, ...stages.map((s) => ({ value: s.key, label: s.name }))]} />
-          <FilterSelect label="Source" value={source} onChange={setSource} options={[{ value: "any", label: "Any source" }, ...sources.map((s) => ({ value: s, label: s }))]} />
-          <FilterSelect label="Min score" value={String(minScore)} onChange={(v) => setMinScore(Number(v))} options={[{ value: "0", label: "Any score" }, { value: "70", label: ">= 70" }, { value: "80", label: ">= 80" }, { value: "90", label: ">= 90" }]} />
-          <FilterSelect label="Pulse" value={pulseFilter} onChange={setPulseFilter} options={[{ value: "any", label: "Any pulse" }, { value: "hot", label: "🔥 Hot only" }, { value: "cooling", label: "❄️ Cool or cold" }]} />
-          <FilterSelect label="Sort" value={sort} onChange={(v) => setSort(v as Sort)} options={[{ value: "recent", label: "Most recent" }, { value: "score", label: "AI fit" }, { value: "rated", label: "Top rated" }, { value: "name", label: "Name" }]} />
+          <FilterSelect label={t("filters.stage")} value={stage} onChange={setStage} options={[{ value: "any", label: t("filters.anyStage") }, ...stages.map((s) => ({ value: s.key, label: s.name }))]} />
+          <FilterSelect label={t("filters.source")} value={source} onChange={setSource} options={[{ value: "any", label: t("filters.anySource") }, ...sources.map((s) => ({ value: s, label: s }))]} />
+          <FilterSelect label={t("filters.minScore")} value={String(minScore)} onChange={(v) => setMinScore(Number(v))} options={[{ value: "0", label: t("filters.anyScore") }, { value: "70", label: ">= 70" }, { value: "80", label: ">= 80" }, { value: "90", label: ">= 90" }]} />
+          <FilterSelect label={t("filters.pulse")} value={pulseFilter} onChange={setPulseFilter} options={[{ value: "any", label: t("filters.anyPulse") }, { value: "hot", label: t("filters.hotOnly") }, { value: "cooling", label: t("filters.cooling") }]} />
+          <FilterSelect label={t("filters.sort")} value={sort} onChange={(v) => setSort(v as Sort)} options={[{ value: "recent", label: t("filters.recent") }, { value: "score", label: t("filters.aiFit") }, { value: "rated", label: t("filters.topRated") }, { value: "name", label: t("filters.name") }]} />
         </div>
         {filtersActive && (
           <div className="row" style={{ marginTop: 10, gap: 6 }}>
-            <span className="tiny">{filtered.length} of {activeRows.length} candidates</span>
+            <span className="tiny">{t("filteredCount", { shown: filtered.length, total: activeRows.length })}</span>
             <span style={{ flex: 1 }} />
-            <button className="btn btn-sm btn-ghost" onClick={clearFilters}>Clear filters <Icons.X size={11} /></button>
+            <button className="btn btn-sm btn-ghost" onClick={clearFilters}>{t("clearFilters")} <Icons.X size={11} /></button>
           </div>
         )}
       </Glass>
@@ -334,21 +333,21 @@ export default function CandidatesDatabase({
           background: "linear-gradient(135deg, color-mix(in oklab, var(--accent-1) 10%, var(--glass-bg)), color-mix(in oklab, var(--accent-2) 8%, var(--glass-bg)))",
         }}>
           <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>{selected.size} selected</span>
-            <button className="btn btn-sm" disabled={busy === "message"} onClick={messageSelected}><Icons.Mail size={12} /> Message</button>
+            <span style={{ fontSize: 13, fontWeight: 500 }}>{t("selected", { count: selected.size })}</span>
+            <button className="btn btn-sm" disabled={busy === "message"} onClick={messageSelected}><Icons.Mail size={12} /> {t("message")}</button>
             <select className="select" value={bulkStageId} onChange={(e) => setBulkStageId(e.target.value)} style={{ width: 150, height: 28, fontSize: 12 }}>
               {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             <button className="btn btn-sm" disabled={busy === "move" || selectedApps.length === 0} onClick={() => moveApplications(selectedApps, bulkStageId)}>
-              <Icons.Pipeline size={12} /> Move stage
+              <Icons.Pipeline size={12} /> {t("moveStage")}
             </button>
             <input
               value={tagText}
               onChange={(e) => setTagText(e.target.value)}
-              placeholder="Add tag…"
+              placeholder={t("tagPlaceholder")}
               style={{ width: 120, height: 28, borderRadius: 8, border: "0.5px solid var(--line)", background: "var(--glass-bg-faint)", padding: "0 9px", color: "var(--ink-0)" }}
             />
-            <button className="btn btn-sm" disabled={busy === "tag" || !tagText.trim()} onClick={addTagToSelected}><Icons.Plus size={12} /> Add tag</button>
+            <button className="btn btn-sm" disabled={busy === "tag" || !tagText.trim()} onClick={addTagToSelected}><Icons.Plus size={12} /> {t("addTag")}</button>
             <span style={{ flex: 1 }} />
             {canDelete && (
               <button
@@ -357,27 +356,27 @@ export default function CandidatesDatabase({
                 onClick={deleteSelected}
                 style={{ color: "oklch(50% 0.18 28)" }}
               >
-                <Icons.Trash size={12} /> Delete
+                <Icons.Trash size={12} /> {tc("delete")}
               </button>
             )}
-            <button className="btn btn-sm btn-ghost" onClick={() => setSelected(new Set())}>Cancel</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => setSelected(new Set())}>{tc("cancel")}</button>
           </div>
         </Glass>
       )}
 
       <Glass style={{ overflow: "hidden", borderRadius: 14 }}>
         <div className="candidate-db-row candidate-db-head">
-          <input type="checkbox" checked={filtered.length > 0 && selected.size === filtered.length} onChange={toggleAll} aria-label="Select all candidates" />
-          <span className="tiny">Candidate</span>
-          <span className="tiny">Role applied</span>
-          <span className="tiny">Stage</span>
-          <span className="tiny">Source</span>
-          <span className="tiny" style={{ textAlign: "right" }}>AI fit</span>
-          <span className="tiny" style={{ textAlign: "right" }}>Rating</span>
-          <span className="tiny" style={{ textAlign: "right" }}>Applied</span>
+          <input type="checkbox" checked={filtered.length > 0 && selected.size === filtered.length} onChange={toggleAll} aria-label={t("selectAll")} />
+          <span className="tiny">{t("cols.candidate")}</span>
+          <span className="tiny">{t("cols.role")}</span>
+          <span className="tiny">{t("cols.stage")}</span>
+          <span className="tiny">{t("cols.source")}</span>
+          <span className="tiny" style={{ textAlign: "right" }}>{t("cols.aiFit")}</span>
+          <span className="tiny" style={{ textAlign: "right" }}>{t("cols.rating")}</span>
+          <span className="tiny" style={{ textAlign: "right" }}>{t("cols.applied")}</span>
         </div>
         {filtered.length === 0 && (
-          <div style={{ padding: 40, textAlign: "center", color: "var(--ink-2)", fontSize: 13 }}>No candidates match these filters.</div>
+          <div style={{ padding: 40, textAlign: "center", color: "var(--ink-2)", fontSize: 13 }}>{t("noMatch")}</div>
         )}
         {filtered.map((candidate, i) => (
           <CandidateRecord
@@ -404,7 +403,7 @@ export default function CandidatesDatabase({
           onClose={() => setAddOpen(false)}
           onCreated={(id) => {
             setAddOpen(false);
-            flash("Candidate added");
+            flash(t("added"));
             router.refresh();
             router.push(`/candidates/${id}`);
           }}
@@ -415,7 +414,7 @@ export default function CandidatesDatabase({
         <ProfileSheet
           applicationId={openApplicationId}
           stages={stages}
-          currentUser={currentUser ?? { id: "current", name: "You", signature: "" }}
+          currentUser={currentUser ?? { id: "current", name: t("you"), signature: "" }}
           currentRole={currentRole}
           onClose={() => setOpenApplicationId(null)}
           onChanged={() => router.refresh()}
@@ -468,6 +467,8 @@ function CandidateRecord({
   onMove: (stageId: string) => void;
   onDelete: (() => void) | null;
 }) {
+  const t = useTranslations("candidates.db");
+  const relativeTime = useRelativeTime();
   const stage = candidate.application;
   return (
     <div
@@ -475,7 +476,7 @@ function CandidateRecord({
       onClick={onOpen}
       role="button"
       tabIndex={0}
-      aria-label={`Open ${candidate.name}`}
+      aria-label={t("openLabel", { name: candidate.name })}
       onKeyDown={(e) => {
         // Don't hijack keys typed into the row's stage <select> or checkbox.
         if ((e.target as HTMLElement).closest("select, input, button")) return;
@@ -494,18 +495,18 @@ function CandidateRecord({
         checked={checked}
         onClick={(e) => e.stopPropagation()}
         onChange={onToggle}
-        aria-label={`Select ${candidate.name}`}
+        aria-label={t("selectLabel", { name: candidate.name })}
       />
       <div className="row" style={{ gap: 10, minWidth: 0 }}>
         <Avatar name={candidate.name} size="md" />
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--ink-0)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{candidate.name}</div>
-          <div className="tiny" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{candidate.location || candidate.email || "No location"}</div>
+          <div className="tiny" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{candidate.location || candidate.email || t("noLocation")}</div>
         </div>
       </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 13, color: "var(--ink-0)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {stage?.jobTitle || candidate.currentRole || "No role yet"}
+          {stage?.jobTitle || candidate.currentRole || t("noRole")}
         </div>
         <div className="row" style={{ gap: 4, marginTop: 3, overflow: "hidden" }}>
           {candidate.skills.slice(0, 2).map((skill) => <span key={skill} className="chip" style={{ height: 17, fontSize: 10, padding: "0 6px" }}>{skill}</span>)}
@@ -530,7 +531,7 @@ function CandidateRecord({
             {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         ) : (
-          <span className="tiny">No application</span>
+          <span className="tiny">{t("noApplication")}</span>
         )}
       </div>
       <div className="tiny">{candidate.source || "—"}</div>
@@ -551,8 +552,8 @@ function CandidateRecord({
           <button
             className="iconbtn"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            aria-label={`Delete ${candidate.name}`}
-            title="Delete candidate"
+            aria-label={t("deleteLabel", { name: candidate.name })}
+            title={t("deleteTitle")}
             style={{ width: 24, height: 24, color: "var(--ink-2)" }}
           >
             <Icons.Trash size={12} />
@@ -575,6 +576,8 @@ type PulseBreakdownAPI = {
 };
 
 function PulsePill({ candidateId, score, band }: { candidateId: string; score: number | null; band: string | null }) {
+  const tp = useTranslations("common.pulse");
+  const tc = useTranslations("common");
   const [open, setOpen] = React.useState(false);
   const [data, setData] = React.useState<PulseBreakdownAPI | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -607,13 +610,15 @@ function PulsePill({ candidateId, score, band }: { candidateId: string; score: n
   if (typeof score !== "number" || !band) {
     return <span className="tiny" style={{ minWidth: 56, textAlign: "right" }}>—</span>;
   }
-  const meta = BAND_META[band as PulseBand] || BAND_META.warm;
+  const bandKey = (band in BAND_META ? band : "warm") as PulseBand;
+  const meta = BAND_META[bandKey];
+  const bandLabel = tp(`bands.${bandKey}`);
 
   return (
     <div style={{ position: "relative" }} ref={popoverRef}>
       <button
         onClick={openBreakdown}
-        title={`Pulse · ${meta.label}`}
+        title={`Pulse · ${bandLabel}`}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -657,18 +662,18 @@ function PulsePill({ candidateId, score, band }: { candidateId: string; score: n
               Pulse · {score} {meta.emoji}
             </span>
             <span style={{ flex: 1 }} />
-            <span className="tiny">{meta.label}</span>
+            <span className="tiny">{bandLabel}</span>
           </div>
-          {loading && <div className="tiny">Loading…</div>}
+          {loading && <div className="tiny">{tc("loading")}</div>}
           {data && (
             <>
               <Sparkline data={data.sparkline} />
               <div style={{ marginTop: 10, borderTop: "0.5px solid var(--line)", paddingTop: 10 }}>
                 <div className="tiny" style={{ marginBottom: 6, color: "var(--ink-2)" }}>
-                  Signals · last 14 days
+                  {tp("signalsTitle")}
                 </div>
                 {data.signals.length === 0 ? (
-                  <div className="tiny">No signals yet.</div>
+                  <div className="tiny">{tp("noSignals")}</div>
                 ) : (
                   <div className="col" style={{ gap: 4 }}>
                     {data.signals.slice(0, 6).map((s) => (
@@ -684,14 +689,14 @@ function PulsePill({ candidateId, score, band }: { candidateId: string; score: n
                           {s.polarity === "neg" ? "−" : "+"}
                           {s.weight}
                         </span>
-                        <span style={{ flex: 1, color: "var(--ink-1)" }}>{prettySignal(s.kind)}</span>
+                        <span style={{ flex: 1, color: "var(--ink-1)" }}>{prettySignal(s.kind, tp)}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
               <div className="tiny" style={{ marginTop: 8, color: "var(--ink-2)" }}>
-                Baseline: {data.baseline}
+                {tp("baseline", { value: data.baseline })}
               </div>
             </>
           )}
@@ -723,26 +728,15 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
-function prettySignal(kind: string): string {
-  switch (kind) {
-    case "message_received": return "Replied to outbound";
-    case "message_fast_reply": return "Replied fast";
-    case "message_long_reply": return "Long, considered reply";
-    case "positive_sentiment": return "Positive tone";
-    case "question_asked": return "Asked a question";
-    case "link_clicked": return "Clicked a link";
-    case "email_opened": return "Opened an email";
-    case "no_reply_overdue": return "Outbound overdue";
-    case "no_open": return "Outbounds unopened";
-    case "stage_idle": return "Stage idle";
-    case "negative_sentiment": return "Concerns raised";
-    case "reschedule_requested": return "Reschedule requested";
-    case "interview_no_show": return "Interview no-show";
-    case "unsubscribe": return "Unsubscribed";
-    case "stage_advanced": return "Stage advanced";
-    case "offer_sent": return "Offer sent";
-    default: return kind;
-  }
+const SIGNAL_KINDS = new Set([
+  "message_received", "message_fast_reply", "message_long_reply", "positive_sentiment",
+  "question_asked", "link_clicked", "email_opened", "no_reply_overdue", "no_open",
+  "stage_idle", "negative_sentiment", "reschedule_requested", "interview_no_show",
+  "unsubscribe", "stage_advanced", "offer_sent",
+]);
+
+function prettySignal(kind: string, tp: ReturnType<typeof useTranslations<"common.pulse">>): string {
+  return SIGNAL_KINDS.has(kind) ? tp(`signals.${kind as "message_received"}`) : kind;
 }
 
 function ScorePill({ score }: { score: number | null }) {
@@ -817,12 +811,15 @@ function AddCandidateModal({
   onClose: () => void;
   onCreated: (id: string) => void;
 }) {
+  const t = useTranslations("candidates.add");
+  const tc = useTranslations("common");
+  const labels = useValueLabels();
   const [form, setForm] = React.useState({
     name: "",
     email: "",
     location: "",
     currentRole: "",
-    source: "Sourced",
+    source: t("defaultSource"),
     years: "",
     skills: "",
     jobId: jobs.find((j) => j.status === "Open")?.id || jobs[0]?.id || "",
@@ -850,7 +847,7 @@ function AddCandidateModal({
     const json = await res.json().catch(() => ({}));
     setSaving(false);
     if (!res.ok) {
-      setError(json.error || "Could not add candidate");
+      setError(json.error || t("failed"));
       return;
     }
     onCreated(json.id);
@@ -863,34 +860,34 @@ function AddCandidateModal({
         <div style={{ padding: "18px 24px", borderBottom: "0.5px solid var(--line)" }}>
           <div className="row">
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="topbar-crumb">Candidates</div>
-              <h2 style={{ fontSize: 18 }}>Add candidate</h2>
+              <div className="topbar-crumb">{t("crumb")}</div>
+              <h2 style={{ fontSize: 18 }}>{t("title")}</h2>
             </div>
-            <button type="button" className="iconbtn" onClick={onClose} aria-label="Close"><Icons.X size={15} /></button>
+            <button type="button" className="iconbtn" onClick={onClose} aria-label={tc("close")}><Icons.X size={15} /></button>
           </div>
         </div>
         <div className="scroll" style={{ flex: 1, padding: "22px 24px", overflowY: "auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Full name" required><input className="input" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Amelia Chen" required /></Field>
-            <Field label="Email"><input className="input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@email.com" /></Field>
+            <Field label={t("name")} required><input className="input" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Amelia Chen" required /></Field>
+            <Field label={t("email")}><input className="input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder={t("emailPlaceholder")} /></Field>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Location"><input className="input" value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Berlin, DE" /></Field>
-            <Field label="Current role"><input className="input" value={form.currentRole} onChange={(e) => set("currentRole", e.target.value)} placeholder="Senior Designer @ N26" /></Field>
+            <Field label={t("location")}><input className="input" value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Berlin, DE" /></Field>
+            <Field label={t("currentRole")}><input className="input" value={form.currentRole} onChange={(e) => set("currentRole", e.target.value)} placeholder="Senior Designer @ N26" /></Field>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Source"><input className="input" value={form.source} onChange={(e) => set("source", e.target.value)} /></Field>
-            <Field label="Years"><input className="input" type="number" min="0" max="80" value={form.years} onChange={(e) => set("years", e.target.value)} placeholder="7" /></Field>
+            <Field label={t("source")}><input className="input" value={form.source} onChange={(e) => set("source", e.target.value)} /></Field>
+            <Field label={t("years")}><input className="input" type="number" min="0" max="80" value={form.years} onChange={(e) => set("years", e.target.value)} placeholder="7" /></Field>
           </div>
-          <Field label="Tags / skills"><input className="input" value={form.skills} onChange={(e) => set("skills", e.target.value)} placeholder="Design Systems, B2B, Research" /></Field>
+          <Field label={t("skills")}><input className="input" value={form.skills} onChange={(e) => set("skills", e.target.value)} placeholder="Design Systems, B2B, Research" /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Attach to job">
+            <Field label={t("job")}>
               <select className="select" value={form.jobId} onChange={(e) => set("jobId", e.target.value)}>
-                <option value="">No application yet</option>
-                {jobs.map((job) => <option key={job.id} value={job.id}>{job.title} · {job.status}</option>)}
+                <option value="">{t("noApplication")}</option>
+                {jobs.map((job) => <option key={job.id} value={job.id}>{job.title} · {labels.jobStatus(job.status)}</option>)}
               </select>
             </Field>
-            <Field label="Initial stage">
+            <Field label={t("stage")}>
               <select className="select" value={form.stageId} onChange={(e) => set("stageId", e.target.value)} disabled={!form.jobId}>
                 {stages.map((stage) => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
               </select>
@@ -899,10 +896,10 @@ function AddCandidateModal({
           {error && <div className="chip chip-danger" style={{ marginTop: 4 }}>{error}</div>}
         </div>
         <div className="row" style={{ padding: "12px 22px", borderTop: "0.5px solid var(--line)" }}>
-          <span className="tiny" style={{ flex: 1 }}>Creates a workspace-scoped candidate record.</span>
-          <button type="button" className="btn btn-sm btn-ghost" onClick={onClose}>Cancel</button>
+          <span className="tiny" style={{ flex: 1 }}>{t("hint")}</span>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={onClose}>{tc("cancel")}</button>
           <button className="btn btn-sm btn-primary" disabled={saving || !form.name.trim()} type="submit">
-            {saving ? "Adding…" : "Add candidate"}
+            {saving ? t("adding") : t("submit")}
           </button>
         </div>
       </form>

@@ -4,12 +4,14 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons } from "@/components/primitives";
 
 export default function PrintButton() {
+  const t = useTranslations("dashboard.monthly");
   return (
     <button className="btn btn-primary" onClick={() => window.print()}>
-      <Icons.ArrowUpRight size={12} stroke={2}/> Save as PDF
+      <Icons.ArrowUpRight size={12} stroke={2}/> {t("savePdf")}
     </button>
   );
 }

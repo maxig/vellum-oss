@@ -15,7 +15,8 @@
     "prisma:dev": "prisma migrate dev",
     "prisma:reset": "prisma migrate reset --force",
     "db:seed": "tsx prisma/seed.ts",
-    "db:setup": "prisma migrate deploy && tsx prisma/seed.ts"
+    "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
+    "i18n:check": "node scripts/check-messages.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -33,6 +34,7 @@
     "mailparser": "^3.9.8",
     "next": "16.2.6",
     "next-auth": "4.24.14",
+    "next-intl": "^4.14.9",
     "nodemailer": "^8.0.8",
     "pdf-parse-new": "^2.1.0",
     "react": "19.2",

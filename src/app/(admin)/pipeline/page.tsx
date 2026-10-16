@@ -5,6 +5,7 @@ import * as React from "react";
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
+import { getTranslations } from "next-intl/server";
 import KanbanBoard from "./KanbanBoard";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +33,12 @@ export default async function PipelinePage({
   });
 
   if (jobs.length === 0) {
+    const t = await getTranslations("pipeline.kanban");
     return (
       <div className="page">
-        <h1>Pipeline</h1>
-        <p className="muted" style={{ marginTop: 8 }}>You haven't created any jobs yet.</p>
-        <Link href="/jobs" className="btn btn-primary" style={{ marginTop: 20 }}>Create your first job</Link>
+        <h1>{t("title")}</h1>
+        <p className="muted" style={{ marginTop: 8 }}>{t("noJobs")}</p>
+        <Link href="/jobs" className="btn btn-primary" style={{ marginTop: 20 }}>{t("createFirst")}</Link>
       </div>
     );
   }

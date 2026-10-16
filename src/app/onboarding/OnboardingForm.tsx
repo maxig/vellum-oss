@@ -3,9 +3,11 @@
 
 "use client";
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons } from "@/components/Icons";
 
 export default function OnboardingForm({ redirectAfter = "/dashboard" }: { redirectAfter?: string }) {
+  const t = useTranslations("auth.onboarding");
   const [name, setName] = React.useState("");
   const [slug, setSlug] = React.useState("");
   const [domain, setDomain] = React.useState("");
@@ -33,7 +35,7 @@ export default function OnboardingForm({ redirectAfter = "/dashboard" }: { redir
     setBusy(false);
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
-      setError(j.error || "Could not create workspace.");
+      setError(j.error || t("failed"));
       return;
     }
     window.location.href = redirectAfter;
@@ -42,31 +44,33 @@ export default function OnboardingForm({ redirectAfter = "/dashboard" }: { redir
   return (
     <form onSubmit={submit} className="col" style={{ gap: 14 }}>
       <div>
-        <label className="label">Company name</label>
+        <label className="label">{t("company")}</label>
         <input className="input" required autoFocus value={name} onChange={(e) => { setName(e.target.value); autoSlug(e.target.value); }} placeholder="goscore"/>
       </div>
       <div className="row" style={{ gap: 14 }}>
         <div style={{ flex: 1 }}>
-          <label className="label">Subdomain</label>
+          <label className="label">{t("subdomain")}</label>
           <div className="row" style={{ alignItems: "center", gap: 4 }}>
             <input className="input" required value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} placeholder="goscore"/>
             <span className="tiny mono" style={{ whiteSpace: "nowrap" }}>.localhost:3000</span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <label className="label">Website</label>
+          <label className="label">{t("website")}</label>
           <input className="input" value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="goscore.io" />
         </div>
       </div>
       <div className="row" style={{ gap: 14 }}>
         <div style={{ flex: 1 }}>
-          <label className="label">Industry</label>
+          <label className="label">{t("industry")}</label>
           <select className="select" value={industry} onChange={(e) => setIndustry(e.target.value)}>
-            <option>Software</option><option>Fintech</option><option>Healthcare</option><option>Consumer</option><option>Hardware</option><option>Other</option>
+            {(["Software", "Fintech", "Healthcare", "Consumer", "Hardware", "Other"] as const).map((v) => (
+              <option key={v} value={v}>{t(`industries.${v}`)}</option>
+            ))}
           </select>
         </div>
         <div style={{ flex: 1 }}>
-          <label className="label">Team size</label>
+          <label className="label">{t("size")}</label>
           <select className="select" value={size} onChange={(e) => setSize(e.target.value)}>
             <option>1–10</option><option>11–50</option><option>51–200</option><option>201+</option>
           </select>
@@ -75,13 +79,13 @@ export default function OnboardingForm({ redirectAfter = "/dashboard" }: { redir
 
       <label className="row" style={{ gap: 10 }}>
         <input type="checkbox" checked={seed} onChange={(e) => setSeed(e.target.checked)} />
-        <span className="tiny">Seed with example jobs and candidates (recommended for a first look)</span>
+        <span className="tiny">{t("seed")}</span>
       </label>
 
       {error && <div className="chip chip-danger" style={{ height: "auto", padding: "8px 12px", borderRadius: 10 }}>{error}</div>}
 
       <button className="btn btn-primary btn-lg" type="submit" disabled={busy || !name.trim() || !slug.trim()}>
-        {busy ? "Creating…" : "Create workspace"} <Icons.ArrowRight size={14} stroke={2} />
+        {busy ? t("creating") : t("create")} <Icons.ArrowRight size={14} stroke={2} />
       </button>
     </form>
   );

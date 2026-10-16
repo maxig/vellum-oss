@@ -3,7 +3,12 @@
 
 "use client";
 import * as React from "react";
+import { useTranslations } from "next-intl";
+import { useValueLabels } from "@/i18n/labels";
 import { Glass, Chip, Icons } from "@/components/primitives";
+
+// Sentinel for the "every team" chip; its label comes from careers.board.allTeams.
+const ALL = "__all__";
 
 type Job = {
   id: string;
@@ -26,7 +31,9 @@ export default function RolesBoard({
   offices: Office[];
   jobs: Job[];
 }) {
-  const [filter, setFilter] = React.useState<string>("All teams");
+  const t = useTranslations("careers.board");
+  const labels = useValueLabels();
+  const [filter, setFilter] = React.useState<string>(ALL);
   const [search, setSearch] = React.useState("");
 
   // Location filter chips are derived from the workspace's configured offices,
@@ -57,7 +64,7 @@ export default function RolesBoard({
 
   const filtered = React.useMemo(() => {
     return jobs.filter((j) => {
-      if (filter !== "All teams") {
+      if (filter !== ALL) {
         const matchesDept = j.department === filter;
         const matchesLoc = matchesLocationChip(j.location, filter);
         if (!matchesDept && !matchesLoc) return false;
@@ -71,7 +78,7 @@ export default function RolesBoard({
     });
   }, [filter, jobs, search]);
 
-  const chips = ["All teams", ...departments, ...locationFilters];
+  const chips = [ALL, ...departments, ...locationFilters];
 
   return (
     <>
@@ -90,7 +97,7 @@ export default function RolesBoard({
               }}
               onClick={() => setFilter(label)}
             >
-              {label}
+              {label === ALL ? t("allTeams") : label === "Remote" ? labels.workMode("Remote") : label}
             </button>
           ))}
         </Glass>
@@ -99,20 +106,20 @@ export default function RolesBoard({
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search roles…"
+            placeholder={t("search")}
             style={{ background: "transparent", border: 0, outline: 0, color: "var(--ink-0)", fontSize: 13, width: "100%" }}
           />
         </Glass>
-        {(filter !== "All teams" || search) && (
+        {(filter !== ALL || search) && (
           <button
             type="button"
             className="btn btn-sm btn-ghost"
             onClick={() => {
-              setFilter("All teams");
+              setFilter(ALL);
               setSearch("");
             }}
           >
-            Clear <Icons.X size={11} />
+            {t("clear")} <Icons.X size={11} />
           </button>
         )}
       </div>
@@ -121,7 +128,7 @@ export default function RolesBoard({
         {filtered.length === 0 && (
           <div style={{ padding: "32px 24px", textAlign: "center" }}>
             <p className="muted">
-              {jobs.length === 0 ? "No open roles right now. Check back soon." : "No roles match this filter."}
+              {jobs.length === 0 ? t("none") : t("noMatch")}
             </p>
           </div>
         )}
@@ -138,17 +145,17 @@ export default function RolesBoard({
                 <Icons.MapPin size={11} stroke={1.8} /> {j.location}
               </span>
             )}
-            <span className="tiny mono career-job-meta">{j.employment || "Full-time"}</span>
+            <span className="tiny mono career-job-meta">{labels.employment(j.employment || "Full-time")}</span>
             <span className="btn btn-sm">
-              {j.salary || "View role"} <Icons.ArrowRight size={11} stroke={2} />
+              {j.salary || t("view")} <Icons.ArrowRight size={11} stroke={2} />
             </span>
           </a>
         ))}
       </Glass>
 
-      {filtered.length > 0 && (filter !== "All teams" || search) && (
+      {filtered.length > 0 && (filter !== ALL || search) && (
         <div className="tiny" style={{ marginTop: 10, textAlign: "right" }}>
-          Showing {filtered.length} of {jobs.length} {jobs.length === 1 ? "role" : "roles"}
+          {t("showing", { shown: filtered.length, total: jobs.length })}
         </div>
       )}
     </>

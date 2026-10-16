@@ -13,7 +13,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { Glass, AIPill, Icons } from "@/components/primitives";
-import { relativeTime } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 import type { RecapItem, RecapResult, RecapScope } from "@/lib/recap";
 
 type Props = {
@@ -22,6 +23,8 @@ type Props = {
 };
 
 export default function RecapCard({ initialRecap, unreadThreads }: Props) {
+  const t = useTranslations("dashboard.recap");
+  const relativeTime = useRelativeTime();
   const [scope, setScope] = React.useState<RecapScope>("today");
   const [recap, setRecap] = React.useState<RecapResult | null>(initialRecap);
   const [loading, setLoading] = React.useState(false);
@@ -81,7 +84,7 @@ export default function RecapCard({ initialRecap, unreadThreads }: Props) {
       }}
     >
       <div className="row" style={{ marginBottom: 10 }}>
-        {recap?.hasAI ? <AIPill>Vellum AI</AIPill> : <span className="chip tiny">Snapshot</span>}
+        {recap?.hasAI ? <AIPill>Vellum AI</AIPill> : <span className="chip tiny">{t("snapshot")}</span>}
         <span style={{ flex: 1 }} />
         {/* Cadence chip group. Reads inline; doesn't shout. */}
         <div className="row" style={{ gap: 2 }}>
@@ -98,35 +101,24 @@ export default function RecapCard({ initialRecap, unreadThreads }: Props) {
                 background: scope === s ? "var(--glass-bg-strong)" : "transparent",
                 border: scope === s ? "0.5px solid var(--glass-border)" : "0.5px solid transparent",
                 color: scope === s ? "var(--ink-0)" : "var(--ink-2)",
-                textTransform: "capitalize",
               }}
             >
-              {s}
+              {t(`scopes.${s}`)}
             </button>
           ))}
         </div>
       </div>
 
       <div className="row" style={{ marginBottom: 10, alignItems: "baseline" }}>
-        <h3 style={{ fontSize: 15, letterSpacing: "-0.015em", flex: 1, textTransform: "capitalize" }}>
+        <h3 style={{ fontSize: 15, letterSpacing: "-0.015em", flex: 1 }}>
           {/* Per §3 — title becomes "Today's snapshot" when AI is disabled
               so the card reads as a fact list, not an analyst's take. */}
-          {recap?.hasAI || recap == null
-            ? scope === "today"
-              ? "Today's recap"
-              : scope === "week"
-              ? "This week's recap"
-              : "This month's recap"
-            : scope === "today"
-            ? "Today's snapshot"
-            : scope === "week"
-            ? "This week's snapshot"
-            : "This month's snapshot"}
+          {recap?.hasAI || recap == null ? t(`titles.recap.${scope}`) : t(`titles.snapshot.${scope}`)}
         </h3>
         <button
           onClick={refresh}
           disabled={!canRefresh}
-          title={canRefresh ? "Regenerate now" : "Rate-limited — try again in a minute"}
+          title={canRefresh ? t("regenerate") : t("rateLimited")}
           className="btn btn-sm btn-ghost"
           style={{ height: 22, padding: "0 6px", opacity: canRefresh ? 1 : 0.5 }}
         >
@@ -136,7 +128,7 @@ export default function RecapCard({ initialRecap, unreadThreads }: Props) {
             <Icons.ArrowRight size={11} stroke={2} style={{ transform: "rotate(-45deg)" }} />
           )}
           <span className="tiny" style={{ marginLeft: 4 }}>
-            {recap ? `updated ${relativeTime(recap.generatedAt)}` : "warming up…"}
+            {recap ? t("updated", { when: relativeTime(recap.generatedAt) }) : t("warmingUp")}
           </span>
         </button>
       </div>
@@ -146,30 +138,28 @@ export default function RecapCard({ initialRecap, unreadThreads }: Props) {
           recap.items.map((item) => <RecapRow key={item.id} item={item} />)
         ) : recap ? (
           <p className="muted" style={{ fontSize: 13 }}>
-            Quiet so far — the recap will fill in as activity picks up.
+            {t("quiet")}
           </p>
         ) : (
           <p className="muted" style={{ fontSize: 13 }}>
-            Vellum is preparing your first recap. It will appear here in a minute or two.
+            {t("preparing")}
           </p>
         )}
         {/* §3 — soft notice when AI was attempted but the items came back
             empty (provider error, parse failure, or model returned mock). */}
         {recap?.aiError && (
           <p className="tiny" style={{ color: "var(--ink-2)", marginTop: 4 }}>
-            AI insights paused — check Settings → AI.
+            {t("aiPaused")}
           </p>
         )}
       </div>
 
       <div className="row" style={{ marginTop: 16, gap: 8 }}>
         <Link href="/inbox" className="btn btn-sm" style={{ flex: 1, justifyContent: "center" }}>
-          {unreadThreads > 0
-            ? `Reply to ${unreadThreads} thread${unreadThreads === 1 ? "" : "s"}`
-            : "Open inbox"}
+          {unreadThreads > 0 ? t("replyThreads", { count: unreadThreads }) : t("openInbox")}
         </Link>
         <Link href="/pipeline" className="btn btn-sm btn-primary" style={{ flex: 1, justifyContent: "center" }}>
-          Open pipeline <Icons.ArrowRight size={12} stroke={2} />
+          {t("openPipeline")} <Icons.ArrowRight size={12} stroke={2} />
         </Link>
       </div>
     </Glass>

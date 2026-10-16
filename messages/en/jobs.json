@@ -1,0 +1,253 @@
+{
+  "wizard": {
+    "crumb": "New job",
+    "title": "Create a job posting",
+    "steps": {
+      "basics": "Basics",
+      "describe": "Description",
+      "screen": "Screening",
+      "publish": "Publish"
+    },
+    "basics": {
+      "title": "What are you hiring for?",
+      "hint": "We'll generate a draft you can edit in the next step.",
+      "jobTitle": "Job title",
+      "jobTitlePlaceholder": "e.g. Senior Product Designer",
+      "jobTitleExample": "Senior Product Designer",
+      "department": "Department",
+      "addInSettings": "+ Add in Settings",
+      "departmentPlaceholder": "e.g. Engineering",
+      "workMode": "Work mode",
+      "location": "Primary location",
+      "addOffice": "+ Add office",
+      "locationPlaceholder": "Berlin, Lisbon, Remote (EU)…",
+      "salary": "Salary range",
+      "salaryHint": "Optional — {symbol}",
+      "min": "Min",
+      "to": "to",
+      "max": "Max",
+      "employment": "Employment type"
+    },
+    "describe": {
+      "title": "Write the description",
+      "hint": "Tell our AI what you're looking for, or write it yourself. You can always edit afterward.",
+      "aiDraft": "AI draft",
+      "tone": "Tone:",
+      "tones": {
+        "direct": "Direct",
+        "warm": "Warm",
+        "bold": "Bold"
+      },
+      "promptPlaceholder": "A few sentences about who you want…",
+      "generating": "Generating…",
+      "generate": "Generate description",
+      "pitch": "Pitch",
+      "pitchHint": "one line that hooks readers",
+      "pitchPlaceholder": "Help us make lending feel obvious.",
+      "description": "Description",
+      "descriptionPlaceholder": "What the role is, what you'll work on, and why someone should care.",
+      "requirements": "Requirements",
+      "requirementsPlaceholder": "One per line — bullets work too",
+      "niceToHave": "Nice to have",
+      "niceToHavePlaceholder": "Background in regulated industries"
+    },
+    "screen": {
+      "title": "Add screening questions",
+      "hint": "Optional. Candidates answer these in the application form.",
+      "types": {
+        "short": "short",
+        "long": "long",
+        "yesno": "yes/no"
+      },
+      "required": "Required",
+      "questionPlaceholder": "Ask a question…",
+      "add": "Add question",
+      "suggestions": "AI suggestions",
+      "suggesting": "Generating questions tailored to your job description…"
+    },
+    "publish": {
+      "title": "Where should it go?",
+      "hint": "You can change this any time.",
+      "careers": "Vellum careers",
+      "careersSub": "Your branded career site",
+      "linkedinSub": "Free posting · ~3 day review",
+      "indeedSub": "Free posting · auto-syncs applicants",
+      "preview": "Preview",
+      "previewBrand": "Vellum · careers",
+      "descriptionPlaceholder": "Your description will appear here."
+    },
+    "continue": "Continue",
+    "publishing": "Publishing…",
+    "publishJob": "Publish job",
+    "saveDraft": "Save draft"
+  },
+  "detail": {
+    "confirmClose": "Close \"{title}\"? The role disappears from the career site immediately. Existing applicants stay in the pipeline and you can reopen the role anytime.",
+    "confirmDelete": "Permanently delete \"{title}\"? This removes the job, all its applications, threads, and screening questions. Funnel and stage analytics for the role stay intact.",
+    "deleteForbidden": "Only admins can delete jobs.",
+    "deleteFailed": "Could not delete the job.",
+    "allJobs": "All jobs",
+    "openPublic": "Open public link",
+    "openPipeline": "Open pipeline",
+    "moreActions": "More actions",
+    "deleteJob": "Delete job",
+    "postedDaysAgo": "Posted {days}d ago",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "closeRole": "Close role",
+    "reopenRole": "Reopen role",
+    "reopenHint": "Republishes immediately on the career site",
+    "publishForbidden": "Only admins can publish, close, or reopen roles.",
+    "stats": {
+      "applicants": "Applicants",
+      "newThisWeek": "New this week",
+      "lateStages": "In late stages",
+      "salary": "Salary band"
+    },
+    "tabs": {
+      "description": "Description",
+      "screening": "Screening",
+      "process": "Hiring process",
+      "team": "Hiring team",
+      "publish": "Publishing",
+      "analytics": "Analytics"
+    },
+    "description": {
+      "title": "Position description",
+      "rewriting": "Rewriting…",
+      "aiRewrite": "AI rewrite",
+      "save": "Save changes",
+      "edit": "Edit description",
+      "pitch": "One-line pitch",
+      "pitchPlaceholder": "What's this role in one sentence?",
+      "description": "Description",
+      "requirements": "Requirements",
+      "niceToHave": "Nice to have",
+      "onePerLine": "One per line",
+      "salary": "Salary band",
+      "salaryPlaceholder": "€85k – €110k · annual",
+      "about": "About the role",
+      "empty": "No description yet. Click \"Edit description\" to add one.",
+      "compensation": "Compensation"
+    },
+    "screening": {
+      "newQuestion": "New question",
+      "title": "Screening questions",
+      "hint": "Custom questions asked when a candidate applies.",
+      "save": "Save questions",
+      "edit": "Edit questions",
+      "kinds": {
+        "text": "Short text",
+        "longtext": "Long text",
+        "yesno": "Yes/No",
+        "number": "Number"
+      },
+      "required": "Required",
+      "labelPlaceholder": "Question label (e.g. Years of experience with React?)",
+      "add": "Add question",
+      "empty": "No screening questions yet. Candidates will only be asked the defaults."
+    },
+    "process": {
+      "defaults": {
+        "intro": {
+          "n": "Intro chat",
+          "who": "Recruiter · 30 min",
+          "d": "Get to know each other and the role."
+        },
+        "working": {
+          "n": "Working session",
+          "who": "Hiring manager · 60 min",
+          "d": "Walk through a representative problem."
+        },
+        "team": {
+          "n": "Team meet",
+          "who": "2-3 teammates · 60 min",
+          "d": "Meet the people you'll work with day to day."
+        },
+        "offer": {
+          "n": "Offer",
+          "who": "Decision within a week",
+          "d": "We'll move fast once everyone's met."
+        }
+      },
+      "newStep": "New step",
+      "title": "Hiring process",
+      "hint": "What candidates can expect after they apply. Shown on the public career site.",
+      "save": "Save process",
+      "edit": "Edit process",
+      "stepN": "Step {n}",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "removeStep": "Remove step",
+      "namePlaceholder": "Step name (e.g. Working session)",
+      "whoPlaceholder": "Who & duration (e.g. Hiring manager · 60 min)",
+      "descPlaceholder": "What candidates can expect",
+      "addStep": "Add step",
+      "empty": "No hiring process defined yet. Click \"Edit process\" to add one.",
+      "untitled": "Untitled step"
+    },
+    "team": {
+      "presets": {
+        "recruiterLead": "Recruiter (lead)",
+        "hiringManager": "Hiring manager",
+        "interviewer": "Interviewer",
+        "reviewer": "Reviewer",
+        "sourcer": "Sourcer"
+      },
+      "forbidden": "Only admins can change the hiring team or lead reviewer.",
+      "saveFailed": "Could not save.",
+      "confirmRemove": "Remove {name} from the hiring team?",
+      "lead": "Lead reviewer",
+      "leadHint": "The recruiter who owns triaging candidates for this role. New applications inherit this as their reviewer; the lead can be reassigned per-application from the candidate profile.",
+      "unassigned": "— Unassigned —",
+      "title": "Hiring team",
+      "hint": "Workspace members involved in this hire. Team members can view the candidates for this job, add notes, and write debriefs on interviews they're scheduled into.",
+      "addMember": "Add member",
+      "person": "Person",
+      "pick": "Pick a teammate…",
+      "role": "Role on this hire",
+      "addToTeam": "Add to team",
+      "empty": "No one on the hiring team yet. Click \"Add member\" to assign a teammate.",
+      "removeFromTeam": "Remove from team",
+      "removeLabel": "Remove {name}"
+    },
+    "publishing": {
+      "careers": "{slug} careers",
+      "branded": "{url} · branded",
+      "freeSync": "Free posting · syncs every 24h",
+      "otta": "Pre-screened candidates · paid",
+      "hn": "First Monday of month",
+      "title": "Where it's published",
+      "hint": "Vellum syncs this listing across the channels you've enabled.",
+      "live": "Live",
+      "toggle": "Toggle {name}",
+      "ossNote": "External channels (LinkedIn / Indeed / Otta / HN) are toggles in the OSS edition — credential sync is part of the SaaS roadmap."
+    },
+    "analytics": {
+      "funnel": "Funnel & conversion",
+      "pulse": "Pipeline pulse",
+      "days": "{n}d",
+      "avgAge": "Avg. application age",
+      "newThisWeek": "New this week",
+      "published": "Published"
+    }
+  },
+  "list": {
+    "title": "Jobs",
+    "summary": "{total} total · {open} actively hiring",
+    "all": "All",
+    "newJob": "New job",
+    "cols": {
+      "role": "Role",
+      "location": "Location",
+      "applicants": "Applicants",
+      "open": "Open",
+      "status": "Status"
+    },
+    "empty": "No jobs yet. Create your first to start collecting applicants.",
+    "emptyTab": "No {status} roles right now.",
+    "create": "Create a job",
+    "newCount": "{count} new",
+    "days": "{n}d"
+  }
+}

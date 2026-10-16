@@ -1,0 +1,76 @@
+{
+  "title": "Careers analytics",
+  "subtitle": "How visitors are finding and engaging with <b>{domain}</b>.",
+  "other": "Other",
+  "kpi": {
+    "views": "Page views",
+    "uniques": "Unique visitors",
+    "applies": "Applications",
+    "conversion": "Conversion rate"
+  },
+  "chartTitle": "Visits & applications",
+  "funnel": {
+    "title": "Conversion funnel",
+    "hint": "Where visitors drop off between landing and submitting.",
+    "visited": "Visited careers site",
+    "viewedJob": "Viewed a job",
+    "clickedApply": "Clicked Apply",
+    "started": "Started application",
+    "submitted": "Submitted application"
+  },
+  "sources": {
+    "title": "Top sources",
+    "hint": "Where visits came from.",
+    "empty": "No referrer data yet.",
+    "direct": "Direct",
+    "internal": "Internal referrals"
+  },
+  "jobs": {
+    "title": "Top jobs by views",
+    "all": "All jobs",
+    "empty": "No job views yet in this window.",
+    "cols": {
+      "job": "JOB",
+      "views": "VIEWS",
+      "applies": "APPLIES",
+      "conv": "CONV"
+    }
+  },
+  "pages": {
+    "title": "Top pages",
+    "empty": "No page views yet in this window.",
+    "cols": {
+      "path": "PATH",
+      "views": "VIEWS",
+      "time": "AVG. TIME",
+      "bounce": "BOUNCE"
+    }
+  },
+  "geo": {
+    "title": "Where they're visiting from",
+    "empty": "No country-tagged traffic yet. We read country from request headers (Vercel / Cloudflare); it'll fill in once the site is live behind one of those edges."
+  },
+  "devices": {
+    "title": "Devices",
+    "empty": "No device data yet in this window.",
+    "desktop": "Desktop",
+    "mobile": "Mobile",
+    "tablet": "Tablet"
+  },
+  "ai": {
+    "title": "Vellum AI · weekly summary",
+    "updated": "Updated {when}",
+    "mock": "mock",
+    "empty": "Not enough traffic in this window for a summary yet."
+  },
+  "vsPrev": "vs prev. {value}",
+  "daysAgo": "{n} days ago",
+  "today": "Today",
+  "controls": {
+    "last": "Last {n}d",
+    "compare": "Compare previous",
+    "export": "Export",
+    "regenerating": "Regenerating…",
+    "regenerate": "Regenerate"
+  }
+}

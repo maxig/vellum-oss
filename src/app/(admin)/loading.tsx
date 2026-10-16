@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 MG Tech AS
 
+import { useTranslations } from "next-intl";
+
 export default function AdminLoading() {
+  const t = useTranslations("common");
   return (
     <div className="page" aria-busy="true" aria-live="polite">
       <div className="skeleton-line" style={{ width: 200, height: 24, marginBottom: 20 }} />
@@ -11,7 +14,7 @@ export default function AdminLoading() {
         <div className="skeleton-line" style={{ width: "75%" }} />
         <div className="skeleton-line" style={{ width: "45%" }} />
       </div>
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">{t("loading")}</span>
     </div>
   );
 }

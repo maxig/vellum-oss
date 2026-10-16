@@ -1,0 +1,157 @@
+{
+  "dashboard": "Dashboard",
+  "applications": "Bewerbungen",
+  "pipeline": "Pipeline",
+  "pipelineBadge": "{count} aktiv",
+  "jobs": "Stellen",
+  "candidates": "Kandidaten",
+  "inbox": "Posteingang",
+  "calendar": "Kalender",
+  "analytics": "Auswertungen",
+  "company": "Unternehmen",
+  "careerSite": "Karriereseite",
+  "settings": "Einstellungen",
+  "workspaceCount": "{count, plural, one {# Workspace} other {# Workspaces}}",
+  "switchWorkspace": "Workspace wechseln",
+  "createWorkspace": "Workspace erstellen",
+  "aiAssistant": "KI-Assistent",
+  "queueLoading": "Pipeline wird durchsucht…",
+  "queueEmpty": "Alles erledigt — gerade braucht dich nichts.",
+  "queueCount": "<b>{count}</b> {count, plural, one {Kandidat braucht} other {Kandidaten brauchen}} Aufmerksamkeit.",
+  "reviewQueue": "Review-Queue",
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "buttonLabel": "Benachrichtigungen — {count} ungelesen",
+    "markAllRead": "Alle als gelesen markieren",
+    "empty": "Noch keine Benachrichtigungen."
+  },
+  "reviewQueueLabel": "Review-Queue — {count, plural, one {# Eintrag} other {# Einträge}}",
+  "topbar": {
+    "dashboard": {
+      "title": "Dashboard",
+      "crumb": "Dein Workspace"
+    },
+    "applications": {
+      "title": "Bewerbungen",
+      "crumb": "Alle Stellen"
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "crumb": "Stellen › Pipeline"
+    },
+    "jobs": {
+      "title": "Stellen",
+      "crumb": "Alle Anzeigen"
+    },
+    "candidates": {
+      "title": "Kandidaten",
+      "crumb": "Datenbank"
+    },
+    "inbox": {
+      "title": "Posteingang",
+      "crumb": "Unterhaltungen"
+    },
+    "analytics": {
+      "title": "Auswertungen",
+      "crumb": "Karriereseite"
+    },
+    "career": {
+      "title": "Karriereseite",
+      "crumb": "Vorschau"
+    },
+    "settings": {
+      "title": "Einstellungen",
+      "crumb": ""
+    },
+    "profile": {
+      "title": "Profil",
+      "crumb": ""
+    },
+    "groups": {
+      "job": "Stellen",
+      "candidate": "Kandidaten",
+      "thread": "Unterhaltungen",
+      "settings": "Einstellungen"
+    },
+    "openMenu": "Navigationsmenü öffnen",
+    "menu": "Menü",
+    "searchPlaceholder": "Kandidaten, Stellen, Unterhaltungen suchen…",
+    "searching": "Suche…",
+    "noMatches": "Keine Treffer für „{query}“.",
+    "toggleTheme": "Design wechseln"
+  },
+  "queue": {
+    "loadFailed": "Deine Queue konnte nicht geladen werden. Versuch es erneut.",
+    "waitSeconds": "Warte {seconds} s, bevor du erneut aktualisierst.",
+    "refreshInProgress": "Aktualisierung läuft — versuch es gleich noch einmal.",
+    "refreshFailed": "Aktualisierung fehlgeschlagen.",
+    "title": "Review-Queue",
+    "crumb": "KI-Assistent",
+    "close": "Schließen",
+    "loading": "Deine Queue wird geladen…",
+    "inboxZeroLine": "Alles erledigt. Gerade wartet nichts auf dich — gute Arbeit.",
+    "summary": "Ich habe deine Pipeline durchgesehen und <b>{count, plural, one {# Kandidaten} other {# Kandidaten}}</b> gefunden, die Aufmerksamkeit brauchen. Sortiert nach Dringlichkeit.",
+    "showing": "Anzeige",
+    "scopeMine": "Meine Kandidaten",
+    "scopeWorkspace": "Ganzer Workspace",
+    "all": "Alle",
+    "bucketEmpty": "In dieser Kategorie wartet nichts auf dich.",
+    "refreshing": "Wird aktualisiert…",
+    "cachedStale": "Queue zwischengespeichert {when}. Wird im Hintergrund aktualisiert.",
+    "cached": "Queue zwischengespeichert {when}. Wird stündlich aktualisiert.",
+    "refresh": "Aktualisieren",
+    "customize": "Regeln anpassen",
+    "done": "Fertig",
+    "aiTitle": "Von der KI-Ergänzung gefunden",
+    "urgent": "Dringend",
+    "open": "Öffnen",
+    "actions": {
+      "reply": "Antworten",
+      "schedule": "Planen",
+      "decide": "Entscheiden",
+      "nudge": "Erinnern",
+      "complete": "Erledigen"
+    },
+    "allClear": "Hier ist alles erledigt.",
+    "inboxZero": "Alles erledigt.",
+    "nothingBlocked": "Gerade wartet nichts auf dich — gute Arbeit.",
+    "buckets": {
+      "no-reply": {
+        "label": "Wartet auf deine Antwort",
+        "short": "Keine Antwort"
+      },
+      "post-interview": {
+        "label": "Interview geführt — wartet auf deine Entscheidung",
+        "short": "Nach Interview"
+      },
+      "offer-pending": {
+        "label": "Angebot verschickt — Antwort ausstehend",
+        "short": "Angebot offen"
+      },
+      "stale-applied": {
+        "label": "Beworben — seit 3+ Tagen keine Reaktion",
+        "short": "Liegengeblieben"
+      },
+      "schedule-needed": {
+        "label": "In Interview-Phase — noch kein Termin",
+        "short": "Termin nötig"
+      },
+      "missing-debrief": {
+        "label": "Interview geführt — Debriefing fehlt",
+        "short": "Debriefing fehlt"
+      },
+      "reference-overdue": {
+        "label": "Referenzprüfungen überfällig",
+        "short": "Referenz überfällig"
+      },
+      "long-cold-scorer": {
+        "label": "Starke Passung, aber kühlt ab",
+        "short": "Kühlt ab"
+      },
+      "ai": {
+        "label": "Von der KI bemerkt",
+        "short": "KI-Hinweis"
+      }
+    }
+  }
+}

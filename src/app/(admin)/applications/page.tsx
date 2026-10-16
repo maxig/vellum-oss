@@ -5,6 +5,7 @@ import * as React from "react";
 import Link from "next/link";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
+import { getTranslations } from "next-intl/server";
 import ApplicationsBoard from "./ApplicationsBoard";
 
 export const dynamic = "force-dynamic";
@@ -91,14 +92,15 @@ export default async function ApplicationsPage() {
   );
 
   if (jobs.length === 0) {
+    const t = await getTranslations("pipeline.apps");
     return (
       <div className="page">
-        <h1>Applications</h1>
+        <h1>{t("title")}</h1>
         <p className="muted" style={{ marginTop: 8 }}>
-          No active jobs yet. Publish a role and applicants will show up here.
+          {t("noJobs")}
         </p>
         <Link href="/jobs" className="btn btn-primary" style={{ marginTop: 20 }}>
-          Go to jobs
+          {t("goToJobs")}
         </Link>
       </div>
     );

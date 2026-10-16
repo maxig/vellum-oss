@@ -10,6 +10,7 @@ import ThemeBoot from "@/components/ThemeBoot";
 import { Glass, Chip } from "@/components/primitives";
 import { Icons } from "@/components/Icons";
 import CookieConsent, { CookiePreferencesLink } from "@/components/CookieConsent";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,10 @@ export default async function Root() {
   if (session?.user?.id) redirect("/dashboard");
   const count = await db.user.count();
   if (count === 0) redirect("/onboarding");
+  const t = await getTranslations("landing");
+  const hl = (c: React.ReactNode) => (
+    <span className="serif" style={{ fontStyle: "italic", fontWeight: 400, color: "var(--accent-solid)" }}>{c}</span>
+  );
 
   return (
     <>
@@ -32,12 +37,12 @@ export default async function Root() {
               <span className="gs-name">Vellum</span>
             </Link>
             <div style={{ flex: 1 }} />
-            <a className="tiny marketing-nav-extra" href="#features" style={{ color: "var(--ink-1)", fontSize: 13 }}>Features</a>
-            <a className="tiny marketing-nav-extra" href="#ai" style={{ color: "var(--ink-1)", fontSize: 13 }}>AI</a>
-            <a className="tiny marketing-nav-extra" href="#self-host" style={{ color: "var(--ink-1)", fontSize: 13 }}>Self-host</a>
+            <a className="tiny marketing-nav-extra" href="#features" style={{ color: "var(--ink-1)", fontSize: 13 }}>{t("nav.features")}</a>
+            <a className="tiny marketing-nav-extra" href="#ai" style={{ color: "var(--ink-1)", fontSize: 13 }}>{t("nav.ai")}</a>
+            <a className="tiny marketing-nav-extra" href="#self-host" style={{ color: "var(--ink-1)", fontSize: 13 }}>{t("nav.selfHost")}</a>
             <a className="tiny marketing-nav-extra" href="https://github.com/vellum-ats/vellum" target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink-1)", fontSize: 13 }}>GitHub</a>
-            <Link href="/login" className="btn btn-sm">Sign in</Link>
-            <Link href="/onboarding" className="btn btn-sm btn-primary">Start free</Link>
+            <Link href="/login" className="btn btn-sm">{t("nav.signIn")}</Link>
+            <Link href="/onboarding" className="btn btn-sm btn-primary">{t("startFree")}</Link>
           </Glass>
         </div>
 
@@ -45,30 +50,23 @@ export default async function Root() {
           <div className="row" style={{ justifyContent: "center", marginBottom: 18 }}>
             <span className="chip" style={{ height: 26, padding: "0 12px", fontSize: 12 }}>
               <span className="chip-dot" style={{ background: "oklch(68% 0.16 150)" }} />
-              Open source · AGPL · Self-hosted
+              {t("hero.chip")}
             </span>
           </div>
           <h1>
-            Hiring software that
-            <br />
-            <span className="serif" style={{ fontStyle: "italic", fontWeight: 400, color: "var(--accent-solid)" }}>
-              feels obvious.
-            </span>
+            {t.rich("hero.title", { br: () => <br />, hl })}
           </h1>
           <p className="lede">
-            Vellum is an AI-first applicant tracking system for teams who want a beautiful pipeline, calm
-            collaboration, and a candidate experience that doesn&rsquo;t feel like a form.
+            {t("hero.lede")}
           </p>
           <div className="row" style={{ justifyContent: "center", gap: 10, marginTop: 30, flexWrap: "wrap" }}>
             <Link href="/onboarding" className="btn btn-lg btn-primary">
-              Start free <Icons.ArrowRight size={14} stroke={2} />
+              {t("startFree")} <Icons.ArrowRight size={14} stroke={2} />
             </Link>
-            <a href="#features" className="btn btn-lg">See how it works</a>
+            <a href="#features" className="btn btn-lg">{t("hero.howItWorks")}</a>
           </div>
           <div className="tiny" style={{ marginTop: 14, color: "var(--ink-2)" }}>
-            <code className="mono" style={{ fontSize: 12.5 }}>docker compose up</code>
-            <span> and you have a working ATS at </span>
-            <code className="mono" style={{ fontSize: 12.5 }}>localhost:3000</code>.
+            {t.rich("hero.docker", { code: (c) => <code className="mono" style={{ fontSize: 12.5 }}>{c}</code> })}
           </div>
         </section>
 
@@ -85,20 +83,20 @@ export default async function Root() {
             <div className="marketing-showcase-body">
               <div className="marketing-kanban">
                 {[
-                  { stage: "Applied", count: 24, accent: false, cards: [
+                  { stage: t("showcase.applied"), count: 24, accent: false, cards: [
                     { name: "Ines Vidal", role: "Senior Engineer", score: 86 },
                     { name: "Tomás Brito", role: "Senior Engineer", score: 74 },
                     { name: "Kira Ahmed", role: "Senior Engineer", score: 69 },
                   ] },
-                  { stage: "Screen", count: 9, accent: false, cards: [
+                  { stage: t("showcase.screen"), count: 9, accent: false, cards: [
                     { name: "Daniel Ek", role: "Senior Engineer", score: 91 },
                     { name: "Yuki Tanaka", role: "Senior Engineer", score: 82 },
                   ] },
-                  { stage: "Interview", count: 5, accent: true, cards: [
+                  { stage: t("showcase.interview"), count: 5, accent: true, cards: [
                     { name: "Marta Nowak", role: "Senior Engineer", score: 88 },
                     { name: "Ben Cohen", role: "Senior Engineer", score: 79 },
                   ] },
-                  { stage: "Offer", count: 2, accent: false, cards: [
+                  { stage: t("showcase.offer"), count: 2, accent: false, cards: [
                     { name: "Lena Park", role: "Senior Engineer", score: 94 },
                   ] },
                 ].map((col) => (
@@ -108,7 +106,7 @@ export default async function Root() {
                       <span className="tiny" style={{ marginLeft: 6, color: "var(--ink-2)" }}>{col.count}</span>
                       <div style={{ flex: 1 }} />
                       {col.accent && (
-                        <span className="chip chip-accent" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>AI nudge</span>
+                        <span className="chip chip-accent" style={{ height: 18, padding: "0 6px", fontSize: 10 }}>{t("showcase.nudge")}</span>
                       )}
                     </div>
                     <div className="col" style={{ gap: 8 }}>
@@ -137,25 +135,23 @@ export default async function Root() {
         </section>
 
         <section id="features" className="marketing-section">
-          <div className="section-h" style={{ marginBottom: 6, textAlign: "center" }}>What&rsquo;s inside</div>
+          <div className="section-h" style={{ marginBottom: 6, textAlign: "center" }}>{t("features.eyebrow")}</div>
           <h2 style={{ fontSize: 36, textAlign: "center", letterSpacing: "-0.03em", marginBottom: 12 }}>
-            Everything a hiring team needs.{" "}
-            <span className="serif" style={{ fontStyle: "italic", fontWeight: 400, color: "var(--ink-2)" }}>Nothing it doesn&rsquo;t.</span>
+            {t.rich("features.title", { muted: (c) => <span className="serif" style={{ fontStyle: "italic", fontWeight: 400, color: "var(--ink-2)" }}>{c}</span> })}
           </h2>
           <p className="lede" style={{ textAlign: "center", maxWidth: 540, margin: "0 auto" }}>
-            One workspace for jobs, candidates, conversations, and decisions — built for small teams that ship and
-            large teams that care about craft.
+            {t("features.lede")}
           </p>
 
           <div className="marketing-features">
             {[
-              { icon: Icons.Pipeline, title: "Kanban pipeline", body: "Drag candidates through stages, with WIP limits, sub-pipelines per role, and history baked in." },
-              { icon: Icons.Sparkle, title: "AI evaluation", body: "Summaries, fit scores, and interview recaps. Always labeled, always reviewable, never auto-deciding." },
-              { icon: Icons.Globe, title: "Branded career sites", body: "SEO-ready job listings on your domain with CNAME, JSON-LD, and a no-code editor." },
-              { icon: Icons.Inbox, title: "Unified inbox", body: "Email, scheduling, and team comments in one thread. Context follows the candidate." },
-              { icon: Icons.Calendar, title: "Calendar sync", body: "Two-way sync with Google, Microsoft, and CalDAV. Availability, holds, and conflict checks." },
-              { icon: Icons.Lock, title: "Built for privacy", body: "Row-level workspace isolation, PII redaction before AI calls, full audit log, GDPR-ready exports." },
-            ].map((f) => (
+              { icon: Icons.Pipeline, key: "kanban" },
+              { icon: Icons.Sparkle, key: "ai" },
+              { icon: Icons.Globe, key: "careers" },
+              { icon: Icons.Inbox, key: "inbox" },
+              { icon: Icons.Calendar, key: "calendar" },
+              { icon: Icons.Lock, key: "privacy" },
+            ].map(({ icon, key }) => ({ icon, title: t(`features.items.${key as "kanban"}.title`), body: t(`features.items.${key as "kanban"}.body`) })).map((f) => (
               <Glass key={f.title} faint className="marketing-feature">
                 <div className="marketing-feature-icon">
                   <f.icon size={16} stroke={1.8} />
@@ -172,25 +168,15 @@ export default async function Root() {
             <div className="marketing-ai-glow" />
             <div className="marketing-ai-grid">
               <div>
-                <div className="section-h" style={{ marginBottom: 8 }}>AI, with the brakes on</div>
+                <div className="section-h" style={{ marginBottom: 8 }}>{t("ai.eyebrow")}</div>
                 <h2 style={{ fontSize: 34, letterSpacing: "-0.03em", lineHeight: 1.08, marginBottom: 14 }}>
-                  Helpful in the loop.{" "}
-                  <span className="serif" style={{ fontStyle: "italic", fontWeight: 400, color: "var(--accent-solid)" }}>
-                    Never out of it.
-                  </span>
+                  {t.rich("ai.title", { hl })}
                 </h2>
                 <p style={{ fontSize: 16, lineHeight: 1.55, color: "var(--ink-1)", marginBottom: 20 }}>
-                  Vellum drafts, summarizes, and suggests — humans accept, edit, or ignore. No auto-rejects, no
-                  silent decisions, no hidden prompts.
+                  {t("ai.lede")}
                 </p>
                 <ul className="marketing-ai-list">
-                  {[
-                    "Choose your provider — Anthropic, OpenAI, Google, or local Ollama.",
-                    "PII redaction before content leaves your workspace.",
-                    "Per-feature token budgets and usage reporting.",
-                    "Response caching keyed by workspace + model + prompt.",
-                    "Every AI-generated surface is clearly labeled.",
-                  ].map((line) => (
+                  {(["provider", "redaction", "budgets", "caching", "labeled"] as const).map((k) => t(`ai.points.${k}`)).map((line) => (
                     <li key={line} className="row" style={{ gap: 10, alignItems: "flex-start" }}>
                       <span className="marketing-check"><Icons.Check size={11} stroke={2.4} /></span>
                       <span style={{ fontSize: 14, color: "var(--ink-1)" }}>{line}</span>
@@ -205,24 +191,22 @@ export default async function Root() {
                     <Icons.Sparkle size={14} stroke={1.8} />
                   </span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-0)" }}>Interview recap</div>
-                    <div className="tiny">Marta Nowak · Senior Engineer · 47 min</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-0)" }}>{t("ai.card.title")}</div>
+                    <div className="tiny">{t("ai.card.meta")}</div>
                   </div>
-                  <Chip accent>AI draft</Chip>
+                  <Chip accent>{t("ai.card.draft")}</Chip>
                 </div>
                 <p style={{ fontSize: 13.5, lineHeight: 1.55, color: "var(--ink-1)", marginBottom: 12 }}>
-                  Strong systems instinct — walked through the migration plan with clear failure modes. Pushed
-                  back politely on a leading question, which is a good sign. Slightly nervous in the first 10
-                  minutes, settled in once we moved to code.
+                  {t("ai.card.body")}
                 </p>
                 <div className="row" style={{ gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-                  <Chip good>Strong technical signal</Chip>
-                  <Chip>Collaborative</Chip>
-                  <Chip>Comp expectation: in range</Chip>
+                  <Chip good>{t("ai.card.chip1")}</Chip>
+                  <Chip>{t("ai.card.chip2")}</Chip>
+                  <Chip>{t("ai.card.chip3")}</Chip>
                 </div>
                 <div className="row" style={{ gap: 8 }}>
-                  <button type="button" className="btn btn-sm" disabled>Edit</button>
-                  <button type="button" className="btn btn-sm btn-primary" disabled>Send to team</button>
+                  <button type="button" className="btn btn-sm" disabled>{t("ai.card.edit")}</button>
+                  <button type="button" className="btn btn-sm btn-primary" disabled>{t("ai.card.send")}</button>
                 </div>
               </Glass>
             </div>
@@ -232,21 +216,19 @@ export default async function Root() {
         <section id="self-host" className="marketing-section">
           <div className="marketing-self">
             <div>
-              <div className="section-h" style={{ marginBottom: 8 }}>Self-host in minutes</div>
+              <div className="section-h" style={{ marginBottom: 8 }}>{t("self.eyebrow")}</div>
               <h2 style={{ fontSize: 32, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 14 }}>
-                Your data,{" "}
-                <span className="serif" style={{ fontStyle: "italic", fontWeight: 400, color: "var(--accent-solid)" }}>your servers.</span>
+                {t.rich("self.title", { hl })}
               </h2>
               <p style={{ fontSize: 16, lineHeight: 1.55, color: "var(--ink-1)", marginBottom: 18 }}>
-                Vellum is open source under AGPL. Run it on a $5 VPS, your enterprise k8s cluster, or anything in
-                between. Bring your own SSO, your own AI keys, your own retention policy.
+                {t("self.lede")}
               </p>
               <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
                 <a href="https://github.com/vellum-ats/vellum" target="_blank" rel="noopener noreferrer" className="btn">
-                  <Icons.Github size={14} stroke={1.8} /> View on GitHub
+                  <Icons.Github size={14} stroke={1.8} /> {t("self.github")}
                 </a>
                 <a href="https://github.com/vellum-ats/vellum#readme" target="_blank" rel="noopener noreferrer" className="btn">
-                  Read the docs <Icons.ArrowUpRight size={12} stroke={1.8} />
+                  {t("self.docs")} <Icons.ArrowUpRight size={12} stroke={1.8} />
                 </a>
               </div>
             </div>
@@ -275,19 +257,16 @@ export default async function Root() {
             <div className="marketing-cta-glow" />
             <div style={{ position: "relative", textAlign: "center" }}>
               <h2 style={{ fontSize: 44, letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: 14 }}>
-                Run your first interview{" "}
-                <span className="serif" style={{ fontStyle: "italic", fontWeight: 400, color: "var(--accent-solid)" }}>
-                  this afternoon.
-                </span>
+                {t.rich("cta.title", { hl })}
               </h2>
               <p style={{ fontSize: 17, color: "var(--ink-1)", maxWidth: 520, margin: "0 auto 24px", lineHeight: 1.5 }}>
-                Spin up a workspace, import a job, and invite your team. No credit card, no demo call.
+                {t("cta.lede")}
               </p>
               <div className="row" style={{ justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
                 <Link href="/onboarding" className="btn btn-lg btn-primary">
-                  Start free <Icons.ArrowRight size={13} stroke={2} />
+                  {t("startFree")} <Icons.ArrowRight size={13} stroke={2} />
                 </Link>
-                <Link href="/login" className="btn btn-lg">I already have an account</Link>
+                <Link href="/login" className="btn btn-lg">{t("cta.haveAccount")}</Link>
               </div>
             </div>
           </Glass>
@@ -300,12 +279,12 @@ export default async function Root() {
                 <span className="gs-mark" />
                 <span className="gs-name" style={{ fontSize: 14 }}>Vellum</span>
               </div>
-              <div className="tiny">© {new Date().getFullYear()} Vellum. AI-first applicant tracking.</div>
+              <div className="tiny">{t("footer.copyright", { year: new Date().getFullYear() })}</div>
             </div>
             <div className="row" style={{ gap: 18, flexWrap: "wrap" }}>
-              <Link className="tiny" href="/privacy">Privacy</Link>
-              <Link className="tiny" href="/terms">Terms</Link>
-              <Link className="tiny" href="/cookies">Cookies</Link>
+              <Link className="tiny" href="/privacy">{t("footer.privacy")}</Link>
+              <Link className="tiny" href="/terms">{t("footer.terms")}</Link>
+              <Link className="tiny" href="/cookies">{t("footer.cookies")}</Link>
               <CookiePreferencesLink />
               <a className="tiny" href="https://github.com/vellum-ats/vellum" target="_blank" rel="noopener noreferrer">GitHub</a>
               <a className="tiny" href="mailto:hello@vellum.app">hello@vellum.app</a>

@@ -3,6 +3,7 @@
 
 "use client";
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons } from "@/components/Icons";
 import Wysiwyg from "@/components/Wysiwyg";
 
@@ -14,6 +15,8 @@ export default function ApplyForm({
   jobId: string;
   screening: { id: string; label: string; kind: string; required: boolean }[];
 }) {
+  const t = useTranslations("careers.apply");
+  const tc = useTranslations("common");
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [linkedin, setLinkedin] = React.useState("");
@@ -37,13 +40,13 @@ export default function ApplyForm({
         // For HTML fields, we need to strip tags to see if there's actual text
         const text = answer.replace(/<[^>]*>/g, "").trim();
         if (!text && !answer) {
-          setError(`Please answer the required question: "${q.label}"`);
+          setError(t("requiredQuestion", { label: q.label }));
           return;
         }
       }
     }
 
-    if (!consent) { setError("Please accept the data processing notice."); return; }
+    if (!consent) { setError(t("consentMissing")); return; }
     setBusy(true);
     const fd = new FormData();
     fd.append("jobId", jobId);
@@ -59,7 +62,7 @@ export default function ApplyForm({
     setBusy(false);
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
-      setError(j.error || "Could not submit. Please try again.");
+      setError(j.error || t("failed"));
       return;
     }
     window.location.href = `/jobs/${jobSlug}/apply?done=1`;
@@ -68,30 +71,30 @@ export default function ApplyForm({
   return (
     <form onSubmit={submit} className="col" style={{ gap: 14 }}>
       <div className="row" style={{ gap: 14 }}>
-        <div style={{ flex: 1 }}><label className="label">Full name *</label><input className="input" required value={name} onChange={(e) => setName(e.target.value)} /></div>
-        <div style={{ flex: 1 }}><label className="label">Email *</label><input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+        <div style={{ flex: 1 }}><label className="label">{t("name")}</label><input className="input" required value={name} onChange={(e) => setName(e.target.value)} /></div>
+        <div style={{ flex: 1 }}><label className="label">{t("email")}</label><input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
       </div>
       <div className="row" style={{ gap: 14 }}>
-        <div style={{ flex: 1 }}><label className="label">LinkedIn</label><input className="input" placeholder="https://linkedin.com/in/…" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} /></div>
-        <div style={{ flex: 1 }}><label className="label">Portfolio / website</label><input className="input" placeholder="https://" value={portfolio} onChange={(e) => setPortfolio(e.target.value)} /></div>
+        <div style={{ flex: 1 }}><label className="label">{t("linkedin")}</label><input className="input" placeholder="https://linkedin.com/in/…" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} /></div>
+        <div style={{ flex: 1 }}><label className="label">{t("portfolio")}</label><input className="input" placeholder="https://" value={portfolio} onChange={(e) => setPortfolio(e.target.value)} /></div>
       </div>
-      <div><label className="label">Location</label><input className="input" placeholder="City, country" value={location} onChange={(e) => setLocation(e.target.value)} /></div>
+      <div><label className="label">{t("location")}</label><input className="input" placeholder={t("locationPlaceholder")} value={location} onChange={(e) => setLocation(e.target.value)} /></div>
 
       <div>
-        <label className="label">Resume / CV (PDF)</label>
+        <label className="label">{t("resume")}</label>
         <label className="card-faint" style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, borderRadius: 10, border: "1px dashed var(--line-strong)", cursor: "pointer" }}>
           <Icons.Upload size={16} />
-          <div style={{ flex: 1, fontSize: 13 }}>{file ? file.name : "Click or drag to upload"}</div>
+          <div style={{ flex: 1, fontSize: 13 }}>{file ? file.name : t("upload")}</div>
           <input type="file" accept=".pdf,.doc,.docx" style={{ display: "none" }} onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </label>
       </div>
 
       <div>
-        <label className="label">Why us?</label>
+        <label className="label">{t("whyUs")}</label>
         <Wysiwyg
           value={whyUs}
           onChange={setWhyUs}
-          placeholder="Tell us what drew you here, and what kind of work you'd love to do."
+          placeholder={t("whyUsPlaceholder")}
           minHeight={140}
         />
       </div>
@@ -114,7 +117,7 @@ export default function ApplyForm({
                   className={`btn btn-sm ${answers[q.id] === v ? "btn-primary" : ""}`}
                   onClick={() => setAnswers({ ...answers, [q.id]: v })}
                 >
-                  {v}
+                  {v === "Yes" ? tc("yes") : tc("no")}
                 </button>
               ))}
             </div>
@@ -127,7 +130,7 @@ export default function ApplyForm({
       <label className="row" style={{ gap: 10, alignItems: "flex-start", marginTop: 10 }}>
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 4 }} />
         <span className="tiny" style={{ lineHeight: 1.5 }}>
-          I consent to have my application data stored and reviewed for this role. I can request deletion at any time by emailing the hiring team.
+          {t("consent")}
         </span>
       </label>
 
@@ -135,7 +138,7 @@ export default function ApplyForm({
 
       <div className="row" style={{ justifyContent: "flex-end", marginTop: 8 }}>
         <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
-          {busy ? "Submitting…" : "Submit application"}
+          {busy ? t("submitting") : t("submit")}
         </button>
       </div>
     </form>

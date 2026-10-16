@@ -1,0 +1,60 @@
+{
+  "crumb": "Zeit",
+  "title": "Kalender",
+  "previous": "Zurück",
+  "today": "Heute",
+  "next": "Weiter",
+  "modes": {
+    "day": "Tag",
+    "week": "Woche",
+    "agenda": "Agenda"
+  },
+  "refresh": "Aktualisieren",
+  "connectHint": "<b>Verbinde einen Kalender</b>, damit Vellum deine bestehenden Termine anzeigt und keine Zeiten mehr vorschlägt, zu denen du schon belegt bist.",
+  "connect": "Verbinden",
+  "loadFailed": "Kalender konnte nicht geladen werden: {error}",
+  "emptyWindow": "In diesem Zeitraum steht nichts an. Deine verbundenen Kalender sind synchronisiert, aber {period, select, day {dieser Tag} week {diese Woche} other {diese zwei Wochen}} ist leer — {widen, select, yes {erweitere den Filter, } other {}}blättere weiter oder prüfe unter Einstellungen → Kalender, ob der richtige Kalender ausgewählt ist.",
+  "rescheduleFailed": "Verschieben fehlgeschlagen: {error}",
+  "filter": {
+    "button": "Filter",
+    "scope": "Umfang",
+    "scopes": {
+      "mine": "Nur ich",
+      "team": "Mein Team",
+      "workspace": "Ganzer Workspace"
+    },
+    "show": "Anzeigen",
+    "interviews": "Interviews",
+    "followUps": "Follow-ups",
+    "busy": "Externe belegte Zeiten"
+  },
+  "more": "+ {count} weitere",
+  "followUpLabels": {
+    "reply": "{name} antworten",
+    "decide": "Über {name} entscheiden",
+    "send_rejection": "Absage an {name} senden",
+    "debrief": "Debriefing zu {name}",
+    "reference": "Referenzen für {name}",
+    "nudge_offer": "Angebot an {name} nachfassen",
+    "ai_suggested": "Bei {name} nachhaken"
+  },
+  "markDone": "Als erledigt markieren",
+  "dismiss": "Verwerfen",
+  "locked": {
+    "cancelled": "Abgesagt · kann nicht verschoben werden",
+    "noShow": "Nicht erschienen · kann nicht verschoben werden",
+    "done": "Abgeschlossen · kann nicht verschoben werden",
+    "past": "Bereits vorbei · kann nicht verschoben werden"
+  },
+  "dragHint": "Zum Verschieben in einen neuen Zeitslot ziehen oder klicken, um den Kandidaten zu öffnen.",
+  "syncFailed": "Kalender-Synchronisierung fehlgeschlagen — Einstellungen erneut öffnen",
+  "kinds": {
+    "phone": "Telefon",
+    "video": "Video",
+    "onsite": "Vor Ort",
+    "panel": "Panel"
+  },
+  "noTitle": "(ohne Titel)",
+  "busyChip": "Belegt · {provider}",
+  "nothingScheduled": "In diesem Zeitraum ist nichts geplant."
+}

@@ -10,6 +10,7 @@
  */
 
 import * as React from "react";
+import { useFormatter, useTranslations } from "next-intl";
 import { Icons } from "@/components/Icons";
 import { useProfileSheet } from "@/components/SheetHost";
 
@@ -33,6 +34,7 @@ export type Todo = {
 type Member = { id: string; name: string; email: string };
 
 export default function TodoButton() {
+  const tt = useTranslations("todos");
   const { openSheet } = useProfileSheet();
   const [open, setOpen] = React.useState(false);
   const [todos, setTodos] = React.useState<Todo[]>([]);
@@ -135,7 +137,7 @@ export default function TodoButton() {
 
   return (
     <div style={{ position: "relative" }}>
-      <button className="iconbtn" onClick={() => setOpen((o) => !o)} title="To-dos" aria-label={`To-dos — ${openCount} open`} aria-haspopup="true" aria-expanded={open}>
+      <button className="iconbtn" onClick={() => setOpen((o) => !o)} title={tt("title")} aria-label={tt("buttonLabel", { count: openCount })} aria-haspopup="true" aria-expanded={open}>
         <Icons.ListChecks size={15} />
         {openCount > 0 && (
           <span
@@ -168,19 +170,19 @@ export default function TodoButton() {
             className="glass glass-strong"
             style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, width: 380, padding: 8, borderRadius: 14, zIndex: 90, maxHeight: 520, overflow: "auto" }}
           >
-            <div className="seg" role="tablist" aria-label="To-do scope" style={{ marginBottom: 8 }}>
+            <div className="seg" role="tablist" aria-label={tt("scope")} style={{ marginBottom: 8 }}>
               <button className={`seg-btn${tab === "mine" ? " active" : ""}`} onClick={() => setTab("mine")}>
-                My to-dos{openCount ? ` (${openCount})` : ""}
+                {tt("mine")}{openCount ? ` (${openCount})` : ""}
               </button>
               <button className={`seg-btn${tab === "assigned" ? " active" : ""}`} onClick={() => setTab("assigned")}>
-                Assigned
+                {tt("assigned")}
               </button>
             </div>
 
             <div className="col" style={{ gap: 4 }}>
               {list.length === 0 && (
                 <div className="tiny" style={{ padding: "12px 8px", color: "var(--ink-2)" }}>
-                  {tab === "mine" ? "Nothing on your list. Add a to-do below." : "You haven't assigned any to-dos."}
+                  {tab === "mine" ? tt("emptyMine") : tt("emptyAssigned")}
                 </div>
               )}
               {list.map((t) => (
@@ -193,12 +195,12 @@ export default function TodoButton() {
                 className="input"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Add a to-do…"
+                placeholder={tt("placeholder")}
                 style={{ height: 32, fontSize: 12.5 }}
               />
               <div className="row" style={{ gap: 6, marginTop: 6 }}>
-                <select className="select" value={assignee} onChange={(e) => setAssignee(e.target.value)} style={{ flex: 1, height: 30, fontSize: 12 }} aria-label="Assign to">
-                  <option value="">Assign to me</option>
+                <select className="select" value={assignee} onChange={(e) => setAssignee(e.target.value)} style={{ flex: 1, height: 30, fontSize: 12 }} aria-label={tt("assignTo")}>
+                  <option value="">{tt("assignToMe")}</option>
                   {members.filter((m) => m.id !== me).map((m) => (
                     <option key={m.id} value={m.id}>{m.name || m.email}</option>
                   ))}
@@ -209,9 +211,9 @@ export default function TodoButton() {
                   value={due}
                   onChange={(e) => setDue(e.target.value)}
                   style={{ width: 130, height: 30, fontSize: 12 }}
-                  aria-label="Due date"
+                  aria-label={tt("dueDate")}
                 />
-                <button type="submit" className="btn btn-sm btn-primary" disabled={!title.trim() || busy} style={{ height: 30 }}>
+                <button type="submit" className="btn btn-sm btn-primary" disabled={!title.trim() || busy} style={{ height: 30 }} aria-label={tt("add")}>
                   <Icons.Plus size={12} />
                 </button>
               </div>
@@ -238,15 +240,17 @@ export function TodoRow({
   onOpen?: () => void;
   hideCandidate?: boolean;
 }) {
+  const tt = useTranslations("todos");
+  const format = useFormatter();
   const overdue = !t.done && t.dueAt && new Date(t.dueAt).getTime() < Date.now();
-  const dueLabel = t.dueAt ? new Date(t.dueAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
+  const dueLabel = t.dueAt ? format.dateTime(new Date(t.dueAt), { month: "short", day: "numeric" }) : null;
   return (
     <div className="row" style={{ gap: 8, padding: "7px 8px", borderRadius: 8, alignItems: "flex-start" }}>
       <button
         className="iconbtn"
         onClick={onToggle}
-        aria-label={t.done ? "Mark not done" : "Mark done"}
-        title={t.done ? "Mark not done" : "Mark done"}
+        aria-label={t.done ? tt("markNotDone") : tt("markDone")}
+        title={t.done ? tt("markNotDone") : tt("markDone")}
         style={{ width: 22, height: 22, color: t.done ? "var(--accent-solid)" : "var(--ink-3)", flexShrink: 0, marginTop: 1 }}
       >
         {t.done ? <Icons.CheckCircle size={16} /> : <Icons.Circle size={16} />}
@@ -272,10 +276,10 @@ export function TodoRow({
             </span>
           )}
           {t.assigneeId !== me && <span className="tiny" style={{ color: "var(--ink-3)" }}>→ {t.assigneeName}</span>}
-          {t.assigneeId === me && t.creatorId !== me && <span className="tiny" style={{ color: "var(--ink-3)" }}>from {t.creatorName}</span>}
+          {t.assigneeId === me && t.creatorId !== me && <span className="tiny" style={{ color: "var(--ink-3)" }}>{tt("from", { name: t.creatorName })}</span>}
         </div>
       </div>
-      <button className="iconbtn" onClick={onRemove} aria-label="Delete to-do" title="Delete" style={{ width: 22, height: 22, color: "var(--ink-3)", flexShrink: 0 }}>
+      <button className="iconbtn" onClick={onRemove} aria-label={tt("delete")} title={tt("delete")} style={{ width: 22, height: 22, color: "var(--ink-3)", flexShrink: 0 }}>
         <Icons.X size={12} />
       </button>
     </div>

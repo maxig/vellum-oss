@@ -19,6 +19,7 @@
  */
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons, Stars } from "@/components/primitives";
 import { useDialogA11y } from "@/components/useDialogA11y";
 
@@ -47,20 +48,15 @@ type Initial = {
   criteria?: DebriefCriterion[] | null;
 } | null;
 
+// Labels: candidates.debrief.sentiments.<v> and common.recommend.<v>
 const SENTIMENTS = [
-  { v: "positive", l: "Positive", color: "oklch(68% 0.16 150)" },
-  { v: "neutral", l: "Neutral", color: "var(--ink-2)" },
-  { v: "mixed", l: "Mixed", color: "oklch(70% 0.15 60)" },
-  { v: "negative", l: "Negative", color: "oklch(60% 0.18 28)" },
+  { v: "positive", color: "oklch(68% 0.16 150)" },
+  { v: "neutral", color: "var(--ink-2)" },
+  { v: "mixed", color: "oklch(70% 0.15 60)" },
+  { v: "negative", color: "oklch(60% 0.18 28)" },
 ] as const;
 
-const RECOMMENDS = [
-  { v: "strong_yes", l: "Strong yes" },
-  { v: "yes", l: "Yes" },
-  { v: "maybe", l: "Maybe" },
-  { v: "no", l: "No" },
-  { v: "strong_no", l: "Strong no" },
-] as const;
+const RECOMMENDS = ["strong_yes", "yes", "maybe", "no", "strong_no"] as const;
 
 // Shared "selectable pill" styling for the yes/no criterion buttons —
 // matches the sentiment/recommend chips.
@@ -94,6 +90,8 @@ export default function DebriefModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("candidates.debrief");
+  const tc = useTranslations("common");
   const [pros, setPros] = React.useState(initial?.pros || "");
   const [cons, setCons] = React.useState(initial?.cons || "");
   const [sentiment, setSentiment] = React.useState(initial?.sentiment || "neutral");
@@ -184,7 +182,7 @@ export default function DebriefModal({
     }).catch(() => null);
     setSaving(false);
     if (!res?.ok) {
-      setError("Could not save debrief.");
+      setError(t("saveFailed"));
       return;
     }
     onSaved();
@@ -199,16 +197,16 @@ export default function DebriefModal({
         className="sheet glass glass-strong sheet-md"
         role="dialog"
         aria-modal="true"
-        aria-label="Interview debrief"
+        aria-label={t("title")}
       >
         <div className="sheet-hd">
           <div className="grow">
-            <div className="topbar-crumb">Interview debrief</div>
+            <div className="topbar-crumb">{t("title")}</div>
             <h2 style={{ fontSize: 18 }}>
               {candidateName} · {interviewKind}
             </h2>
           </div>
-          <button className="iconbtn" onClick={onClose} aria-label="Close">
+          <button className="iconbtn" onClick={onClose} aria-label={tc("close")}>
             <Icons.X size={15} />
           </button>
         </div>
@@ -217,18 +215,18 @@ export default function DebriefModal({
           {/* Interview kit — structured scorecard */}
           {kits.length > 0 && (
             <div style={{ marginBottom: activeKit ? 14 : 16 }}>
-              <label className="label">Interview kit</label>
+              <label className="label">{t("kit")}</label>
               <select
                 className="select"
                 value={kitId || ""}
                 onChange={(e) => setKitId(e.target.value || null)}
                 style={{ width: "100%" }}
               >
-                <option value="">No kit — free-form notes</option>
+                <option value="">{t("noKit")}</option>
                 {kits.map((k) => (
                   <option key={k.id} value={k.id}>
                     {k.name}
-                    {stageKey && k.stageKey === stageKey ? " (suggested)" : ""}
+                    {stageKey && k.stageKey === stageKey ? ` (${t("suggested")})` : ""}
                   </option>
                 ))}
               </select>
@@ -254,10 +252,10 @@ export default function DebriefModal({
                         {it.kind === "yesno" && (
                           <div className="row" style={{ gap: 4 }}>
                             <button type="button" className="btn btn-sm" style={pickStyle(a.yesno === true)} onClick={() => setAnswer(it.id, { yesno: a.yesno === true ? null : true })}>
-                              Yes
+                              {tc("yes")}
                             </button>
                             <button type="button" className="btn btn-sm" style={pickStyle(a.yesno === false)} onClick={() => setAnswer(it.id, { yesno: a.yesno === false ? null : false })}>
-                              No
+                              {tc("no")}
                             </button>
                           </div>
                         )}
@@ -269,7 +267,7 @@ export default function DebriefModal({
                           rows={2}
                           value={a.text || ""}
                           onChange={(e) => setAnswer(it.id, { text: e.target.value })}
-                          placeholder="Notes…"
+                          placeholder={t("notes")}
                           style={{ fontFamily: "inherit", marginTop: 8 }}
                         />
                       )}
@@ -283,7 +281,7 @@ export default function DebriefModal({
           {/* Sentiment + Recommend — short answers up top */}
           <div className="row" style={{ gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label className="label">Overall feeling</label>
+              <label className="label">{t("feeling")}</label>
               <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
                 {SENTIMENTS.map((s) => (
                   <button
@@ -301,18 +299,18 @@ export default function DebriefModal({
                     }}
                   >
                     <span className="chip-dot" style={{ background: s.color }} />
-                    {s.l}
+                    {t(`sentiments.${s.v}`)}
                   </button>
                 ))}
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label className="label">Overall rating</label>
+              <label className="label">{t("rating")}</label>
               <div className="row" style={{ gap: 8, height: 32 }}>
-                <Stars value={rating} onChange={setRating} size={22} ariaLabel="Overall rating" />
+                <Stars value={rating} onChange={setRating} size={22} ariaLabel={t("rating")} />
                 {rating !== null && (
                   <button type="button" onClick={() => setRating(null)} className="btn btn-sm btn-ghost" style={{ fontSize: 11 }}>
-                    Clear
+                    {t("clear")}
                   </button>
                 )}
               </div>
@@ -320,24 +318,24 @@ export default function DebriefModal({
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <label className="label">Recommendation</label>
+            <label className="label">{t("recommendation")}</label>
             <div className="row" style={{ gap: 4, flexWrap: "wrap" }}>
               {RECOMMENDS.map((r) => (
                 <button
-                  key={r.v}
+                  key={r}
                   type="button"
-                  onClick={() => setRecommend(recommend === r.v ? null : r.v)}
+                  onClick={() => setRecommend(recommend === r ? null : r)}
                   className="btn btn-sm"
                   style={{
                     height: 28,
                     padding: "0 12px",
                     fontSize: 12,
-                    background: recommend === r.v ? "var(--glass-bg-strong)" : "transparent",
-                    borderColor: recommend === r.v ? "var(--glass-border)" : "var(--line)",
-                    color: recommend === r.v ? "var(--ink-0)" : "var(--ink-2)",
+                    background: recommend === r ? "var(--glass-bg-strong)" : "transparent",
+                    borderColor: recommend === r ? "var(--glass-border)" : "var(--line)",
+                    color: recommend === r ? "var(--ink-0)" : "var(--ink-2)",
                   }}
                 >
-                  {r.l}
+                  {tc(`recommend.${r}`)}
                 </button>
               ))}
             </div>
@@ -345,24 +343,24 @@ export default function DebriefModal({
 
           <div className="row" style={{ gap: 14, alignItems: "stretch" }}>
             <div style={{ flex: 1 }}>
-              <label className="label">Pros</label>
+              <label className="label">{t("pros")}</label>
               <textarea
                 className="input"
                 rows={5}
                 value={pros}
                 onChange={(e) => setPros(e.target.value)}
-                placeholder="What stood out? Strengths, signals worth recording."
+                placeholder={t("prosPlaceholder")}
                 style={{ fontFamily: "inherit" }}
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label className="label">Cons / concerns</label>
+              <label className="label">{t("cons")}</label>
               <textarea
                 className="input"
                 rows={5}
                 value={cons}
                 onChange={(e) => setCons(e.target.value)}
-                placeholder="What raised eyebrows? Gaps, follow-up questions."
+                placeholder={t("consPlaceholder")}
                 style={{ fontFamily: "inherit" }}
               />
             </div>
@@ -377,13 +375,13 @@ export default function DebriefModal({
 
         <div className="sheet-ft">
           <span className="tiny" style={{ flex: 1 }}>
-            Submitting marks the interview as done and feeds the candidate's Pulse score.
+            {t("hint")}
           </span>
           <button className="btn btn-sm" onClick={onClose} disabled={saving}>
-            Cancel
+            {tc("cancel")}
           </button>
           <button className="btn btn-sm btn-primary" onClick={save} disabled={saving}>
-            <Icons.Check size={11} stroke={2} /> {saving ? "Saving…" : initial ? "Update debrief" : "Submit debrief"}
+            <Icons.Check size={11} stroke={2} /> {saving ? tc("saving") : initial ? t("update") : t("submit")}
           </button>
         </div>
       </div>

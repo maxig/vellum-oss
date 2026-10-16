@@ -1,0 +1,21 @@
+{
+  "title": "To-dos",
+  "buttonLabel": "To-dos — {count} offen",
+  "scope": "To-do-Bereich",
+  "mine": "Meine To-dos",
+  "assigned": "Vergeben",
+  "emptyMine": "Nichts auf deiner Liste. Füge unten ein To-do hinzu.",
+  "emptyAssigned": "Du hast noch keine To-dos vergeben.",
+  "placeholder": "To-do hinzufügen…",
+  "assignTo": "Zuweisen an",
+  "assignToMe": "Mir zuweisen",
+  "dueDate": "Fällig am",
+  "add": "To-do hinzufügen",
+  "markNotDone": "Als offen markieren",
+  "markDone": "Als erledigt markieren",
+  "from": "von {name}",
+  "delete": "To-do löschen",
+  "openCount": "{count} offen",
+  "caughtUp": "Alles erledigt — nichts auf deiner Liste.",
+  "more": "+{count} weitere"
+}

@@ -19,7 +19,8 @@ import {
 import { Avatar, Stars } from "@/components/primitives";
 import { Icons } from "@/components/Icons";
 import ProfileSheet from "@/components/ProfileSheet";
-import { relativeTime } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 
 type Stage = { id: string; key: string; name: string; color: string };
 type Job = {
@@ -67,6 +68,7 @@ export default function ApplicationsBoard({
   applications: App[];
 }) {
   const router = useRouter();
+  const t = useTranslations("pipeline.apps");
 
   const visibleStages = React.useMemo(
     () =>
@@ -187,16 +189,16 @@ export default function ApplicationsBoard({
     <div className="apps-view">
       <div className="apps-toolbar">
         <h1 className="apps-title">
-          Applications <span className="apps-count">{shownCount}</span>
+          {t("title")} <span className="apps-count">{shownCount}</span>
         </h1>
 
         {hasMine && (
-          <div className="seg" role="tablist" aria-label="Job scope">
+          <div className="seg" role="tablist" aria-label={t("jobScope")}>
             <button className={`seg-btn${scope === "mine" ? " active" : ""}`} onClick={() => setScope("mine")}>
-              My jobs
+              {t("myJobs")}
             </button>
             <button className={`seg-btn${scope === "all" ? " active" : ""}`} onClick={() => setScope("all")}>
-              All jobs
+              {t("allJobs")}
             </button>
           </div>
         )}
@@ -205,21 +207,21 @@ export default function ApplicationsBoard({
 
         <div className="apps-search glass glass-faint">
           <Icons.Search size={13} style={{ color: "var(--ink-2)" }} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search applicants…" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} />
         </div>
 
-        <div className="seg" role="tablist" aria-label="View">
+        <div className="seg" role="tablist" aria-label={t("view")}>
           <button
             className={`seg-btn${view === "board" ? " active" : ""}`}
             onClick={() => setView("board")}
-            title="Board view"
+            title={t("boardView")} aria-label={t("boardView")}
           >
             <Icons.Pipeline size={14} />
           </button>
           <button
             className={`seg-btn${view === "list" ? " active" : ""}`}
             onClick={() => setView("list")}
-            title="List view"
+            title={t("listView")} aria-label={t("listView")}
           >
             <Icons.Inbox size={14} />
           </button>
@@ -228,21 +230,21 @@ export default function ApplicationsBoard({
         <button
           className={`btn btn-sm${topRated ? " btn-primary" : ""}`}
           onClick={() => setTopRated((v) => !v)}
-          title="Show only candidates rated 4★ or higher"
+          title={t("topRatedHint")}
         >
-          <Icons.Star size={13} fill={topRated ? "currentColor" : "none"} /> Top rated
+          <Icons.Star size={13} fill={topRated ? "currentColor" : "none"} /> {t("topRated")}
         </button>
         {view === "board" && (
           <button
             className={`btn btn-sm${hideEmpty ? " btn-primary" : ""}`}
             onClick={() => setHideEmpty((v) => !v)}
-            title="Hide stages with no candidates"
+            title={t("hideEmptyHint")}
           >
-            Hide empty stages
+            {t("hideEmpty")}
           </button>
         )}
         <button className="btn btn-sm btn-ghost" onClick={toggleCollapseAll}>
-          {allCollapsed ? "Expand all" : "Collapse all"}
+          {allCollapsed ? t("expandAll") : t("collapseAll")}
         </button>
       </div>
 
@@ -270,14 +272,14 @@ export default function ApplicationsBoard({
 
         {scopedJobs.length > 0 && shownCount === 0 && (
           <div className="apps-empty muted">
-            {q ? "No applicants match your search." : "No applicants in these jobs yet."}
+            {q ? t("noMatch") : t("noApplicants")}
           </div>
         )}
         {scope === "mine" && scopedJobs.length === 0 && (
           <div className="apps-empty muted">
-            You&apos;re not on any job&apos;s hiring team yet.{" "}
+            {t("notOnTeam")}{" "}
             <button className="linklike" onClick={() => setScope("all")}>
-              View all jobs
+              {t("viewAllJobs")}
             </button>
           </div>
         )}
@@ -317,6 +319,7 @@ function JobGroup({
   onOpen: (id: string) => void;
   onMove: (appId: string, stageId: string) => void;
 }) {
+  const t = useTranslations("pipeline.apps");
   const fallback = stages[0];
   const byStage = React.useMemo(() => {
     const groups = new Map<string, App[]>();
@@ -348,7 +351,7 @@ function JobGroup({
             {[job.department, job.location].filter(Boolean).join(" · ")}
           </span>
         )}
-        {job.mine && <span className="apps-mine-tag">Mine</span>}
+        {job.mine && <span className="apps-mine-tag">{t("mine")}</span>}
         <span className="spacer" />
         <span className="apps-stage-counts">
           {stages.map((s) => {
@@ -387,6 +390,7 @@ function BoardBody({
   onOpen: (id: string) => void;
   onMove: (appId: string, stageId: string) => void;
 }) {
+  const t = useTranslations("pipeline.apps");
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
@@ -413,7 +417,7 @@ function BoardBody({
         {cols.map((stage) => (
           <StageColumn key={stage.id} stage={stage} items={byStage.get(stage.id) || []} onOpen={onOpen} />
         ))}
-        {cols.length === 0 && <div className="kanban-empty">No candidates in any stage</div>}
+        {cols.length === 0 && <div className="kanban-empty">{t("noneInStages")}</div>}
       </div>
       <DragOverlay dropAnimation={null}>
         {activeApp ? (
@@ -467,6 +471,8 @@ function DraggableCard({ app, onOpen }: { app: App; onOpen: () => void }) {
 }
 
 function CardInner({ app }: { app: App }) {
+  const t = useTranslations("pipeline.apps");
+  const relativeTime = useRelativeTime();
   return (
     <>
       <div className="kcard-head">
@@ -475,9 +481,9 @@ function CardInner({ app }: { app: App }) {
           <div className="kcard-name">{app.candidate.name}</div>
           <div className="kcard-role">{app.candidate.currentRole || app.candidate.location || " "}</div>
         </div>
-        {app.unread && <span className="apps-unread-dot" title="Unread message" />}
+        {app.unread && <span className="apps-unread-dot" title={t("unread")} />}
         {typeof app.aiFit === "number" && app.aiFit >= 85 && (
-          <div className="pipeline-score" title={`AI fit ${app.aiFit}`}>
+          <div className="pipeline-score" title={t("aiFit", { n: app.aiFit })}>
             {app.aiFit}
           </div>
         )}
@@ -489,25 +495,27 @@ function CardInner({ app }: { app: App }) {
       )}
       <div className="kcard-meta">
         <Icons.Clock size={11} />
-        <span>{relativeTime(app.stageEnteredAt)} in stage</span>
+        <span>{t("inStage", { when: relativeTime(app.stageEnteredAt) })}</span>
         <span className="spacer" />
-        {app.outcome === "hired" && <span className="tiny apps-tag-hired">Hired</span>}
-        {app.outcome === "rejected" && <span className="tiny apps-tag-rejected">Rejected</span>}
+        {app.outcome === "hired" && <span className="tiny apps-tag-hired">{t("hired")}</span>}
+        {app.outcome === "rejected" && <span className="tiny apps-tag-rejected">{t("rejected")}</span>}
       </div>
     </>
   );
 }
 
 function ListBody({ stages, apps, onOpen }: { stages: Stage[]; apps: App[]; onOpen: (id: string) => void }) {
+  const t = useTranslations("pipeline.apps");
+  const relativeTime = useRelativeTime();
   const stageName = (id: string | null) => stages.find((s) => s.id === id)?.name || "—";
   return (
     <div className="apps-list">
       <div className="apps-list-head">
-        <span>Candidate</span>
-        <span>Stage</span>
-        <span>Rating</span>
-        <span>Applied</span>
-        <span>In stage</span>
+        <span>{t("cols.candidate")}</span>
+        <span>{t("cols.stage")}</span>
+        <span>{t("cols.rating")}</span>
+        <span>{t("cols.applied")}</span>
+        <span>{t("cols.inStage")}</span>
       </div>
       {apps.map((a) => (
         <button key={a.id} className="apps-list-row" onClick={() => onOpen(a.id)}>
@@ -517,7 +525,7 @@ function ListBody({ stages, apps, onOpen }: { stages: Stage[]; apps: App[]; onOp
               <span className="apps-list-name">{a.candidate.name}</span>
               <span className="apps-list-sub muted">{a.candidate.currentRole || a.candidate.location || ""}</span>
             </span>
-            {a.unread && <span className="apps-unread-dot" title="Unread message" />}
+            {a.unread && <span className="apps-unread-dot" title={t("unread")} />}
           </span>
           <span>
             <span className="apps-stage-pill">

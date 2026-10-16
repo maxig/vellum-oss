@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { LOCALES } from "@/i18n/config";
 
 const Body = z.object({
   theme: z.enum(["light", "dark"]).optional(),
@@ -13,6 +14,8 @@ const Body = z.object({
   glassIntensity: z.number().min(0.1).max(2).optional(),
   // null clears the override and falls back to the workspace default.
   reviewScope: z.enum(["mine", "workspace"]).nullable().optional(),
+  // null clears the override and falls back to Workspace.locale.
+  locale: z.enum(LOCALES).nullable().optional(),
 });
 
 export async function POST(req: Request) {

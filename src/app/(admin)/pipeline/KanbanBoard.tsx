@@ -19,7 +19,9 @@ import {
 import { Chip, Avatar } from "@/components/primitives";
 import { Icons } from "@/components/Icons";
 import ProfileSheet from "@/components/ProfileSheet";
-import { relativeTime } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
+import { useValueLabels } from "@/i18n/labels";
 
 type Stage = { id: string; key: string; name: string; color: string };
 type JobSummary = {
@@ -77,6 +79,8 @@ export default function KanbanBoard({
   applications: Applicant[];
 }) {
   const router = useRouter();
+  const t = useTranslations("pipeline.kanban");
+  const labels = useValueLabels();
   const visibleStages = React.useMemo(
     () =>
       stages
@@ -205,7 +209,7 @@ export default function KanbanBoard({
   }
 
   function mockAction(label: string) {
-    setMockNotice(`${label} is mocked for now`);
+    setMockNotice(t("mocked", { action: label }));
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setMockNotice(null), 2200);
   }
@@ -218,7 +222,7 @@ export default function KanbanBoard({
         <div className="pipeline-toolbar">
           <div className="pipeline-job-picker glass glass-faint">
             <Icons.Briefcase size={14} style={{ color: "var(--ink-2)" }} />
-            <select className="pipeline-job-select" value={activeJobId} onChange={(e) => changeJob(e.target.value)} aria-label="Select job posting">
+            <select className="pipeline-job-select" value={activeJobId} onChange={(e) => changeJob(e.target.value)} aria-label={t("selectJob")}>
               {jobs.map((job) => (
                 <option key={job.id} value={job.id}>
                   {job.title} ({job.applicants})
@@ -229,12 +233,12 @@ export default function KanbanBoard({
           </div>
 
           <div className="pipeline-statbar">
-            <Chip>{totalApplicants} applicants</Chip>
+            <Chip>{t("applicants", { count: totalApplicants })}</Chip>
             <Chip dot={activeJob?.status === "Draft" ? "oklch(72% 0.15 80)" : "oklch(68% 0.16 150)"}>
-              {activeJob?.status || "Open"}
+              {labels.jobStatus(activeJob?.status || "Open")}
             </Chip>
-            <Chip>{lateStageCount} late stage</Chip>
-            {averageFit ? <Chip accent>{averageFit} avg fit</Chip> : null}
+            <Chip>{t("lateStage", { count: lateStageCount })}</Chip>
+            {averageFit ? <Chip accent>{t("avgFit", { n: averageFit })}</Chip> : null}
           </div>
 
           <div className="spacer" />
@@ -244,18 +248,18 @@ export default function KanbanBoard({
             <input
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Filter by name, skills, location..."
+              placeholder={t("filter")}
             />
           </div>
 
           <div className="pipeline-actions">
-            <button className="btn btn-sm btn-ghost" onClick={() => mockAction("AI screen")}>
+            <button className="btn btn-sm btn-ghost" onClick={() => mockAction(t("aiScreen"))}>
               <Icons.Sparkle size={13} stroke={2} />
-              AI screen
+              {t("aiScreen")}
             </button>
-            <button className="btn btn-sm" onClick={() => mockAction("Add candidate")}>
+            <button className="btn btn-sm" onClick={() => mockAction(t("addCandidate"))}>
               <Icons.Plus size={13} stroke={2} />
-              Add candidate
+              {t("addCandidate")}
             </button>
           </div>
         </div>
@@ -268,7 +272,7 @@ export default function KanbanBoard({
               items={byStage.get(stage.id) || []}
               isFiltered={Boolean(filter.trim())}
               onOpen={(id) => setSelectedId(id)}
-              onAdd={() => mockAction(`Add to ${stage.name}`)}
+              onAdd={() => mockAction(t("addTo", { stage: stage.name }))}
             />
           ))}
         </div>
@@ -325,6 +329,7 @@ function Column({
   onOpen: (id: string) => void;
   onAdd: () => void;
 }) {
+  const t = useTranslations("pipeline.kanban");
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   return (
     <div ref={setNodeRef} className={`kcol${isOver ? " drag-over" : ""}`}>
@@ -333,7 +338,7 @@ function Column({
         <div className="kcol-name">{stage.name}</div>
         <span className="kcol-count">{items.length}</span>
         <div className="spacer" />
-        <button className="iconbtn" style={{ width: 24, height: 24 }} onClick={onAdd} aria-label={`Add candidate to ${stage.name}`}>
+        <button className="iconbtn" style={{ width: 24, height: 24 }} onClick={onAdd} aria-label={t("addToLabel", { stage: stage.name })}>
           <Icons.Plus size={13} />
         </button>
       </div>
@@ -343,7 +348,7 @@ function Column({
         ))}
         {items.length === 0 && (
           <div className="kanban-empty">
-            {isFiltered ? "No matching applicants" : "Drag candidates here"}
+            {isFiltered ? t("noMatching") : t("dragHere")}
           </div>
         )}
       </div>
@@ -378,6 +383,8 @@ function DraggableCard({ app, onOpen }: { app: Applicant; onOpen: () => void }) 
 }
 
 function Card({ app }: { app: Applicant }) {
+  const t = useTranslations("pipeline.kanban");
+  const relativeTime = useRelativeTime();
   return (
     <>
       <div className="kcard-head">
@@ -387,7 +394,7 @@ function Card({ app }: { app: Applicant }) {
           <div className="kcard-role">{app.candidate.location || "\u00a0"}</div>
         </div>
         {typeof app.aiFit === "number" && app.aiFit >= 85 && (
-          <div className="pipeline-score" title={`AI fit ${app.aiFit}`}>
+          <div className="pipeline-score" title={t("aiFit", { n: app.aiFit })}>
             {app.aiFit}
           </div>
         )}
@@ -403,7 +410,7 @@ function Card({ app }: { app: Applicant }) {
         <Icons.Clock size={11} />
         <span>{relativeTime(app.appliedAt)}</span>
         <span className="spacer" />
-        <span className="tiny">{app.candidate.source || "Direct"}</span>
+        <span className="tiny">{app.candidate.source || t("direct")}</span>
       </div>
     </>
   );

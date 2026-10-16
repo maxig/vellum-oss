@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireWorkspace } from "@/lib/workspace";
 import { db } from "@/lib/db";
 import { normalizeCookieConfig } from "@/lib/cookies";
+import { LOCALES } from "@/i18n/config";
 
 const CookieScriptPatch = z.object({
   id: z.string().min(1).max(64),
@@ -29,6 +30,7 @@ const Patch = z.object({
   currency: z.string().min(3).max(8).optional(),
   departments: z.array(z.string().trim().min(1).max(40)).optional(),
   timezone: z.string().min(1).max(64).optional(),
+  locale: z.enum(LOCALES).optional(),
   signature: z.string().max(2000).optional().nullable(),
   defaults: z
     .object({

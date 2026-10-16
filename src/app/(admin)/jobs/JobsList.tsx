@@ -4,6 +4,8 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useValueLabels } from "@/i18n/labels";
 import { Glass, Chip, Icons } from "@/components/primitives";
 import { useProfileSheet } from "@/components/SheetHost";
 
@@ -34,6 +36,8 @@ const STATUS_COLORS: Record<string, { fg: string; bg: string }> = {
 
 export default function JobsList({ rows }: { rows: JobRow[] }) {
   const router = useRouter();
+  const t = useTranslations("jobs.list");
+  const labels = useValueLabels();
   const { openJobWizard } = useProfileSheet();
   const [tab, setTab] = React.useState<Tab>("Open");
 
@@ -56,37 +60,37 @@ export default function JobsList({ rows }: { rows: JobRow[] }) {
     <div className="page">
       <div className="row" style={{ marginBottom: 22, alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 240 }}>
-          <h1 style={{ fontSize: 28 }}>Jobs</h1>
+          <h1 style={{ fontSize: 28 }}>{t("title")}</h1>
           <p className="muted" style={{ fontSize: 14, marginTop: 4 }}>
-            {rows.length} total · {counts.Open} actively hiring
+            {t("summary", { total: rows.length, open: counts.Open })}
           </p>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <Glass faint style={{ padding: 2, borderRadius: 9, display: "inline-flex", flexShrink: 0 }}>
-            {TABS.map((t) => {
-              const active = tab === t;
+            {TABS.map((tb) => {
+              const active = tab === tb;
               return (
                 <button
-                  key={t}
+                  key={tb}
                   type="button"
                   className="btn btn-sm btn-ghost"
-                  onClick={() => setTab(t)}
+                  onClick={() => setTab(tb)}
                   style={{
                     background: active ? "var(--glass-bg-strong)" : "transparent",
                     border: active ? "0.5px solid var(--glass-border)" : "0.5px solid transparent",
                     color: active ? "var(--ink-0)" : "var(--ink-2)",
                   }}
                 >
-                  {t}
+                  {tb === "All" ? t("all") : labels.jobStatus(tb)}
                   <span className="tiny mono" style={{ marginLeft: 4, opacity: 0.6 }}>
-                    {counts[t]}
+                    {counts[tb]}
                   </span>
                 </button>
               );
             })}
           </Glass>
           <button className="btn btn-primary" onClick={() => openJobWizard()}>
-            <Icons.Plus size={13} stroke={2} /> New job
+            <Icons.Plus size={13} stroke={2} /> {t("newJob")}
           </button>
         </div>
       </div>
@@ -102,23 +106,23 @@ export default function JobsList({ rows }: { rows: JobRow[] }) {
             gap: 12,
           }}
         >
-          <span className="tiny" style={{ flex: 1, fontWeight: 500 }}>Role</span>
-          <span className="tiny" style={{ width: 180, fontWeight: 500 }}>Location</span>
-          <span className="tiny" style={{ width: 110, fontWeight: 500, textAlign: "right" }}>Applicants</span>
-          <span className="tiny" style={{ width: 80, fontWeight: 500, textAlign: "right" }}>Open</span>
-          <span className="tiny" style={{ width: 110, fontWeight: 500, textAlign: "right" }}>Status</span>
+          <span className="tiny" style={{ flex: 1, fontWeight: 500 }}>{t("cols.role")}</span>
+          <span className="tiny" style={{ width: 180, fontWeight: 500 }}>{t("cols.location")}</span>
+          <span className="tiny" style={{ width: 110, fontWeight: 500, textAlign: "right" }}>{t("cols.applicants")}</span>
+          <span className="tiny" style={{ width: 80, fontWeight: 500, textAlign: "right" }}>{t("cols.open")}</span>
+          <span className="tiny" style={{ width: 110, fontWeight: 500, textAlign: "right" }}>{t("cols.status")}</span>
         </div>
 
         {filtered.length === 0 && (
           <div style={{ padding: "40px 24px", textAlign: "center" }}>
             <p className="muted">
               {rows.length === 0
-                ? "No jobs yet. Create your first to start collecting applicants."
-                : `No ${tab.toLowerCase()} roles right now.`}
+                ? t("empty")
+                : t("emptyTab", { status: labels.jobStatus(tab).toLowerCase() })}
             </p>
             {rows.length === 0 && (
               <button className="btn btn-primary" onClick={() => openJobWizard()} style={{ marginTop: 16 }}>
-                <Icons.Plus size={13} stroke={2} /> Create a job
+                <Icons.Plus size={13} stroke={2} /> {t("create")}
               </button>
             )}
           </div>
@@ -162,7 +166,7 @@ export default function JobsList({ rows }: { rows: JobRow[] }) {
                   >
                     {j.title}
                   </span>
-                  {j.newThisWeek > 0 && <Chip accent>{j.newThisWeek} new</Chip>}
+                  {j.newThisWeek > 0 && <Chip accent>{t("newCount", { count: j.newThisWeek })}</Chip>}
                 </div>
                 {j.department && (
                   <div className="tiny" style={{ marginTop: 3 }}>{j.department}</div>
@@ -184,7 +188,7 @@ export default function JobsList({ rows }: { rows: JobRow[] }) {
                 className="mono"
                 style={{ width: 80, textAlign: "right", fontSize: 13, color: "var(--ink-2)" }}
               >
-                {j.published ? `${j.daysOpen}d` : "—"}
+                {j.published ? t("days", { n: j.daysOpen }) : "—"}
               </div>
               <div style={{ width: 110, textAlign: "right" }}>
                 <span
@@ -197,7 +201,7 @@ export default function JobsList({ rows }: { rows: JobRow[] }) {
                   }}
                 >
                   <span className="chip-dot" />
-                  {j.status}
+                  {labels.jobStatus(j.status)}
                 </span>
               </div>
             </div>

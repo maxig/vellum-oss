@@ -5,6 +5,8 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 import { Glass, Icons, AIPill } from "@/components/primitives";
 import type { IconName } from "@/components/Icons";
 import type {
@@ -25,6 +27,23 @@ type Props = {
 
 export default function AnalyticsView(props: Props) {
   const { data, comparing, insights, summaryGeneratedAt, summaryMocked } = props;
+  const t = useTranslations("analytics");
+  const format = useFormatter();
+  const locale = useLocale();
+  const relativeTime = useRelativeTime();
+  // Country names follow the UI language; "Other" is our own bucket.
+  const regionNames = React.useMemo(() => new Intl.DisplayNames([locale], { type: "region" }), [locale]);
+  const countryName = (code: string, fallback: string) => {
+    if (code === "Other") return t("other");
+    try {
+      return regionNames.of(code) || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  // Traffic-source labels from lib/analytics labelReferrer(); brand names stay as-is.
+  const sourceName = (name: string) =>
+    name === "Direct" ? t("sources.direct") : name === "Other" ? t("other") : name === "Internal referrals" ? t("sources.internal") : name;
   const range = data.range;
   const series = data.series;
   const prevSeries = data.prevSeries;
@@ -41,9 +60,9 @@ export default function AnalyticsView(props: Props) {
       {/* Header */}
       <div className="row" style={{ marginBottom: 22, alignItems: "flex-end", flexWrap: "wrap", gap: 10 }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <h1 style={{ fontSize: 28 }}>Careers analytics</h1>
+          <h1 style={{ fontSize: 28 }}>{t("title")}</h1>
           <p className="muted" style={{ fontSize: 14, marginTop: 4 }}>
-            How visitors are finding and engaging with <b className="mono">{data.domain}</b>.
+            {t.rich("subtitle", { domain: data.domain, b: (c) => <b className="mono">{c}</b> })}
           </p>
         </div>
         <AnalyticsControls range={range} comparing={comparing} />
@@ -53,7 +72,7 @@ export default function AnalyticsView(props: Props) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 14 }}>
         <Kpi
           icon="Eye"
-          label="Page views"
+          label={t("kpi.views")}
           value={k.visits}
           delta={comparing ? delta(k.visits, k.prevVisits) : null}
           prev={k.prevVisits}
@@ -61,7 +80,7 @@ export default function AnalyticsView(props: Props) {
         />
         <Kpi
           icon="Users"
-          label="Unique visitors"
+          label={t("kpi.uniques")}
           value={k.uniques}
           delta={comparing ? delta(k.uniques, k.prevUniques) : null}
           prev={k.prevUniques}
@@ -69,7 +88,7 @@ export default function AnalyticsView(props: Props) {
         />
         <Kpi
           icon="Send"
-          label="Applications"
+          label={t("kpi.applies")}
           value={k.applies}
           delta={comparing ? delta(k.applies, k.prevApplies) : null}
           prev={k.prevApplies}
@@ -78,10 +97,10 @@ export default function AnalyticsView(props: Props) {
         />
         <Kpi
           icon="TrendUp"
-          label="Conversion rate"
-          value={conv.toFixed(2) + "%"}
+          label={t("kpi.conversion")}
+          value={format.number(conv / 100, { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           delta={comparing ? conv - prevConv : null}
-          prev={prevConv.toFixed(2) + "%"}
+          prev={format.number(prevConv / 100, { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           comparing={comparing}
           ptDelta
         />
@@ -90,11 +109,11 @@ export default function AnalyticsView(props: Props) {
       {/* Main chart */}
       <Glass style={{ padding: 22, borderRadius: 16, marginBottom: 14 }}>
         <div className="row" style={{ marginBottom: 18 }}>
-          <h3 style={{ flex: 1 }}>Visits &amp; applications</h3>
+          <h3 style={{ flex: 1 }}>{t("chartTitle")}</h3>
           <div className="row" style={{ gap: 14 }}>
-            <LegendDot color="var(--accent-1)" label="Page views" />
-            <LegendDot color="var(--accent-solid)" label="Unique visitors" filled />
-            <LegendDot color="oklch(68% 0.16 150)" label="Applications" filled />
+            <LegendDot color="var(--accent-1)" label={t("kpi.views")} />
+            <LegendDot color="var(--accent-solid)" label={t("kpi.uniques")} filled />
+            <LegendDot color="oklch(68% 0.16 150)" label={t("kpi.applies")} filled />
           </div>
         </div>
         <Chart series={series} prev={compareSeries} range={range} />
@@ -103,42 +122,42 @@ export default function AnalyticsView(props: Props) {
       {/* Funnel + Sources */}
       <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 14, marginBottom: 14 }}>
         <Glass style={{ padding: 22, borderRadius: 16 }}>
-          <h3 style={{ marginBottom: 6 }}>Conversion funnel</h3>
+          <h3 style={{ marginBottom: 6 }}>{t("funnel.title")}</h3>
           <p className="muted" style={{ fontSize: 13, marginBottom: 18 }}>
-            Where visitors drop off between landing and submitting.
+            {t("funnel.hint")}
           </p>
           <Funnel
             steps={[
-              { l: "Visited careers site", n: data.funnel.visited, color: "var(--accent-1)" },
+              { l: t("funnel.visited"), n: data.funnel.visited, color: "var(--accent-1)" },
               {
-                l: "Viewed a job",
+                l: t("funnel.viewedJob"),
                 n: data.funnel.viewedJob,
                 color: "color-mix(in oklab, var(--accent-1) 70%, var(--accent-2))",
               },
-              { l: "Clicked Apply", n: data.funnel.clickedApply, color: "var(--accent-2)" },
+              { l: t("funnel.clickedApply"), n: data.funnel.clickedApply, color: "var(--accent-2)" },
               {
-                l: "Started application",
+                l: t("funnel.started"),
                 n: data.funnel.startedApply,
                 color: "color-mix(in oklab, var(--accent-2) 70%, oklch(68% 0.16 150))",
               },
-              { l: "Submitted application", n: data.funnel.submitted, color: "oklch(68% 0.16 150)" },
+              { l: t("funnel.submitted"), n: data.funnel.submitted, color: "oklch(68% 0.16 150)" },
             ]}
           />
         </Glass>
 
         <Glass style={{ padding: 22, borderRadius: 16 }}>
-          <h3 style={{ marginBottom: 4 }}>Top sources</h3>
-          <p className="muted" style={{ fontSize: 13, marginBottom: 18 }}>Where visits came from.</p>
+          <h3 style={{ marginBottom: 4 }}>{t("sources.title")}</h3>
+          <p className="muted" style={{ fontSize: 13, marginBottom: 18 }}>{t("sources.hint")}</p>
           {data.sources.length === 0 ? (
-            <div className="muted" style={{ fontSize: 13 }}>No referrer data yet.</div>
+            <div className="muted" style={{ fontSize: 13 }}>{t("sources.empty")}</div>
           ) : (
             <div className="col" style={{ gap: 10 }}>
               {data.sources.map((s) => (
                 <div key={s.name}>
                   <div className="row" style={{ marginBottom: 4 }}>
                     <span className="chip-dot" style={{ background: s.color, marginRight: 8 }} />
-                    <span style={{ fontSize: 13, flex: 1 }}>{s.name}</span>
-                    <span className="mono tiny" style={{ color: "var(--ink-0)" }}>{s.visits.toLocaleString()}</span>
+                    <span style={{ fontSize: 13, flex: 1 }}>{sourceName(s.name)}</span>
+                    <span className="mono tiny" style={{ color: "var(--ink-0)" }}>{format.number(s.visits)}</span>
                     <span className="tiny" style={{ width: 38, textAlign: "right" }}>{(s.pct * 100).toFixed(0)}%</span>
                   </div>
                   <div className="funnel-bar">
@@ -155,21 +174,21 @@ export default function AnalyticsView(props: Props) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
         <Glass style={{ padding: 22, borderRadius: 16 }}>
           <div className="row" style={{ marginBottom: 18 }}>
-            <h3 style={{ flex: 1 }}>Top jobs by views</h3>
+            <h3 style={{ flex: 1 }}>{t("jobs.title")}</h3>
             <Link href="/jobs" className="btn btn-sm btn-ghost">
-              All jobs <Icons.ChevronRight size={11} />
+              {t("jobs.all")} <Icons.ChevronRight size={11} />
             </Link>
           </div>
           {data.topJobs.length === 0 ? (
-            <div className="muted" style={{ fontSize: 13 }}>No job views yet in this window.</div>
+            <div className="muted" style={{ fontSize: 13 }}>{t("jobs.empty")}</div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ color: "var(--ink-2)", fontWeight: 500 }}>
-                  <th style={{ textAlign: "left", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>JOB</th>
-                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>VIEWS</th>
-                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>APPLIES</th>
-                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>CONV</th>
+                  <th style={{ textAlign: "left", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("jobs.cols.job")}</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("jobs.cols.views")}</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("jobs.cols.applies")}</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("jobs.cols.conv")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,7 +196,7 @@ export default function AnalyticsView(props: Props) {
                   <tr key={j.id} style={{ borderTop: "0.5px solid var(--line)" }}>
                     <td style={{ padding: "10px 0", color: "var(--ink-0)" }}>{j.title}</td>
                     <td className="mono" style={{ textAlign: "right", padding: "10px 0" }}>
-                      {j.views.toLocaleString()}
+                      {format.number(j.views)}
                     </td>
                     <td className="mono" style={{ textAlign: "right", padding: "10px 0" }}>{j.applies}</td>
                     <td style={{ textAlign: "right", padding: "10px 0" }}>
@@ -205,17 +224,17 @@ export default function AnalyticsView(props: Props) {
         </Glass>
 
         <Glass style={{ padding: 22, borderRadius: 16 }}>
-          <h3 style={{ marginBottom: 18 }}>Top pages</h3>
+          <h3 style={{ marginBottom: 18 }}>{t("pages.title")}</h3>
           {data.pages.length === 0 ? (
-            <div className="muted" style={{ fontSize: 13 }}>No page views yet in this window.</div>
+            <div className="muted" style={{ fontSize: 13 }}>{t("pages.empty")}</div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ color: "var(--ink-2)", fontWeight: 500 }}>
-                  <th style={{ textAlign: "left", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>PATH</th>
-                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>VIEWS</th>
-                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>AVG. TIME</th>
-                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>BOUNCE</th>
+                  <th style={{ textAlign: "left", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("pages.cols.path")}</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("pages.cols.views")}</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("pages.cols.time")}</th>
+                  <th style={{ textAlign: "right", padding: "6px 0", fontWeight: 500, fontSize: 11.5 }}>{t("pages.cols.bounce")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -236,7 +255,7 @@ export default function AnalyticsView(props: Props) {
                       {p.path}
                     </td>
                     <td className="mono" style={{ textAlign: "right", padding: "10px 0" }}>
-                      {p.visits.toLocaleString()}
+                      {format.number(p.visits)}
                     </td>
                     <td className="tiny mono" style={{ textAlign: "right", padding: "10px 0" }}>{p.time}</td>
                     <td
@@ -260,11 +279,10 @@ export default function AnalyticsView(props: Props) {
       {/* Geo + Devices */}
       <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 14, marginBottom: 14 }}>
         <Glass style={{ padding: 22, borderRadius: 16 }}>
-          <h3 style={{ marginBottom: 18 }}>Where they're visiting from</h3>
+          <h3 style={{ marginBottom: 18 }}>{t("geo.title")}</h3>
           {data.countries.length === 0 ? (
             <div className="muted" style={{ fontSize: 13 }}>
-              No country-tagged traffic yet. We read country from request headers (Vercel / Cloudflare); it'll fill in once
-              the site is live behind one of those edges.
+              {t("geo.empty")}
             </div>
           ) : (
             <div className="col" style={{ gap: 8 }}>
@@ -281,8 +299,8 @@ export default function AnalyticsView(props: Props) {
                       flexShrink: 0,
                     }}
                   />
-                  <span style={{ fontSize: 13, flex: 1 }}>{c.name}</span>
-                  <span className="mono tiny" style={{ color: "var(--ink-0)" }}>{c.visits.toLocaleString()}</span>
+                  <span style={{ fontSize: 13, flex: 1 }}>{countryName(c.code, c.name)}</span>
+                  <span className="mono tiny" style={{ color: "var(--ink-0)" }}>{format.number(c.visits)}</span>
                   <div style={{ width: 100 }}>
                     <div className="funnel-bar">
                       <div className="funnel-fill" style={{ width: c.pct * 100 + "%" }} />
@@ -296,11 +314,11 @@ export default function AnalyticsView(props: Props) {
         </Glass>
 
         <Glass style={{ padding: 22, borderRadius: 16 }}>
-          <h3 style={{ marginBottom: 18 }}>Devices</h3>
+          <h3 style={{ marginBottom: 18 }}>{t("devices.title")}</h3>
           {data.devices.every((d) => d.pct === 0) ? (
-            <div className="muted" style={{ fontSize: 13 }}>No device data yet in this window.</div>
+            <div className="muted" style={{ fontSize: 13 }}>{t("devices.empty")}</div>
           ) : (
-            <DonutChart data={data.devices} />
+            <DonutChart data={data.devices.map((d) => ({ ...d, label: t(`devices.${d.name.toLowerCase() as "desktop"}`) }))} />
           )}
         </Glass>
       </div>
@@ -315,17 +333,17 @@ export default function AnalyticsView(props: Props) {
         }}
       >
         <div className="row" style={{ marginBottom: 12 }}>
-          <AIPill>Vellum AI · weekly summary</AIPill>
+          <AIPill>{t("ai.title")}</AIPill>
           <span style={{ flex: 1 }} />
           <span className="tiny" style={{ color: "var(--ink-2)", marginRight: 10 }}>
-            Updated {formatRelative(summaryGeneratedAt)}
-            {summaryMocked ? " · mock" : ""}
+            {t("ai.updated", { when: relativeTime(summaryGeneratedAt) })}
+            {summaryMocked ? ` · ${t("ai.mock")}` : ""}
           </span>
           <RegenerateButton range={range} />
         </div>
         <div className="col" style={{ gap: 12 }}>
           {insights.length === 0 ? (
-            <div className="muted" style={{ fontSize: 13 }}>Not enough traffic in this window for a summary yet.</div>
+            <div className="muted" style={{ fontSize: 13 }}>{t("ai.empty")}</div>
           ) : (
             insights.map((ins, i) => <Insight key={i} tone={ins.tone}>{renderBoldMarkup(ins.body)}</Insight>)
           )}
@@ -354,6 +372,8 @@ function Kpi({
   accent?: boolean;
   ptDelta?: boolean;
 }) {
+  const t = useTranslations("analytics");
+  const format = useFormatter();
   const I = Icons[icon];
   const up = delta != null && delta >= 0;
   return (
@@ -377,7 +397,7 @@ function Kpi({
         <span className="tiny" style={{ flex: 1, fontWeight: 500 }}>{label}</span>
       </div>
       <div className="stat-value" style={{ marginBottom: 6 }}>
-        {typeof value === "number" ? value.toLocaleString() : value}
+        {typeof value === "number" ? format.number(value) : value}
       </div>
       {delta != null && comparing && (
         <div className="row" style={{ gap: 6, fontSize: 12 }}>
@@ -385,7 +405,7 @@ function Kpi({
             {up ? "↑" : "↓"} {Math.abs(delta).toFixed(ptDelta ? 2 : 0)}
             {ptDelta ? "pt" : "%"}
           </span>
-          <span className="tiny">vs prev. {typeof prev === "number" ? prev.toLocaleString() : prev}</span>
+          <span className="tiny">{t("vsPrev", { value: typeof prev === "number" ? format.number(prev) : prev })}</span>
         </div>
       )}
     </Glass>
@@ -418,6 +438,7 @@ function Chart({
   prev: AnalyticsDayPoint[] | null;
   range: AnalyticsRange;
 }) {
+  const t = useTranslations("analytics");
   const h = 200;
   const max = Math.max(...series.map((d) => d.visits), ...(prev ? prev.map((d) => d.visits) : [0]), 1) * 1.1;
   const points = (arr: AnalyticsDayPoint[], k: "visits" | "uniques" | "applies", scale = 1) =>
@@ -478,14 +499,15 @@ function Chart({
         />
       </svg>
       <div className="row" style={{ justifyContent: "space-between", marginTop: 6 }}>
-        <span className="tiny">{range} days ago</span>
-        <span className="tiny">Today</span>
+        <span className="tiny">{t("daysAgo", { n: range })}</span>
+        <span className="tiny">{t("today")}</span>
       </div>
     </div>
   );
 }
 
 function Funnel({ steps }: { steps: { l: string; n: number; color: string }[] }) {
+  const format = useFormatter();
   const max = Math.max(steps[0].n, 1);
   return (
     <div className="col" style={{ gap: 6 }}>
@@ -506,7 +528,7 @@ function Funnel({ steps }: { steps: { l: string; n: number; color: string }[] })
                 className="mono"
                 style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-0)", fontVariantNumeric: "tabular-nums" }}
               >
-                {s.n.toLocaleString()}
+                {format.number(s.n)}
               </span>
             </div>
             <div
@@ -534,7 +556,7 @@ function Funnel({ steps }: { steps: { l: string; n: number; color: string }[] })
   );
 }
 
-function DonutChart({ data }: { data: { name: string; pct: number }[] }) {
+function DonutChart({ data }: { data: { name: string; label: string; pct: number }[] }) {
   const r = 70;
   const circ = 2 * Math.PI * r;
   let cum = 0;
@@ -574,7 +596,7 @@ function DonutChart({ data }: { data: { name: string; pct: number }[] }) {
         {data.map((d, i) => (
           <div key={d.name} className="row">
             <span style={{ width: 10, height: 10, borderRadius: 50, background: colors[i], marginRight: 10 }} />
-            <span style={{ fontSize: 13, flex: 1 }}>{d.name}</span>
+            <span style={{ fontSize: 13, flex: 1 }}>{d.label}</span>
             <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{(d.pct * 100).toFixed(0)}%</span>
           </div>
         ))}
@@ -650,14 +672,3 @@ function flagFor(code: string): string {
   }
 }
 
-function formatRelative(iso: string): string {
-  const d = new Date(iso);
-  const diff = Date.now() - d.getTime();
-  const m = Math.round(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const days = Math.round(h / 24);
-  return `${days}d ago`;
-}

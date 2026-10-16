@@ -3,6 +3,8 @@
 
 "use client";
 import * as React from "react";
+import { useTranslations } from "next-intl";
+import { useValueLabels } from "@/i18n/labels";
 import { Glass, Chip, AIPill, Icons } from "@/components/primitives";
 import Wysiwyg from "@/components/Wysiwyg";
 import { currencySymbol } from "@/lib/utils";
@@ -11,7 +13,8 @@ import { logger } from "@/lib/log";
 
 const log = logger("job-wizard");
 
-function Segmented({ value, onChange, options, size = "md" }: { value: string; onChange: (v: string) => void; options: string[]; size?: "sm" | "md" }) {
+// `options` are the stored values; `labels` maps them to display text.
+function Segmented({ value, onChange, options, labels, size = "md" }: { value: string; onChange: (v: string) => void; options: string[]; labels?: Record<string, string>; size?: "sm" | "md" }) {
   const small = size === "sm";
   return (
     <div style={{
@@ -36,8 +39,8 @@ function Segmented({ value, onChange, options, size = "md" }: { value: string; o
                   boxShadow: value === o ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                   borderColor: value === o ? "var(--glass-border)" : "transparent",
                   color: value === o ? "var(--ink-0)" : "var(--ink-2)",
-                  textTransform: "capitalize"
-                }}>{o}</button>
+                  textTransform: labels ? "none" : "capitalize"
+                }}>{labels?.[o] ?? o}</button>
       ))}
     </div>
   );
@@ -55,12 +58,7 @@ function Row({ label, hint, children }: { label: string; hint?: React.ReactNode;
   );
 }
 
-const STEPS = [
-  { id: "basics", l: "Basics" },
-  { id: "describe", l: "Description" },
-  { id: "screen", l: "Screening" },
-  { id: "publish", l: "Publish" },
-];
+const STEPS = ["basics", "describe", "screen", "publish"] as const;
 
 export default function JobWizardModal({
   departments,
@@ -75,6 +73,9 @@ export default function JobWizardModal({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const t = useTranslations("jobs.wizard");
+  const tc = useTranslations("common");
+  const labels = useValueLabels();
   const [step, setStep] = React.useState(0);
   const [busy, setBusy] = React.useState(false);
   const [aiBusy, setAiBusy] = React.useState(false);
@@ -197,38 +198,38 @@ export default function JobWizardModal({
       <div className="sheet glass glass-strong" style={{ width: 880, height: "min(840px, 90vh)" }}>
         <div className="sheet-hd">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="topbar-crumb">New job</div>
-            <div className="topbar-title">Create a job posting</div>
+            <div className="topbar-crumb">{t("crumb")}</div>
+            <div className="topbar-title">{t("title")}</div>
           </div>
           <div className="wiz-steps">
             {STEPS.map((s, i) => (
-              <div key={s.id} className={`wiz-step ${i === step ? "active" : i < step ? "done" : ""}`} onClick={() => i <= step && setStep(i)}>
+              <div key={s} className={`wiz-step ${i === step ? "active" : i < step ? "done" : ""}`} onClick={() => i <= step && setStep(i)}>
                 <span className="wiz-step-n">{i < step ? <Icons.Check size={11} stroke={2.4}/> : i + 1}</span>
-                {s.l}
+                {t(`steps.${s}`)}
               </div>
             ))}
           </div>
-          <button className="iconbtn" onClick={onClose}><Icons.X size={15}/></button>
+          <button className="iconbtn" onClick={onClose} aria-label={tc("close")}><Icons.X size={15}/></button>
         </div>
 
         <div className="sheet-body scroll" style={{ display: "block", padding: "26px 30px" }}>
           {step === 0 && (
             <div style={{ maxWidth: 640, margin: "0 auto" }}>
-              <h2 style={{ fontSize: 22, marginBottom: 6 }}>What are you hiring for?</h2>
-              <p style={{ marginBottom: 24 }}>We'll generate a draft you can edit in the next step.</p>
+              <h2 style={{ fontSize: 22, marginBottom: 6 }}>{t("basics.title")}</h2>
+              <p style={{ marginBottom: 24 }}>{t("basics.hint")}</p>
 
-              <Row label="Job title">
-                <input className="input" placeholder="e.g. Senior Product Designer"
+              <Row label={t("basics.jobTitle")}>
+                <input className="input" placeholder={t("basics.jobTitlePlaceholder")}
                        value={form.title} onChange={e => set("title", e.target.value)} autoFocus />
               </Row>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <Row
-                  label="Department"
+                  label={t("basics.department")}
                   hint={
                     departments.length === 0 ? (
                       <a href="/settings?tab=workspace" onClick={onClose} className="tiny accent" style={{ fontWeight: 500 }}>
-                        + Add in Settings
+                        {t("basics.addInSettings")}
                       </a>
                     ) : undefined
                   }
@@ -250,26 +251,27 @@ export default function JobWizardModal({
                       className="input"
                       value={form.department}
                       onChange={(e) => set("department", e.target.value)}
-                      placeholder="e.g. Engineering"
+                      placeholder={t("basics.departmentPlaceholder")}
                     />
                   )}
                 </Row>
-                <Row label="Work mode">
+                <Row label={t("basics.workMode")}>
                   <Segmented
                     value={form.workmode}
                     onChange={(v) => set("workmode", v)}
                     options={["Remote", "Hybrid", "On-site"]}
+                    labels={{ Remote: tc("workModes.remote"), Hybrid: tc("workModes.hybrid"), "On-site": tc("workModes.onsite") }}
                   />
                 </Row>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <Row
-                  label="Primary location"
+                  label={t("basics.location")}
                   hint={
                     locations.length <= 1 ? ( // Only "Remote" or empty
                       <a href="/settings?tab=career" onClick={onClose} className="tiny accent" style={{ fontWeight: 500 }}>
-                        + Add office
+                        {t("basics.addOffice")}
                       </a>
                     ) : undefined
                   }
@@ -289,63 +291,64 @@ export default function JobWizardModal({
                   ) : (
                     <input
                       className="input"
-                      placeholder="Berlin, Lisbon, Remote (EU)…"
+                      placeholder={t("basics.locationPlaceholder")}
                       value={form.location}
                       onChange={(e) => set("location", e.target.value)}
                     />
                   )}
                 </Row>
-                <Row label="Salary range" hint={`Optional — ${sym}`}>
+                <Row label={t("basics.salary")} hint={t("basics.salaryHint", { symbol: sym })}>
                   <div className="row" style={{ gap: 8 }}>
-                    <input className="input" type="number" placeholder="Min" value={form.salaryMin} onChange={(e) => set("salaryMin", e.target.valueAsNumber || "")} />
-                    <span className="muted">to</span>
-                    <input className="input" type="number" placeholder="Max" value={form.salaryMax} onChange={(e) => set("salaryMax", e.target.valueAsNumber || "")} />
+                    <input className="input" type="number" placeholder={t("basics.min")} value={form.salaryMin} onChange={(e) => set("salaryMin", e.target.valueAsNumber || "")} />
+                    <span className="muted">{t("basics.to")}</span>
+                    <input className="input" type="number" placeholder={t("basics.max")} value={form.salaryMax} onChange={(e) => set("salaryMax", e.target.valueAsNumber || "")} />
                   </div>
                 </Row>
               </div>
 
-              <Row label="Employment type">
+              <Row label={t("basics.employment")}>
                 <Segmented value={form.employment} onChange={v => set("employment", v)}
-                           options={["Full-time", "Part-time", "Contract", "Internship"]} />
+                           options={["Full-time", "Part-time", "Contract", "Internship"]}
+                           labels={{ "Full-time": tc("employment.fullTime"), "Part-time": tc("employment.partTime"), Contract: tc("employment.contract"), Internship: tc("employment.internship") }} />
               </Row>
             </div>
           )}
 
           {step === 1 && (
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <h2 style={{ fontSize: 22, marginBottom: 6 }}>Write the description</h2>
-              <p style={{ marginBottom: 22 }}>Tell our AI what you're looking for, or write it yourself. You can always edit afterward.</p>
+              <h2 style={{ fontSize: 22, marginBottom: 6 }}>{t("describe.title")}</h2>
+              <p style={{ marginBottom: 22 }}>{t("describe.hint")}</p>
 
               <Glass faint style={{ padding: 16, borderRadius: 14, marginBottom: 22 }}>
                 <div className="row" style={{ marginBottom: 8 }}>
-                  <AIPill>AI draft</AIPill>
+                  <AIPill>{t("describe.aiDraft")}</AIPill>
                   <span style={{ flex: 1 }} />
-                  <span className="tiny" style={{ marginRight: 8 }}>Tone:</span>
-                  <Segmented value={tone} onChange={setTone} options={["Direct", "Warm", "Bold"]} size="sm" />
+                  <span className="tiny" style={{ marginRight: 8 }}>{t("describe.tone")}</span>
+                  <Segmented value={tone} onChange={setTone} options={["Direct", "Warm", "Bold"]} labels={{ Direct: t("describe.tones.direct"), Warm: t("describe.tones.warm"), Bold: t("describe.tones.bold") }} size="sm" />
                 </div>
                 <textarea
                   className="input"
                   rows={2}
-                  placeholder="A few sentences about who you want…"
+                  placeholder={t("describe.promptPlaceholder")}
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   style={{ marginBottom: 10, height: "auto", padding: "10px 12px" }}
                 />
                 <button className="btn btn-sm btn-primary" type="button" onClick={aiGenerate} disabled={aiBusy}>
-                  <Icons.Sparkle size={12} stroke={2} /> {aiBusy ? "Generating…" : "Generate description"}
+                  <Icons.Sparkle size={12} stroke={2} /> {aiBusy ? t("describe.generating") : t("describe.generate")}
                 </button>
               </Glass>
 
-              <Row label="Pitch" hint="one line that hooks readers">
-                <input className="input" value={form.pitch} onChange={(e) => set("pitch", e.target.value)} placeholder="Help us make lending feel obvious."/>
+              <Row label={t("describe.pitch")} hint={t("describe.pitchHint")}>
+                <input className="input" value={form.pitch} onChange={(e) => set("pitch", e.target.value)} placeholder={t("describe.pitchPlaceholder")}/>
               </Row>
 
-              <Row label="Description" hint={aiBusy ? "Generating…" : ""}>
+              <Row label={t("describe.description")} hint={aiBusy ? t("describe.generating") : ""}>
                 <div style={{ position: "relative" }}>
                   <Wysiwyg
                     value={form.description}
                     onChange={(v) => set("description", v)}
-                    placeholder="What the role is, what you'll work on, and why someone should care."
+                    placeholder={t("describe.descriptionPlaceholder")}
                     minHeight={220}
                   />
                   {aiBusy && <div className="ai-shimmer" style={{ position: "absolute", inset: 0, pointerEvents: "none", borderRadius: 10 }} />}
@@ -353,21 +356,21 @@ export default function JobWizardModal({
               </Row>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <Row label="Requirements">
+                <Row label={t("describe.requirements")}>
                   <div style={{ position: "relative" }}>
                     <textarea className="textarea autogrow" data-max-lines="12"
                               value={form.requirements}
                               onChange={e => set("requirements", e.target.value)}
-                              placeholder="One per line — bullets work too" />
+                              placeholder={t("describe.requirementsPlaceholder")} />
                     {aiBusy && <div className="ai-shimmer" style={{ position: "absolute", inset: 0, pointerEvents: "none", borderRadius: 10 }} />}
                   </div>
                 </Row>
-                <Row label="Nice to have">
+                <Row label={t("describe.niceToHave")}>
                   <div style={{ position: "relative" }}>
                     <textarea className="textarea autogrow" data-max-lines="12"
                               value={form.niceToHave}
                               onChange={e => set("niceToHave", e.target.value)}
-                              placeholder="Background in regulated industries" />
+                              placeholder={t("describe.niceToHavePlaceholder")} />
                     {aiBusy && <div className="ai-shimmer" style={{ position: "absolute", inset: 0, pointerEvents: "none", borderRadius: 10 }} />}
                   </div>
                 </Row>
@@ -377,18 +380,18 @@ export default function JobWizardModal({
 
           {step === 2 && (
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <h2 style={{ fontSize: 22, marginBottom: 6 }}>Add screening questions</h2>
-              <p style={{ marginBottom: 22 }}>Optional. Candidates answer these in the application form.</p>
+              <h2 style={{ fontSize: 22, marginBottom: 6 }}>{t("screen.title")}</h2>
+              <p style={{ marginBottom: 22 }}>{t("screen.hint")}</p>
 
               <div className="col" style={{ gap: 10 }}>
                 {form.questions.map((q, i) => (
                   <Glass faint key={i} style={{ padding: 14, borderRadius: 12 }}>
                     <div className="row" style={{ marginBottom: 8 }}>
                       <span className="chip mono" style={{ height: 20, fontSize: 11 }}>Q{i + 1}</span>
-                      <Segmented value={q.type} onChange={v => set("questions", form.questions.map((item, j) => j === i ? { ...item, type: v } : item))} options={["short", "long", "yes/no"]} size="sm" />
+                      <Segmented value={q.type} onChange={v => set("questions", form.questions.map((item, j) => j === i ? { ...item, type: v } : item))} options={["short", "long", "yes/no"]} labels={{ short: t("screen.types.short"), long: t("screen.types.long"), "yes/no": t("screen.types.yesno") }} size="sm" />
                       <span style={{ flex: 1 }} />
                       <div className="row" style={{ gap: 6 }}>
-                        <span className="tiny">Required</span>
+                        <span className="tiny">{t("screen.required")}</span>
                         <button
                           type="button"
                           className={`switch ${q.required ? "on" : ""}`}
@@ -397,19 +400,19 @@ export default function JobWizardModal({
                       </div>
                       <button className="iconbtn" style={{ width: 26, height: 26 }} onClick={() => set("questions", form.questions.filter((_, j) => j !== i))}><Icons.X size={13}/></button>
                     </div>
-                    <input className="input" placeholder="Ask a question…"
+                    <input className="input" placeholder={t("screen.questionPlaceholder")}
                            value={q.q} onChange={e => set("questions", form.questions.map((item, j) => j === i ? { ...item, q: e.target.value } : item))} />
                   </Glass>
                 ))}
               </div>
 
-              <button className="btn btn-sm" style={{ marginTop: 14 }} onClick={() => set("questions", [...form.questions, { q: "", required: false, type: "short" }])}><Icons.Plus size={13}/> Add question</button>
+              <button className="btn btn-sm" style={{ marginTop: 14 }} onClick={() => set("questions", [...form.questions, { q: "", required: false, type: "short" }])}><Icons.Plus size={13}/> {t("screen.add")}</button>
 
               {(suggestionsBusy || suggestions.length > 0) && (
                 <div style={{ marginTop: 32 }}>
                   <div className="row" style={{ marginBottom: 12, gap: 8 }}>
-                    <AIPill>AI suggestions</AIPill>
-                    {suggestionsBusy && <span className="tiny muted ai-shimmer-text">Generating questions tailored to your job description…</span>}
+                    <AIPill>{t("screen.suggestions")}</AIPill>
+                    {suggestionsBusy && <span className="tiny muted ai-shimmer-text">{t("screen.suggesting")}</span>}
                   </div>
                   
                   <div className="col" style={{ gap: 10 }}>
@@ -434,7 +437,7 @@ export default function JobWizardModal({
                               set("questions", [...form.questions, { q: s.q, required: false, type: s.type }]);
                               setSuggestions(suggestions.filter((_, j) => j !== i));
                             }}>
-                              Add <Icons.Plus size={11} stroke={2.5} />
+                              {tc("add")} <Icons.Plus size={11} stroke={2.5} />
                             </button>
                           </div>
                         </Glass>
@@ -448,32 +451,32 @@ export default function JobWizardModal({
 
           {step === 3 && (
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <h2 style={{ fontSize: 22, marginBottom: 6 }}>Where should it go?</h2>
-              <p style={{ marginBottom: 22 }}>You can change this any time.</p>
+              <h2 style={{ fontSize: 22, marginBottom: 6 }}>{t("publish.title")}</h2>
+              <p style={{ marginBottom: 22 }}>{t("publish.hint")}</p>
 
               <div className="col" style={{ gap: 10, marginBottom: 22 }}>
-                <PublishRow icon="Globe" name="Vellum careers" sub="Your branded career site"
+                <PublishRow icon="Globe" name={t("publish.careers")} sub={t("publish.careersSub")}
                             on={form.publishCareer} onToggle={() => set("publishCareer", !form.publishCareer)} />
-                <PublishRow icon="Linkedin" name="LinkedIn Jobs" sub="Free posting · ~3 day review"
+                <PublishRow icon="Linkedin" name="LinkedIn Jobs" sub={t("publish.linkedinSub")}
                             on={form.publishLinkedin} onToggle={() => set("publishLinkedin", !form.publishLinkedin)} />
-                <PublishRow icon="Briefcase" name="Indeed" sub="Free posting · auto-syncs applicants"
+                <PublishRow icon="Briefcase" name="Indeed" sub={t("publish.indeedSub")}
                             on={form.publishIndeed} onToggle={() => set("publishIndeed", !form.publishIndeed)} />
               </div>
 
               <Glass faint style={{ padding: 18, borderRadius: 12 }}>
-                <div className="section-h" style={{ marginBottom: 8 }}>Preview</div>
+                <div className="section-h" style={{ marginBottom: 8 }}>{t("publish.preview")}</div>
                 <div className="row" style={{ marginBottom: 8 }}>
                   <div className="gs-mark" style={{ width: 22, height: 22 }} />
-                  <span className="tiny">Vellum · careers</span>
+                  <span className="tiny">{t("publish.previewBrand")}</span>
                 </div>
-                <h3 style={{ fontSize: 20, letterSpacing: "-0.02em" }}>{form.title || "Senior Product Designer"}</h3>
+                <h3 style={{ fontSize: 20, letterSpacing: "-0.02em" }}>{form.title || t("basics.jobTitleExample")}</h3>
                 <div className="tiny" style={{ marginTop: 4 }}>
-                  {form.department} · {form.location || "Remote"} · {form.workmode}
+                  {form.department} · {form.location || tc("workModes.remote")} · {labels.workMode(form.workmode)}
                   {(form.salaryMin || form.salaryMax) && <> · {sym}{form.salaryMin}{form.salaryMax && ` – ${sym}${form.salaryMax}`}</>}
                 </div>
                 <div
                   style={{ marginTop: 12, fontSize: 13, color: "var(--ink-1)", lineHeight: 1.55, maxHeight: 120, overflow: "hidden", maskImage: "linear-gradient(to bottom, black 60%, transparent)" }}
-                  dangerouslySetInnerHTML={{ __html: form.description || "Your description will appear here." }}
+                  dangerouslySetInnerHTML={{ __html: form.description || t("publish.descriptionPlaceholder") }}
                 />
               </Glass>
             </div>
@@ -481,14 +484,14 @@ export default function JobWizardModal({
         </div>
 
         <div className="row" style={{ padding: "12px 22px", borderTop: "0.5px solid var(--line)", background: "var(--glass-bg)" }}>
-          <button className="btn btn-sm btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-sm btn-ghost" onClick={onClose}>{tc("cancel")}</button>
           <span style={{ flex: 1 }} />
-          {step > 0 && <button className="btn btn-sm" onClick={() => setStep(step - 1)}><Icons.ChevronLeft size={12}/> Back</button>}
+          {step > 0 && <button className="btn btn-sm" onClick={() => setStep(step - 1)}><Icons.ChevronLeft size={12}/> {tc("back")}</button>}
           {step < STEPS.length - 1 ? (
-            <button className="btn btn-sm btn-primary" onClick={() => setStep(step + 1)} disabled={step === 0 && !form.title.trim()}>Continue <Icons.ChevronRight size={12} stroke={2}/></button>
+            <button className="btn btn-sm btn-primary" onClick={() => setStep(step + 1)} disabled={step === 0 && !form.title.trim()}>{t("continue")} <Icons.ChevronRight size={12} stroke={2}/></button>
           ) : (
             <button className="btn btn-sm btn-primary" onClick={submit} disabled={busy}>
-              {busy ? "Publishing…" : form.publishCareer ? "Publish job" : "Save draft"} <Icons.ArrowUpRight size={12} stroke={2}/>
+              {busy ? t("publishing") : form.publishCareer ? t("publishJob") : t("saveDraft")} <Icons.ArrowUpRight size={12} stroke={2}/>
             </button>
           )}
         </div>

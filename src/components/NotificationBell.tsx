@@ -14,7 +14,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Icons } from "@/components/Icons";
 import { useProfileSheet } from "@/components/SheetHost";
-import { relativeTime } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 
 type Notification = {
   id: string;
@@ -33,6 +34,8 @@ type SeedNotification = { id: string; title: string; body: string; createdAt: st
 
 export default function NotificationBell({ initial }: { initial: SeedNotification[] }) {
   const router = useRouter();
+  const t = useTranslations("nav.notifications");
+  const relativeTime = useRelativeTime();
   const { openSheet } = useProfileSheet();
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<Notification[]>(() =>
@@ -103,7 +106,7 @@ export default function NotificationBell({ initial }: { initial: SeedNotificatio
 
   return (
     <div style={{ position: "relative" }}>
-      <button className="iconbtn" onClick={() => setOpen((o) => !o)} title="Notifications" aria-label={`Notifications — ${unread} unread`} aria-haspopup="true" aria-expanded={open}>
+      <button className="iconbtn" onClick={() => setOpen((o) => !o)} title={t("title")} aria-label={t("buttonLabel", { count: unread })} aria-haspopup="true" aria-expanded={open}>
         <Icons.Bell size={15} />
         {unread > 0 && (
           <span
@@ -128,14 +131,14 @@ export default function NotificationBell({ initial }: { initial: SeedNotificatio
             style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, width: 380, padding: 6, borderRadius: 14, zIndex: 90, maxHeight: 480, overflow: "auto" }}
           >
             <div className="row" style={{ padding: "8px 10px 6px", alignItems: "center" }}>
-              <div className="section-h" style={{ flex: 1, padding: 0 }}>Notifications</div>
+              <div className="section-h" style={{ flex: 1, padding: 0 }}>{t("title")}</div>
               {unread > 0 && (
                 <button className="btn btn-sm btn-ghost" style={{ height: 24, fontSize: 11 }} onClick={markAllRead}>
-                  <Icons.Check size={11} /> Mark all read
+                  <Icons.Check size={11} /> {t("markAllRead")}
                 </button>
               )}
             </div>
-            {items.length === 0 && <div style={{ padding: "16px 12px" }} className="tiny">No notifications yet.</div>}
+            {items.length === 0 && <div style={{ padding: "16px 12px" }} className="tiny">{t("empty")}</div>}
             {items.map((n) => {
               const Ic = (Icons as Record<string, React.FC<{ size?: number }>>)[n.icon] || Icons.Bell;
               const clickable = !!(n.applicationId || n.jobId);

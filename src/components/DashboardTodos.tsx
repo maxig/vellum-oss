@@ -9,11 +9,14 @@
  */
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Glass, Icons } from "@/components/primitives";
 import { TodoRow, type Todo } from "@/components/TodoButton";
 import { useProfileSheet } from "@/components/SheetHost";
 
 export default function DashboardTodos() {
+  const tt = useTranslations("todos");
+  const tc = useTranslations("common");
   const { openSheet } = useProfileSheet();
   const [todos, setTodos] = React.useState<Todo[] | null>(null);
   const [me, setMe] = React.useState("");
@@ -69,9 +72,9 @@ export default function DashboardTodos() {
   return (
     <Glass className="card" style={{ padding: 22 }}>
       <div className="row" style={{ marginBottom: 14, alignItems: "baseline" }}>
-        <h2 style={{ fontSize: 16, flex: 1 }}>My to-dos</h2>
+        <h2 style={{ fontSize: 16, flex: 1 }}>{tt("mine")}</h2>
         {mineOpen.length > 0 && (
-          <span className="chip" style={{ height: 20, fontSize: 11 }}>{mineOpen.length} open</span>
+          <span className="chip" style={{ height: 20, fontSize: 11 }}>{tt("openCount", { count: mineOpen.length })}</span>
         )}
       </div>
 
@@ -81,7 +84,7 @@ export default function DashboardTodos() {
           <div className="ai-shimmer" style={{ height: 34, borderRadius: 8 }} />
         </div>
       ) : mineOpen.length === 0 ? (
-        <p className="muted" style={{ fontSize: 13, margin: "4px 0 12px" }}>You&apos;re all caught up — nothing on your list.</p>
+        <p className="muted" style={{ fontSize: 13, margin: "4px 0 12px" }}>{tt("caughtUp")}</p>
       ) : (
         <div className="col" style={{ gap: 2, marginBottom: 8 }}>
           {mineOpen.slice(0, 6).map((t) => (
@@ -94,7 +97,7 @@ export default function DashboardTodos() {
               onOpen={() => t.applicationId && openSheet(t.applicationId)}
             />
           ))}
-          {mineOpen.length > 6 && <div className="tiny muted" style={{ padding: "2px 8px" }}>+{mineOpen.length - 6} more</div>}
+          {mineOpen.length > 6 && <div className="tiny muted" style={{ padding: "2px 8px" }}>{tt("more", { count: mineOpen.length - 6 })}</div>}
         </div>
       )}
 
@@ -103,11 +106,11 @@ export default function DashboardTodos() {
           className="input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Add a to-do…"
+          placeholder={tt("placeholder")}
           style={{ flex: 1, height: 32, fontSize: 12.5 }}
         />
         <button type="submit" className="btn btn-sm btn-primary" disabled={!title.trim() || busy} style={{ height: 32 }}>
-          <Icons.Plus size={12} /> Add
+          <Icons.Plus size={12} /> {tc("add")}
         </button>
       </form>
     </Glass>

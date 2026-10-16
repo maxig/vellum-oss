@@ -3,14 +3,16 @@
 
 "use client";
 import * as React from "react";
+import { useFormatter, useTranslations } from "next-intl";
 import { Glass, Avatar, Icons } from "@/components/primitives";
 import Wysiwyg from "@/components/Wysiwyg";
 import { markdownToHtml } from "@/lib/markdown";
 import { useDialogA11y } from "@/components/useDialogA11y";
 
 // Interview types — icon + default duration. Matches view-schedule.jsx's
-// "Type" card grid (Phone / Video / On-site / Panel).
-const TYPES: { id: string; label: string; minutes: number; icon: keyof typeof Icons }[] = [
+// "Type" card grid (Phone / Video / On-site / Panel). Display labels come from
+// common.interviewKinds; `label` here only feeds the (English) AI prompt.
+const TYPES: { id: "phone" | "video" | "onsite" | "panel"; label: string; minutes: number; icon: keyof typeof Icons }[] = [
   { id: "phone",  label: "Phone screen", minutes: 30, icon: "Phone" },
   { id: "video",  label: "Video call",   minutes: 45, icon: "Globe" },
   { id: "onsite", label: "On-site",      minutes: 60, icon: "Users" },
@@ -45,7 +47,10 @@ export default function ScheduleModal({
   onClose: () => void;
   onDone: () => void;
 }) {
-  const [type, setType] = React.useState("video");
+  const t = useTranslations("candidates.schedule");
+  const tc = useTranslations("common");
+  const format = useFormatter();
+  const [type, setType] = React.useState<(typeof TYPES)[number]["id"]>("video");
   const [duration, setDuration] = React.useState(45);
   // `weekStart` is the offset in weeks from "today's week". Each step is +7d.
   const [weekStart, setWeekStart] = React.useState(0);
@@ -172,7 +177,8 @@ export default function ScheduleModal({
   }, []);
 
   const pickedMembers = members.filter((m) => pickedIds.includes(m.id));
-  const typeMeta = TYPES.find((t) => t.id === type) || TYPES[0];
+  const typeMeta = TYPES.find((ty) => ty.id === type) || TYPES[0];
+  const typeLabel = tc(`interviewKinds.${typeMeta.id}`);
 
   function toggleMember(id: string) {
     setPickedIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -229,7 +235,7 @@ export default function ScheduleModal({
       // failed POST closed the modal as if the interview had been booked.
       if (!res?.ok) {
         const j = await res?.json().catch(() => ({}));
-        setError(j?.error || "Couldn't schedule the interview. Please try again.");
+        setError(j?.error || t("failed"));
         return;
       }
       onDone();
@@ -246,23 +252,15 @@ export default function ScheduleModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const weekLabel = `${visibleDays[0].date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  })} – ${visibleDays[6].date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  })}`;
+  const weekLabel = format.dateTimeRange(visibleDays[0].date, visibleDays[6].date, { month: "short", day: "numeric" });
   const firstName = candidate.name.split(" ")[0];
   const interviewerLabel =
     pickedMembers.length === 0
-      ? "the hiring team"
+      ? t("hiringTeam")
       : pickedMembers.length === 1
       ? pickedMembers[0].name
-      : `${pickedMembers
-          .slice(0, -1)
-          .map((m) => m.name.split(" ")[0])
-          .join(", ")} and ${pickedMembers[pickedMembers.length - 1].name.split(" ")[0]}`;
+      : format.list(pickedMembers.map((m) => m.name.split(" ")[0]), { type: "conjunction" });
+  const dateLabel = format.dateTime(selectedDate, { weekday: "short", month: "short", day: "numeric" });
 
   return (
     <>
@@ -272,7 +270,7 @@ export default function ScheduleModal({
         className="sheet glass glass-strong schedule-sheet"
         role="dialog"
         aria-modal="true"
-        aria-label={`Schedule interview with ${candidate.name}`}
+        aria-label={t("dialogLabel", { name: candidate.name })}
         style={{
           width: "min(820px, calc(100vw - 48px))",
           height: "auto",
@@ -285,11 +283,11 @@ export default function ScheduleModal({
         <div className="row" style={{ padding: "16px 22px", borderBottom: "0.5px solid var(--line)", gap: 12 }}>
           <Avatar name={candidate.name} size="md" />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="topbar-crumb">Schedule with</div>
+            <div className="topbar-crumb">{t("scheduleWith")}</div>
             <div className="topbar-title">{candidate.name}</div>
             {jobTitle && <div className="tiny" style={{ marginTop: 2 }}>{jobTitle}</div>}
           </div>
-          <button className="iconbtn" onClick={onClose} aria-label="Close">
+          <button className="iconbtn" onClick={onClose} aria-label={tc("close")}>
             <Icons.X size={15} />
           </button>
         </div>
@@ -297,18 +295,18 @@ export default function ScheduleModal({
         {/* Body */}
         <div className="scroll" style={{ flex: 1, padding: "22px 26px", overflowY: "auto" }}>
           {/* Type */}
-          <div className="section-h" style={{ marginBottom: 8 }}>Type</div>
+          <div className="section-h" style={{ marginBottom: 8 }}>{t("type")}</div>
           <div className="row" style={{ gap: 8, marginBottom: 22, flexWrap: "wrap" }}>
-            {TYPES.map((t) => {
-              const I = Icons[t.icon];
-              const sel = type === t.id;
+            {TYPES.map((ty) => {
+              const I = Icons[ty.icon];
+              const sel = type === ty.id;
               return (
                 <button
-                  key={t.id}
+                  key={ty.id}
                   type="button"
                   onClick={() => {
-                    setType(t.id);
-                    setDuration(t.minutes);
+                    setType(ty.id);
+                    setDuration(ty.minutes);
                   }}
                   className="btn"
                   style={{
@@ -325,9 +323,9 @@ export default function ScheduleModal({
                 >
                   <div className="row" style={{ gap: 6 }}>
                     <I size={14} />
-                    <span style={{ fontWeight: 500 }}>{t.label}</span>
+                    <span style={{ fontWeight: 500 }}>{tc(`interviewKinds.${ty.id}`)}</span>
                   </div>
-                  <span className="tiny">{t.minutes} min</span>
+                  <span className="tiny">{t("minutes", { n: ty.minutes })}</span>
                 </button>
               );
             })}
@@ -336,7 +334,7 @@ export default function ScheduleModal({
           {/* Day — paginated by week so the recruiter can schedule out a
               month-plus into the future, not just the next 7 days. */}
           <div className="row" style={{ marginBottom: 8, gap: 8, alignItems: "center" }}>
-            <div className="section-h" style={{ flex: 1 }}>Day</div>
+            <div className="section-h" style={{ flex: 1 }}>{t("day")}</div>
             <span className="tiny" style={{ color: "var(--ink-2)" }}>{weekLabel}</span>
             <button
               type="button"
@@ -344,8 +342,8 @@ export default function ScheduleModal({
               style={{ width: 26, height: 26 }}
               onClick={() => setWeekStart((w) => Math.max(0, w - 1))}
               disabled={weekStart === 0}
-              aria-label="Previous week"
-              title="Previous week"
+              aria-label={t("prevWeek")}
+              title={t("prevWeek")}
             >
               <Icons.ChevronLeft size={13} />
             </button>
@@ -355,8 +353,8 @@ export default function ScheduleModal({
               style={{ width: 26, height: 26 }}
               onClick={() => setWeekStart((w) => Math.min(MAX_WEEKS_AHEAD - 1, w + 1))}
               disabled={weekStart >= MAX_WEEKS_AHEAD - 1}
-              aria-label="Next week"
-              title="Next week"
+              aria-label={t("nextWeek")}
+              title={t("nextWeek")}
             >
               <Icons.ChevronRight size={13} />
             </button>
@@ -397,13 +395,13 @@ export default function ScheduleModal({
                   }}
                 >
                   <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.85 }}>
-                    {date.toLocaleDateString(undefined, { weekday: "short" })}
+                    {format.dateTime(date, { weekday: "short" })}
                   </span>
                   <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em" }}>
                     {date.getDate()}
                   </span>
                   <span style={{ fontSize: 9, opacity: 0.7 }}>
-                    {date.toLocaleDateString(undefined, { month: "short" })}
+                    {format.dateTime(date, { month: "short" })}
                   </span>
                 </button>
               );
@@ -411,7 +409,7 @@ export default function ScheduleModal({
           </div>
 
           {/* Slot */}
-          <div className="section-h" style={{ marginBottom: 8 }}>Time</div>
+          <div className="section-h" style={{ marginBottom: 8 }}>{t("time")}</div>
           <div
             style={{
               display: "grid",
@@ -440,7 +438,7 @@ export default function ScheduleModal({
                     cursor: conflict ? "not-allowed" : "default",
                     textDecoration: conflict ? "line-through" : "none",
                   }}
-                  title={conflict ? `Conflict${provider ? ` · ${provider}` : ""}` : undefined}
+                  title={conflict ? t("conflict") + (provider ? ` · ${provider}` : "") : undefined}
                 >
                   {s}
                 </button>
@@ -449,10 +447,10 @@ export default function ScheduleModal({
           </div>
 
           {/* Interviewers */}
-          <div className="section-h" style={{ marginBottom: 8 }}>Interviewers</div>
+          <div className="section-h" style={{ marginBottom: 8 }}>{t("interviewers")}</div>
           {members.length === 0 ? (
             <p className="tiny" style={{ marginBottom: 22, color: "var(--ink-2)" }}>
-              No teammates yet — invite someone from <span className="mono">Settings → Team</span> first.
+              {t.rich("noTeammates", { mono: (c) => <span className="mono">{c}</span> })}
             </p>
           ) : (
             <div className="row" style={{ gap: 6, marginBottom: 22, flexWrap: "wrap" }}>
@@ -488,18 +486,18 @@ export default function ScheduleModal({
           {/* Location & meeting link — placed before Agenda because the
               calendar invite's "where" field is more important than the
               optional prep notes. */}
-          <div className="section-h" style={{ marginBottom: 8 }}>Where</div>
+          <div className="section-h" style={{ marginBottom: 8 }}>{t("where")}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 22 }}>
             <div>
               <input
                 className="input"
                 value={meetingUrl}
                 onChange={(e) => setMeetingUrl(e.target.value)}
-                placeholder="Meeting link · https://meet…"
+                placeholder={t("meetingLink")}
                 type="url"
               />
               <p className="tiny" style={{ marginTop: 4, color: "var(--ink-2)" }}>
-                Becomes the calendar event's URL — most apps render it as a Join button.
+                {t("meetingLinkHint")}
               </p>
             </div>
             <div>
@@ -507,31 +505,31 @@ export default function ScheduleModal({
                 className="input"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder={type === "onsite" ? "Berlin office · 4th floor" : "Optional physical location"}
+                placeholder={type === "onsite" ? t("locationOnsite") : t("locationOptional")}
               />
               <p className="tiny" style={{ marginTop: 4, color: "var(--ink-2)" }}>
-                Shown to the candidate and added to the calendar invite.
+                {t("locationHint")}
               </p>
             </div>
           </div>
 
           {/* Agenda */}
           <div className="row" style={{ marginBottom: 6 }}>
-            <div className="section-h" style={{ flex: 1 }}>Agenda</div>
+            <div className="section-h" style={{ flex: 1 }}>{t("agenda")}</div>
             <button
               type="button"
               className="btn btn-sm btn-ghost"
               onClick={suggestAgenda}
               disabled={aiBusy}
             >
-              <Icons.Sparkle size={11} stroke={2} /> {aiBusy ? "Suggesting…" : "Suggest"}
+              <Icons.Sparkle size={11} stroke={2} /> {aiBusy ? t("suggesting") : t("suggest")}
             </button>
           </div>
           <div style={{ marginBottom: 18 }}>
             <Wysiwyg
               value={agenda}
               onChange={setAgenda}
-              placeholder="What we'll cover, any prep notes for the candidate…"
+              placeholder={t("agendaPlaceholder")}
               minHeight={110}
             />
           </div>
@@ -541,18 +539,21 @@ export default function ScheduleModal({
             <div className="row" style={{ marginBottom: 8 }}>
               <Icons.Mail size={13} style={{ color: "var(--ink-2)" }} />
               <span className="tiny" style={{ flex: 1, marginLeft: 6 }}>
-                Email preview · sent to {firstName}
+                {t("previewTitle", { name: firstName })}
               </span>
             </div>
             <div style={{ fontSize: 13, color: "var(--ink-1)", lineHeight: 1.55 }}>
-              Hi {firstName} — confirming our {typeMeta.label.toLowerCase()} on{" "}
-              <b style={{ color: "var(--ink-0)" }}>
-                {selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-              </b>{" "}
-              at <b style={{ color: "var(--ink-0)" }}>{slot}</b>. You'll meet with {interviewerLabel}.{" "}
+              {t.rich("previewBody", {
+                name: firstName,
+                kind: typeLabel,
+                date: dateLabel,
+                time: slot,
+                with: interviewerLabel,
+                b: (c) => <b style={{ color: "var(--ink-0)" }}>{c}</b>,
+              })}{" "}
               {meetingUrl.trim() ? (
                 <>
-                  Join link:{" "}
+                  {t("previewJoin")}{" "}
                   <span className="mono" style={{ color: "var(--accent-solid)" }}>
                     {meetingUrl.trim()}
                   </span>
@@ -560,10 +561,10 @@ export default function ScheduleModal({
                 </>
               ) : location.trim() ? (
                 <>
-                  Where: <b style={{ color: "var(--ink-0)" }}>{location.trim()}</b>.{" "}
+                  {t("previewWhere")} <b style={{ color: "var(--ink-0)" }}>{location.trim()}</b>.{" "}
                 </>
               ) : null}
-              An .ics calendar invite is attached.
+              {t("previewIcs")}
             </div>
           </Glass>
 
@@ -579,16 +580,16 @@ export default function ScheduleModal({
             }}
           >
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>Send calendar invite + email now</div>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>{t("sendNow")}</div>
               <div className="tiny" style={{ marginTop: 2 }}>
-                If off, the meeting saves as a draft you can review.
+                {t("sendNowHint")}
               </div>
             </div>
             <button
               type="button"
               className={`switch ${sendNow ? "on" : ""}`}
               onClick={() => setSendNow(!sendNow)}
-              aria-label="Send calendar invite + email now"
+              aria-label={t("sendNow")}
             />
           </div>
         </div>
@@ -598,13 +599,13 @@ export default function ScheduleModal({
           <span className="tiny" style={{ flex: 1, color: error ? "oklch(60% 0.18 28)" : "var(--ink-2)" }} role={error ? "alert" : undefined}>
             {error
               ? error
-              : `${typeMeta.label} · ${duration} min · ${selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} ${slot} · ${pickedMembers.length} interviewer${pickedMembers.length === 1 ? "" : "s"}`}
+              : `${typeLabel} · ${t("minutes", { n: duration })} · ${dateLabel} ${slot} · ${t("interviewerCount", { count: pickedMembers.length })}`}
           </span>
           <button className="btn btn-sm btn-ghost" onClick={onClose}>
-            Cancel
+            {tc("cancel")}
           </button>
           <button className="btn btn-sm btn-primary" onClick={save} disabled={busy}>
-            <Icons.Calendar size={11} /> {busy ? "Scheduling…" : "Schedule"}
+            <Icons.Calendar size={11} /> {busy ? t("scheduling") : t("schedule")}
           </button>
         </div>
       </div>

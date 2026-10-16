@@ -1,0 +1,597 @@
+{
+  "language": {
+    "title": "Language",
+    "userHint": "Language of the app for you. Overrides the workspace default.",
+    "useWorkspaceDefault": "Workspace default ({language})",
+    "workspaceTitle": "Default language",
+    "workspaceHint": "Used for every member who hasn't picked their own language under Appearance."
+  },
+  "title": "Settings",
+  "saveAll": "Save all changes",
+  "tabs": {
+    "workspace": "Workspace",
+    "appearance": "Appearance",
+    "career": "Career site",
+    "ai": "AI & integrations",
+    "team": "Team & roles",
+    "interviewKits": "Interview kits",
+    "email": "Email",
+    "calendar": "Calendar",
+    "cookies": "Cookies & consent",
+    "danger": "Danger zone"
+  },
+  "openSource": {
+    "title": "Open source",
+    "body": "Vellum is self-hosted and free forever."
+  },
+  "workspace": {
+    "identity": "Identity",
+    "identityHint": "Branding and high-level workspace metadata.",
+    "name": "Workspace name",
+    "domain": "Primary email domain",
+    "timezone": "Time zone",
+    "color": "Color",
+    "id": "Workspace ID",
+    "idHint": "used in API calls",
+    "defaults": "Defaults",
+    "defaultsHint": "Sensible starting points for new jobs and outbound messages.",
+    "signature": "Default reply signature",
+    "signaturePlaceholder": "Warmly,\n{name}",
+    "signatureHint": "Appears as a pre-filled signature when composing replies in the inbox.",
+    "autoSend": "Auto-send application confirmations",
+    "autoSendHint": "Email candidates within 60s of applying. Requires connected SMTP.",
+    "aiRejection": "AI rejection drafts",
+    "aiRejectionHint": "Suggest a kind, role-specific rejection note for HR review.",
+    "showSalary": "Show salary publicly by default",
+    "showSalaryHint": "Candidates see compensation in every job listing.",
+    "currency": "Currency",
+    "currencyHint": "Used for every salary input across the app and for compensation shown on the public career site.",
+    "departments": "Departments",
+    "departmentsHint": "The departments your team hires for. Shown as a dropdown in the New job wizard and as filter chips on the career site.",
+    "removeDepartment": "Remove {name}",
+    "departmentPlaceholder": "e.g. Engineering",
+    "savedHint": "Saved · changes apply across the workspace"
+  },
+  "career": {
+    "saveFailed": "Could not save. Please try again.",
+    "domainBrand": "Domain & brand",
+    "openSite": "Open site",
+    "publicUrl": "Public URL",
+    "ownDomain": "Your own domain",
+    "ownDomainPlaceholder": "{domain} — leave empty to use the address above",
+    "domainLive": "Live — we've had visitors on this address",
+    "domainPending": "Save, then add this record at your registrar. The address starts working on its first visit — the security certificate is issued automatically, so the very first page load takes a few seconds.",
+    "domainHint": "Your career site is always reachable at the address above. Add a domain here to serve it from your own instead.",
+    "companyName": "Company name",
+    "hero": "Hero",
+    "eyebrow": "Eyebrow",
+    "headline1": "Headline (1)",
+    "headline2": "Headline (2 · italic)",
+    "lede": "Lede",
+    "ledePlaceholder": "A sentence that introduces the company…",
+    "ctaPrimary": "Primary CTA",
+    "ctaSecondary": "Secondary CTA",
+    "about": "About",
+    "headline": "Headline",
+    "paragraph": "Paragraph {n}",
+    "paragraph1Placeholder": "What you do, in plain language.",
+    "paragraph2Placeholder": "How you work, why it's interesting.",
+    "stats": "Stats (4)",
+    "statValue": "Value (e.g. 38)",
+    "statLabel": "Label (e.g. people)",
+    "values": "Values",
+    "valueTitle": "Title",
+    "valueDesc": "One-sentence description",
+    "newValue": "New value",
+    "addValue": "Add value",
+    "offices": "Offices",
+    "officesHint": "Shown on the public career site below the about block.",
+    "officesEmpty": "No offices yet — add the cities you hire from.",
+    "city": "City",
+    "country": "Country",
+    "address": "Address",
+    "people": "# people",
+    "addOffice": "Add office",
+    "stories": "Team stories",
+    "storiesHint": "Each story shows on the public site with a quote and a portrait.",
+    "storiesEmpty": "Share a few sentences from people on the team.",
+    "storyName": "Name",
+    "storyRole": "Role",
+    "storyTenure": "Tenure (e.g. 2 yrs)",
+    "storyPhoto": "Portrait URL (optional, https://…)",
+    "storyQuote": "What they'd want a candidate to know about working here…",
+    "addStory": "Add story",
+    "footerCta": "Footer CTA",
+    "body": "Body",
+    "bodyPlaceholder": "A short note inviting unsolicited applications.",
+    "contactEmail": "Contact email",
+    "legalLine": "Legal line",
+    "savedHint": "Saved · view site to preview changes",
+    "savePublish": "Save & publish"
+  },
+  "team": {
+    "errors": {
+      "forbidden": "Only admins can manage teammates.",
+      "ownerRequired": "Only an owner can promote, demote, or remove another owner.",
+      "lastOwner": "Promote another teammate to owner first — every workspace needs at least one.",
+      "generic": "Could not update teammate."
+    },
+    "confirmRemove": "Remove {name} from the workspace? Their account stays, but they lose access here.",
+    "invite": "Invite teammates",
+    "sendInvite": "Send invite",
+    "shareLink": "Share this link (no SMTP in OSS edition — also printed to server logs):",
+    "members": "Members ({count})",
+    "cols": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "actions": "Actions",
+      "expires": "Expires",
+      "link": "Link"
+    },
+    "you": "you",
+    "view": "View",
+    "removeLabel": "Remove {name}",
+    "pendingInvites": "Pending invites ({count})",
+    "copy": "copy",
+    "loadFailed": "Could not load teammate.",
+    "crumb": "Team",
+    "teammate": "Teammate",
+    "joined": "Joined {date}",
+    "profile": {
+      "email": "Email",
+      "pronouns": "Pronouns",
+      "location": "Location",
+      "timezone": "Time zone",
+      "workingHours": "Working hours",
+      "bio": "Bio"
+    }
+  },
+  "ai": {
+    "provider": "Provider",
+    "providers": {
+      "anthropic": {
+        "desc": "Claude family — Haiku, Sonnet, Opus",
+        "badge": "Recommended"
+      },
+      "openai": {
+        "desc": "GPT-4 family + GPT-4o",
+        "badge": ""
+      },
+      "google": {
+        "desc": "Gemini 1.5 / 2.0",
+        "badge": ""
+      },
+      "ollama": {
+        "desc": "Run models locally — no data leaves your network",
+        "badge": "Open source"
+      }
+    },
+    "selected": "Selected",
+    "apiKeyOptional": "API key (optional)",
+    "apiKeyFor": "API key · {provider}",
+    "apiKeyOllama": "Leave blank if your Ollama server is unauthenticated",
+    "apiKeySet": "•••••• (set, leave blank to keep)",
+    "apiKeyPaste": "Paste your API key",
+    "model": "Model",
+    "serverUrl": "Server URL",
+    "serverUrlHint": "URL of your self-hosted Ollama server. Hosted providers (Anthropic, OpenAI, Google) use their official endpoints and don't need this.",
+    "testing": "Testing…",
+    "connected": "Connected",
+    "failed": "Failed",
+    "testConnection": "Test connection",
+    "tokensUsed": "~{used} / {quota} tokens used this month",
+    "whereAi": "Where AI shows up",
+    "features": {
+      "summary": {
+        "name": "Candidate summaries",
+        "desc": "Generate AI fit scores and 3-sentence summaries from resumes."
+      },
+      "draft": {
+        "name": "Reply drafts",
+        "desc": "Draft warm, role-specific replies HR can edit before sending."
+      },
+      "jd": {
+        "name": "Job description writer",
+        "desc": "Generate job posts from a few sentences in your tone of voice."
+      },
+      "screen": {
+        "name": "Screening question suggester",
+        "desc": "Suggest questions based on the role description."
+      },
+      "rejection": {
+        "name": "Rejection drafts",
+        "desc": "Write kind, specific rejection notes for HR to review."
+      },
+      "recap": {
+        "name": "Today's recap",
+        "desc": "Glanceable daily briefing on the dashboard. Powers weekly & monthly digests."
+      },
+      "pulse": {
+        "name": "Candidate Pulse",
+        "desc": "Engagement signal blending behavior with AI sentiment on inbound messages."
+      },
+      "review_queue": {
+        "name": "Review queue insights",
+        "desc": "Adds 1–4 cross-cutting AI items to the Review queue, below the rule-based ones."
+      }
+    },
+    "customize": "Customize",
+    "hide": "Hide",
+    "recap": {
+      "title": "Recap & digests",
+      "hint": "A daily briefing on the dashboard, plus opt-in weekly and monthly emails to workspace admins. The same engine drives all three.",
+      "cadences": "Cadences",
+      "daily": "Today",
+      "dailyDesc": "Always on the dashboard",
+      "weekly": "Weekly",
+      "weeklyDesc": "Email · Monday 08:00 local",
+      "monthly": "Monthly",
+      "monthlyDesc": "Email · 1st of month",
+      "dailyDelivery": "Daily delivery",
+      "hourLocal": "{hour} local",
+      "weeklyDelivery": "Weekly delivery",
+      "monthlyDelivery": "Monthly delivery",
+      "dayN": "Day {n}",
+      "tone": "Tone of AI insights",
+      "tones": {
+        "factual": {
+          "label": "Factual",
+          "preview": "\"42% of replies cited salary.\""
+        },
+        "conversational": {
+          "label": "Conversational",
+          "preview": "\"A lot of salary questions came up this week.\""
+        },
+        "quirky": {
+          "label": "Quirky",
+          "preview": "\"Money talk dominated the inbox 💸\""
+        }
+      },
+      "recipients": "Recipients",
+      "allAdmins": "All admins",
+      "sendingToAll": "Sending to all workspace owners and admins ({count}). Per-user mute lives in Settings → Profile → Notifications.",
+      "suggested": "Suggested actions in recap",
+      "suggestedHint": "Adds 'consider doing X' nudges. Some teams prefer just the facts.",
+      "advanced": "Advanced thresholds",
+      "staleMult": "Stale-stage multiplier",
+      "staleMultHint": "× team's median time-in-stage",
+      "awaiting": "Awaiting-reply window",
+      "awaitingHint": "hours since application",
+      "retention": "Retention-horizon warning",
+      "retentionHint": "days before 12-month horizon",
+      "building": "Building…",
+      "buildNow": "Build now",
+      "regenerated": "Recap regenerated",
+      "buildFailed": "Build failed",
+      "adminRecipients": "{count} admin recipients",
+      "selectedRecipients": "{count} selected recipients"
+    },
+    "pulse": {
+      "title": "Pulse — engagement signal",
+      "hint": "Scores how engaged each candidate is, refreshed on every inbound signal. AI sentiment is one input — turn it off for a purely behavioral Pulse.",
+      "sentiment": "Use AI sentiment in Pulse",
+      "sentimentHint": "When off, Pulse is computed from behavior only (opens, clicks, reply cadence).",
+      "alerts": "Pulse alerts",
+      "alertsHint": "Notify the candidate's owner the moment Pulse drops a band.",
+      "lock": "Lock score on unsubscribe",
+      "lockHint": "When a candidate unsubscribes from communications, Pulse locks at 0."
+    },
+    "privacy": {
+      "title": "Data & privacy",
+      "hint": "Resume content is sent to {provider} when AI features are used. Configure what's allowed.",
+      "redact": "Redact PII before sending to AI",
+      "redactHint": "Names, emails, phone numbers replaced with placeholders.",
+      "noLog": "Don't log prompts",
+      "noLogHint": "Run requests with provider's no-log header where supported.",
+      "cache": "Cache AI responses",
+      "cacheHint": "Skip re-runs for the same input — reduces token usage."
+    },
+    "saveChanges": "Save changes"
+  },
+  "reviewQueue": {
+    "forbidden": "Only admins can change these rules.",
+    "saveFailed": "Could not save.",
+    "rateLimited": "Rebuild rate-limited — wait a moment before trying again.",
+    "title": "Review queue",
+    "cacheHint": "Cache refreshes every hour",
+    "hint": "Configurable rules drive the triage queue surfaced in the topbar. Each bucket has a toggle, a severity weight, and (where it makes sense) a threshold knob.",
+    "awaitingSchema": "Awaiting schema",
+    "disable": "Disable {label}",
+    "enable": "Enable {label}",
+    "aiOverlay": "AI overlay",
+    "aiOverlayHint": "Adds 1–4 cross-cutting AI insights below the rule-based items. Requires a configured AI provider.",
+    "maxN": "Max {n}",
+    "defaultScope": "Default scope",
+    "scopeMine": "Mine only",
+    "scopeWorkspace": "Workspace-wide",
+    "savedHint": "Saved · workspace cache cleared",
+    "rebuild": "Rebuild now",
+    "saveRules": "Save rules",
+    "severity": "Severity",
+    "buckets": {
+      "no-reply": {
+        "label": "Awaiting your reply",
+        "desc": "Candidate replied to a thread you haven't responded to yet."
+      },
+      "post-interview": {
+        "label": "Post-interview decision",
+        "desc": "In interview stage longer than this many days."
+      },
+      "offer-pending": {
+        "label": "Offer pending",
+        "desc": "Offer extended but the candidate hasn't responded."
+      },
+      "stale-applied": {
+        "label": "Stale applications",
+        "desc": "Applied but no outreach yet."
+      },
+      "schedule-needed": {
+        "label": "Schedule needed",
+        "desc": "Moved to interview stage but no calendar invite exists."
+      },
+      "missing-debrief": {
+        "label": "Missing debrief",
+        "desc": "Interview happened but no debrief was recorded."
+      },
+      "reference-overdue": {
+        "label": "Reference overdue",
+        "desc": "Reference checks pending for too long. (Awaiting schema — toggle is a no-op for now.)"
+      },
+      "long-cold-scorer": {
+        "label": "Long-cold high scorer",
+        "desc": "Strong AI fit but stagnant in an early stage."
+      }
+    },
+    "thresholds": {
+      "interviewDecisionDays": {
+        "label": "Flag after",
+        "suffix": "days"
+      },
+      "offerNudgeDays": {
+        "label": "Nudge after",
+        "suffix": "days"
+      },
+      "staleAppliedDays": {
+        "label": "Flag after",
+        "suffix": "days"
+      },
+      "scheduleWindowDays": {
+        "label": "Within",
+        "suffix": "days"
+      },
+      "debriefSlaHours": {
+        "label": "SLA after interview",
+        "suffix": "hours"
+      },
+      "referenceSlaDays": {
+        "label": "Flag after",
+        "suffix": "days"
+      },
+      "coldScorerMinScore": {
+        "label": "Min score",
+        "suffix": "/ 100"
+      },
+      "coldScorerStageMult": {
+        "label": "Stale multiplier",
+        "suffix": "× median"
+      }
+    }
+  },
+  "email": {
+    "saveFailed": "Could not save email config.",
+    "saved": "Saved. Run a test to verify the connection.",
+    "testFailed": "Test failed.",
+    "testOk": "✓ IMAP and SMTP connected successfully.",
+    "testPartial": "Partial: IMAP {imap} · SMTP {smtp}",
+    "pollFailed": "Poll failed.",
+    "polled": "Polled — checked {checked, plural, one {# message} other {# messages}}, ingested {ingested} new.",
+    "polledSince": "Polled since {since} — checked {checked, plural, one {# message} other {# messages}}, ingested {ingested} new.",
+    "confirmDisconnect": "Disconnect this email account? Existing messages are kept; polling stops.",
+    "disconnected": "Disconnected.",
+    "title": "Email integration",
+    "hint": "Connect a shared inbox (Gmail, Outlook, FastMail, your provider) so candidate replies show up here and you can answer without leaving the app. Use an <b>app password</b> if your provider requires one.",
+    "lastPolled": "Last polled {date}",
+    "lastError": "Last error: {error}",
+    "fromIdentity": "From identity",
+    "fromName": "From name",
+    "yourName": "Your name",
+    "fromAddress": "From address",
+    "login": "Mailbox login",
+    "username": "Username",
+    "password": "Password",
+    "passwordKeep": "•••••• (leave blank to keep)",
+    "appPassword": "App password",
+    "loginHint": "One login is used for both inbound (IMAP) and outbound (SMTP). Most providers require an <b>app password</b> rather than your account password — check your provider's docs.",
+    "imap": "IMAP server (inbound)",
+    "smtp": "SMTP server (outbound)",
+    "host": "Host",
+    "port": "Port",
+    "tls": "Use TLS",
+    "tlsHint": "Required by almost every provider.",
+    "starttlsHint": "Off for port 465 (implicit TLS), on for 587 (STARTTLS).",
+    "polling": "Polling enabled",
+    "pollingHint": "When off, the background worker stops fetching new mail (existing messages are preserved).",
+    "disconnect": "Disconnect",
+    "testing": "Testing…",
+    "test": "Test connection",
+    "pollingNow": "Polling…",
+    "pollNow": "Poll now",
+    "update": "Update",
+    "connect": "Connect",
+    "matching": {
+      "title": "How matching works",
+      "sender": "Inbound mail is matched to candidates by sender address (case-insensitive).",
+      "subject": "If the sender is unknown, the subject line is scanned for a job title — e.g. \"Re: Senior Product Designer — follow-up\". The applicant whose name best matches the sender's name is picked.",
+      "ignored": "Senders that match neither a known address nor a job/applicant in the workspace are silently ignored.",
+      "threading": "When possible, replies thread under the existing candidate↔job conversation; otherwise a new thread is opened.",
+      "outbound": "Outbound replies sent from Vellum use the From identity above and thread via In-Reply-To headers.",
+      "cadence": "Polling cadence: {seconds}s. Run \"Poll now\" to fetch immediately."
+    }
+  },
+  "calendar": {
+    "invites": "Calendar invites",
+    "invitesHint": "When you schedule an interview, Vellum sends the candidate an email with a real <mono>.ics</mono> calendar attachment. They can open it in Gmail, Apple Calendar, Outlook or any other client and the event lands on their calendar with the right time, location, meeting link and attendees.",
+    "sendDefault": "Send invites by default",
+    "sendDefaultHint": "The 'Send now' toggle in the Schedule modal defaults to this value. Recruiters can override per-meeting.",
+    "delivery": {
+      "title": "How invites are delivered",
+      "smtp": "Outgoing mail uses your workspace's SMTP credentials from <link>Settings → Email</link>.",
+      "ready": "Ready · {address}",
+      "notConfigured": "Not configured",
+      "rfc": "The .ics file follows RFC 5545 with method <mono>REQUEST</mono>, an event UID, and a 10-minute reminder.",
+      "cc": "Picked interviewers are CC'd; their emails appear as ATTENDEES so clients show the full roster.",
+      "url": "Meeting URL becomes the event's <mono>URL</mono> field — most clients render it as a Join button.",
+      "sequence": "Re-sending an interview update bumps the iCalendar <mono>SEQUENCE</mono> so clients refresh in place instead of duplicating."
+    },
+    "savedHint": "Saved · applies to new interviews scheduled from now on",
+    "saveChanges": "Save changes",
+    "confirmDisconnect": "Disconnect this calendar? Vellum will stop syncing meetings to it.",
+    "accounts": "Calendar accounts",
+    "accountsHint": "Connect a calendar so Vellum can push interviews straight to it and skip slot conflicts when you schedule.",
+    "connectedFlash": "Connected {provider} calendar.",
+    "connectFailed": "Connect failed: {error}",
+    "noAccounts": "No calendars connected yet.",
+    "syncError": "error · {error}",
+    "unknown": "unknown",
+    "lastSync": "last sync {date}",
+    "notSynced": "not synced yet",
+    "syncing": "Syncing…",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "syncFailed": "Sync failed: {error}",
+    "pulled": "Pulled {count, plural, one {# event} other {# events}} into the calendar view.",
+    "syncEmpty": "Sync completed — 0 events found in the next 90 days. The connection works; this calendar simply has nothing upcoming in the window we pull. Try a different default calendar above, or add an event to confirm.",
+    "connectGoogle": "Connect Google Calendar",
+    "connectGoogleOff": "Connect Google · not configured",
+    "connectMicrosoft": "Connect Microsoft 365",
+    "connectMicrosoftOff": "Connect Microsoft · not configured",
+    "connectCaldav": "Connect iCloud / CalDAV",
+    "envHint": "Set {vars} on the server",
+    "caldav": {
+      "title": "CalDAV connection",
+      "custom": "Custom",
+      "connectFailed": "Could not connect",
+      "saveFailed": "Save failed",
+      "serverUrl": "Server URL (https://…)",
+      "username": "Email / username",
+      "password": "Password (use an app-specific password)",
+      "connecting": "Connecting…",
+      "test": "Test connection",
+      "pick": "Pick the calendar Vellum should write to:",
+      "save": "Save calendar"
+    },
+    "defaults": "Calendar defaults",
+    "defaultsHint": "Working hours used to render the grid. Times outside this window are dimmed but still scrollable.",
+    "dayStarts": "Day starts",
+    "dayEnds": "Day ends",
+    "defaultKind": "Default kind",
+    "timezone": "Timezone",
+    "saveDefaults": "Save defaults"
+  },
+  "appearance": {
+    "mode": "Mode",
+    "modes": {
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "accent": "Accent",
+    "accents": {
+      "indigo": "Indigo",
+      "aurora": "Aurora",
+      "cyan": "Cyan",
+      "sage": "Sage",
+      "graphite": "Graphite"
+    },
+    "density": "Density",
+    "densities": {
+      "compact": "compact",
+      "cozy": "cozy"
+    },
+    "glass": "Glass intensity"
+  },
+  "cookies": {
+    "title": "Cookies & consent",
+    "hint": "Show a discreet consent banner on your public career site and load third-party scripts only after candidates opt in. Necessary cookies are always allowed; functional and marketing scripts wait for consent.",
+    "banner": "Show consent banner on public pages",
+    "bannerHint": "When off, the banner is hidden and only Necessary scripts will load.",
+    "bannerTitle": "Banner title",
+    "bannerTitlePlaceholder": "We respect your cookie choices",
+    "bannerMessage": "Banner message",
+    "bannerMessagePlaceholder": "We use a few cookies to keep this site running…",
+    "scriptCount": "{count, plural, one {# script} other {# scripts}}",
+    "empty": "No scripts in this category yet.",
+    "inline": "inline ({chars} chars)",
+    "addScript": "Add script",
+    "editScript": "Edit script",
+    "savedAt": "Saved · {time}",
+    "category": "Category",
+    "name": "Name",
+    "provider": "Provider (optional)",
+    "description": "Description (optional)",
+    "descriptionPlaceholder": "Tracks page views and conversion.",
+    "src": "External script URL",
+    "code": "…or inline JS",
+    "loadHint": "The script will only load when a visitor consents to the <b>{category}</b> category. Use either a URL or an inline snippet — if both are set, the URL wins.",
+    "saveChanges": "Save changes"
+  },
+  "danger": {
+    "title": "Danger zone",
+    "export": "Export all workspace data",
+    "exportHint": "JSON file with jobs, candidates, threads, notes, and interviews.",
+    "exportButton": "Export",
+    "purge": "Purge recap cache",
+    "purgeHint": "Drops all cached today / weekly / monthly recap rows. The next dashboard load (or the next worker tick) will rebuild from scratch — useful after editing prompts or thresholds.",
+    "purging": "Purging…",
+    "purged": "✓ Purged",
+    "purgeFailed": "✗ Failed",
+    "purgeButton": "Purge cache",
+    "delete": "Delete workspace",
+    "deleteHint": "Permanently remove this workspace and all its data. Type the workspace slug to confirm.",
+    "deleteButton": "Delete forever"
+  },
+  "kits": {
+    "errors": {
+      "name": "Give the kit a name.",
+      "criteria": "Add at least one criterion.",
+      "save": "Could not save the kit."
+    },
+    "confirmDelete": "Delete the \"{name}\" interview kit? Existing debriefs keep their scores.",
+    "title": "Interview kits",
+    "hint": "Scorecard templates the hiring team fills in after an interview. Attach one to a stage to make it the default when debriefing candidates at that step.",
+    "new": "New kit",
+    "edit": "Edit kit",
+    "newTitle": "New interview kit",
+    "name": "Kit name",
+    "namePlaceholder": "e.g. Technical screen scorecard",
+    "stage": "Default stage",
+    "anyStage": "General (any stage)",
+    "description": "Description",
+    "descriptionPlaceholder": "What this interview is meant to assess",
+    "criteria": "Criteria",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "criterionPlaceholder": "Criterion {n} — e.g. Problem solving",
+    "criterionType": "Criterion type",
+    "removeCriterion": "Remove criterion",
+    "guidance": "Guidance for the interviewer (optional)",
+    "addCriterion": "Add criterion",
+    "save": "Save kit",
+    "create": "Create kit",
+    "empty": "No interview kits yet.",
+    "createFirst": "Create your first kit",
+    "general": "General",
+    "criteriaCount": "{count, plural, one {# criterion} other {# criteria}}",
+    "deleteLabel": "Delete {name}"
+  },
+  "preview": {
+    "banner": "You're previewing your career site at <b>{domain}</b>",
+    "cnameLive": "CNAME live",
+    "cnamePending": "CNAME pending",
+    "edit": "Edit content",
+    "openVisitor": "Open as visitor",
+    "iframeTitle": "{name} career site preview",
+    "liveJobs": "Live job pages",
+    "noJobs": "No open jobs to preview."
+  }
+}

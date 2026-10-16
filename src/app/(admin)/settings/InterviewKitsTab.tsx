@@ -14,18 +14,15 @@
  */
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Glass, Icons } from "@/components/primitives";
 
 type KitItem = { id: string; label: string; hint: string | null; kind: string };
 type Kit = { id: string; name: string; description: string | null; stageKey: string | null; archived: boolean; items: KitItem[] };
 type StageOpt = { key: string; name: string };
 
-const KINDS = [
-  { v: "rating", l: "Rating (1–5)" },
-  { v: "text", l: "Text note" },
-  { v: "yesno", l: "Yes / No" },
-] as const;
-const kindLabel = (v: string) => KINDS.find((k) => k.v === v)?.l || v;
+// Labels: common.criterionKinds.<kind>
+const KINDS = ["rating", "text", "yesno"] as const;
 
 type DraftItem = { label: string; hint: string; kind: string };
 type Draft = { id: string | null; name: string; description: string; stageKey: string; items: DraftItem[] };
@@ -33,6 +30,8 @@ const blankItem = (): DraftItem => ({ label: "", hint: "", kind: "rating" });
 const emptyDraft = (): Draft => ({ id: null, name: "", description: "", stageKey: "", items: [blankItem()] });
 
 export default function InterviewKitsTab() {
+  const t = useTranslations("settings.kits");
+  const tc = useTranslations("common");
   const [kits, setKits] = React.useState<Kit[] | null>(null);
   const [stages, setStages] = React.useState<StageOpt[]>([]);
   const [draft, setDraft] = React.useState<Draft | null>(null);
@@ -92,14 +91,14 @@ export default function InterviewKitsTab() {
   async function save() {
     if (!draft) return;
     if (!draft.name.trim()) {
-      setError("Give the kit a name.");
+      setError(t("errors.name"));
       return;
     }
     const items = draft.items
       .map((it) => ({ label: it.label.trim(), hint: it.hint.trim() || null, kind: it.kind }))
       .filter((it) => it.label);
     if (items.length === 0) {
-      setError("Add at least one criterion.");
+      setError(t("errors.criteria"));
       return;
     }
     setSaving(true);
@@ -112,7 +111,7 @@ export default function InterviewKitsTab() {
     }).catch(() => null);
     setSaving(false);
     if (!res?.ok) {
-      setError("Could not save the kit.");
+      setError(t("errors.save"));
       return;
     }
     setDraft(null);
@@ -120,7 +119,7 @@ export default function InterviewKitsTab() {
   }
 
   async function remove(k: Kit) {
-    if (!window.confirm(`Delete the "${k.name}" interview kit? Existing debriefs keep their scores.`)) return;
+    if (!window.confirm(t("confirmDelete", { name: k.name }))) return;
     const res = await fetch(`/api/interview-kits/${k.id}`, { method: "DELETE" }).catch(() => null);
     if (res?.ok) {
       if (draft?.id === k.id) setDraft(null);
@@ -135,15 +134,14 @@ export default function InterviewKitsTab() {
       <Glass className="card" style={{ padding: 24 }}>
         <div className="row" style={{ alignItems: "flex-start" }}>
           <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 4 }}>Interview kits</h2>
+            <h2 style={{ fontSize: 18, marginBottom: 4 }}>{t("title")}</h2>
             <p className="muted" style={{ marginBottom: 0 }}>
-              Scorecard templates the hiring team fills in after an interview. Attach one to a stage to make it the
-              default when debriefing candidates at that step.
+              {t("hint")}
             </p>
           </div>
           {!draft && (
             <button className="btn btn-sm btn-primary" onClick={startNew}>
-              <Icons.Plus size={13} /> New kit
+              <Icons.Plus size={13} /> {t("new")}
             </button>
           )}
         </div>
@@ -151,23 +149,23 @@ export default function InterviewKitsTab() {
 
       {draft && (
         <Glass className="card" style={{ padding: 24 }}>
-          <h2 style={{ fontSize: 16, marginBottom: 14 }}>{draft.id ? "Edit kit" : "New interview kit"}</h2>
+          <h2 style={{ fontSize: 16, marginBottom: 14 }}>{draft.id ? t("edit") : t("newTitle")}</h2>
 
           <div className="row" style={{ gap: 14, marginBottom: 14, flexWrap: "wrap" }}>
             <div style={{ flex: 2, minWidth: 220 }}>
-              <label className="label">Kit name</label>
+              <label className="label">{t("name")}</label>
               <input
                 className="input"
                 value={draft.name}
                 onChange={(e) => patchDraft({ name: e.target.value })}
-                placeholder="e.g. Technical screen scorecard"
+                placeholder={t("namePlaceholder")}
                 autoFocus
               />
             </div>
             <div style={{ flex: 1, minWidth: 180 }}>
-              <label className="label">Default stage</label>
+              <label className="label">{t("stage")}</label>
               <select className="select" value={draft.stageKey} onChange={(e) => patchDraft({ stageKey: e.target.value })}>
-                <option value="">General (any stage)</option>
+                <option value="">{t("anyStage")}</option>
                 {stages.map((s) => (
                   <option key={s.key} value={s.key}>{s.name}</option>
                 ))}
@@ -176,25 +174,25 @@ export default function InterviewKitsTab() {
           </div>
 
           <div style={{ marginBottom: 18 }}>
-            <label className="label">Description <span className="muted">(optional)</span></label>
+            <label className="label">{t("description")} <span className="muted">({tc("optional")})</span></label>
             <input
               className="input"
               value={draft.description}
               onChange={(e) => patchDraft({ description: e.target.value })}
-              placeholder="What this interview is meant to assess"
+              placeholder={t("descriptionPlaceholder")}
             />
           </div>
 
-          <label className="label">Criteria</label>
+          <label className="label">{t("criteria")}</label>
           <div className="col" style={{ gap: 8, marginBottom: 12 }}>
             {draft.items.map((it, i) => (
               <Glass faint key={i} style={{ padding: 10, borderRadius: 10 }}>
                 <div className="row" style={{ gap: 8, alignItems: "flex-start" }}>
                   <div className="col" style={{ gap: 2, paddingTop: 2 }}>
-                    <button className="iconbtn" style={{ width: 22, height: 18 }} onClick={() => moveItem(i, -1)} disabled={i === 0} aria-label="Move up" title="Move up">
+                    <button className="iconbtn" style={{ width: 22, height: 18 }} onClick={() => moveItem(i, -1)} disabled={i === 0} aria-label={t("moveUp")} title={t("moveUp")}>
                       <Icons.ChevronUp size={13} />
                     </button>
-                    <button className="iconbtn" style={{ width: 22, height: 18 }} onClick={() => moveItem(i, 1)} disabled={i === draft.items.length - 1} aria-label="Move down" title="Move down">
+                    <button className="iconbtn" style={{ width: 22, height: 18 }} onClick={() => moveItem(i, 1)} disabled={i === draft.items.length - 1} aria-label={t("moveDown")} title={t("moveDown")}>
                       <Icons.ChevronDown size={13} />
                     </button>
                   </div>
@@ -205,25 +203,25 @@ export default function InterviewKitsTab() {
                         style={{ flex: 1 }}
                         value={it.label}
                         onChange={(e) => patchItem(i, { label: e.target.value })}
-                        placeholder={`Criterion ${i + 1} — e.g. Problem solving`}
+                        placeholder={t("criterionPlaceholder", { n: i + 1 })}
                       />
                       <select
                         className="select"
                         style={{ width: 130 }}
                         value={it.kind}
                         onChange={(e) => patchItem(i, { kind: e.target.value })}
-                        aria-label="Criterion type"
+                        aria-label={t("criterionType")}
                       >
                         {KINDS.map((k) => (
-                          <option key={k.v} value={k.v}>{k.l}</option>
+                          <option key={k} value={k}>{tc(`criterionKinds.${k}`)}</option>
                         ))}
                       </select>
                       <button
                         className="iconbtn"
                         onClick={() => removeItem(i)}
                         disabled={draft.items.length === 1}
-                        aria-label="Remove criterion"
-                        title="Remove"
+                        aria-label={t("removeCriterion")}
+                        title={tc("remove")}
                         style={{ color: "var(--ink-2)" }}
                       >
                         <Icons.Trash size={13} />
@@ -234,7 +232,7 @@ export default function InterviewKitsTab() {
                       style={{ marginTop: 6, fontSize: 12.5, height: 30 }}
                       value={it.hint}
                       onChange={(e) => patchItem(i, { hint: e.target.value })}
-                      placeholder="Guidance for the interviewer (optional)"
+                      placeholder={t("guidance")}
                     />
                   </div>
                 </div>
@@ -242,7 +240,7 @@ export default function InterviewKitsTab() {
             ))}
           </div>
           <button className="btn btn-sm btn-ghost" onClick={addItem} style={{ marginBottom: 16 }}>
-            <Icons.Plus size={12} /> Add criterion
+            <Icons.Plus size={12} /> {t("addCriterion")}
           </button>
 
           {error && (
@@ -253,10 +251,10 @@ export default function InterviewKitsTab() {
 
           <div className="row" style={{ gap: 8, justifyContent: "flex-end" }}>
             <button className="btn btn-sm" onClick={() => setDraft(null)} disabled={saving}>
-              Cancel
+              {tc("cancel")}
             </button>
             <button className="btn btn-sm btn-primary" onClick={save} disabled={saving}>
-              <Icons.Check size={12} stroke={2} /> {saving ? "Saving…" : draft.id ? "Save kit" : "Create kit"}
+              <Icons.Check size={12} stroke={2} /> {saving ? tc("saving") : draft.id ? t("save") : t("create")}
             </button>
           </div>
         </Glass>
@@ -271,9 +269,9 @@ export default function InterviewKitsTab() {
         ) : kits.length === 0 ? (
           !draft && (
             <div style={{ textAlign: "center", padding: "20px 8px" }}>
-              <p className="muted" style={{ marginBottom: 12 }}>No interview kits yet.</p>
+              <p className="muted" style={{ marginBottom: 12 }}>{t("empty")}</p>
               <button className="btn btn-sm btn-primary" onClick={startNew}>
-                <Icons.Plus size={13} /> Create your first kit
+                <Icons.Plus size={13} /> {t("createFirst")}
               </button>
             </div>
           )
@@ -287,18 +285,18 @@ export default function InterviewKitsTab() {
                     {stageName(k.stageKey) ? (
                       <span className="chip" style={{ height: 20, fontSize: 11 }}>{stageName(k.stageKey)}</span>
                     ) : (
-                      <span className="chip" style={{ height: 20, fontSize: 11, opacity: 0.7 }}>General</span>
+                      <span className="chip" style={{ height: 20, fontSize: 11, opacity: 0.7 }}>{t("general")}</span>
                     )}
                   </div>
                   <div className="tiny" style={{ marginTop: 3 }}>
-                    {k.items.length} criteri{k.items.length === 1 ? "on" : "a"}
+                    {t("criteriaCount", { count: k.items.length })}
                     {k.items.length > 0 && (
                       <span className="muted"> · {k.items.slice(0, 4).map((it) => it.label).join(", ")}{k.items.length > 4 ? "…" : ""}</span>
                     )}
                   </div>
                 </div>
-                <button className="btn btn-sm btn-ghost" onClick={() => startEdit(k)}>Edit</button>
-                <button className="iconbtn" onClick={() => remove(k)} aria-label={`Delete ${k.name}`} title="Delete" style={{ color: "var(--ink-2)" }}>
+                <button className="btn btn-sm btn-ghost" onClick={() => startEdit(k)}>{tc("edit")}</button>
+                <button className="iconbtn" onClick={() => remove(k)} aria-label={t("deleteLabel", { name: k.name })} title={tc("delete")} style={{ color: "var(--ink-2)" }}>
                   <Icons.Trash size={13} />
                 </button>
               </div>

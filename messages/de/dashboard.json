@@ -1,0 +1,127 @@
+{
+  "recap": {
+    "snapshot": "Überblick",
+    "scopes": {
+      "today": "Heute",
+      "week": "Woche",
+      "month": "Monat"
+    },
+    "titles": {
+      "recap": {
+        "today": "Rückblick heute",
+        "week": "Rückblick dieser Woche",
+        "month": "Rückblick dieses Monats"
+      },
+      "snapshot": {
+        "today": "Überblick heute",
+        "week": "Überblick dieser Woche",
+        "month": "Überblick dieses Monats"
+      }
+    },
+    "regenerate": "Jetzt neu erstellen",
+    "rateLimited": "Zu viele Anfragen — versuch es in einer Minute erneut",
+    "updated": "aktualisiert {when}",
+    "warmingUp": "wird vorbereitet…",
+    "quiet": "Bisher ruhig — der Rückblick füllt sich, sobald etwas passiert.",
+    "preparing": "Vellum bereitet deinen ersten Rückblick vor. Er erscheint hier in ein, zwei Minuten.",
+    "aiPaused": "KI-Hinweise pausiert — prüfe Einstellungen → KI.",
+    "replyThreads": "{count, plural, one {# Verlauf} other {# Verläufe}} beantworten",
+    "openInbox": "Posteingang öffnen",
+    "openPipeline": "Pipeline öffnen"
+  },
+  "otherSource": "Sonstige",
+  "there": "du",
+  "greeting": {
+    "late": "Noch fleißig",
+    "morning": "Guten Morgen",
+    "afternoon": "Guten Tag",
+    "evening": "Guten Abend"
+  },
+  "waiting": "<hl>{count, plural, one {# Kandidat wartet} other {# Kandidaten warten}}</hl> auf dich.",
+  "needInterview": "{count} brauchen einen Interviewtermin",
+  "needReply": "{count} brauchen eine erste Antwort",
+  "waiting48": "{count} warten seit mehr als 48 Stunden",
+  "inboxZero": "Alles erledigt — <hl>stark.</hl>",
+  "calmSummary": "{roles, plural, one {# offene Stelle} other {# offene Stellen}} · {applicants} neue Bewerbungen in den letzten 4 Wochen.",
+  "invite": "Teammitglied einladen",
+  "newJob": "Neue Stelle",
+  "stats": {
+    "active": "Aktive Kandidaten",
+    "activeDelta": "↑ {count} in 4 Wochen",
+    "openRoles": "Offene Stellen",
+    "drafts": "{count, plural, one {# Entwurf} other {# Entwürfe}}",
+    "allLive": "alle live",
+    "timeToHire": "Time to Hire",
+    "days": "Tage",
+    "hires90": "{count, plural, one {# Einstellung} other {# Einstellungen}} · 90 T.",
+    "noHires": "noch keine Einstellungen",
+    "acceptRate": "Annahmequote Angebote",
+    "acceptDelta": "{hired} angenommen · {not} abgelehnt"
+  },
+  "pipeline": "Pipeline-Übersicht",
+  "openPipeline": "Pipeline öffnen",
+  "noStages": "Noch keine Phasen — lege deine Pipeline in den Einstellungen an.",
+  "chartTitle": "Bewerbungen · letzte 12 Wochen",
+  "mom": "{delta} % ggü. Vormonat",
+  "firstWave": "erste Welle",
+  "weekBar": "Woche {week}: {count, plural, one {# Bewerbung} other {# Bewerbungen}}",
+  "weeksAgo12": "vor 12 Wochen",
+  "thisWeek": "Diese Woche",
+  "upcoming": "Anstehende Interviews",
+  "pipelineLink": "Pipeline",
+  "nothingScheduled": "Noch nichts geplant.",
+  "sources": "Woher sie kommen",
+  "noApplicants": "Noch keine Bewerbungen.",
+  "activity": "Aktivität",
+  "viewAll": "Alle anzeigen",
+  "noActivity": "Noch keine Aktivität. Veröffentliche eine Stelle, dann füllt sich der Feed.",
+  "activityKinds": {
+    "moved": "hat einen Kandidaten verschoben",
+    "noted": "hat eine Notiz hinterlassen",
+    "scheduled": "hat ein Interview geplant",
+    "applied": "hat sich beworben",
+    "ai": "hat die KI genutzt",
+    "published": "hat eine Stelle veröffentlicht"
+  },
+  "monthly": {
+    "title": "Monatsrückblick",
+    "failed": "Der Monatsbericht konnte nicht erstellt werden.",
+    "sections": {
+      "headline": "Auf einen Blick",
+      "numbers": "Die Zahlen",
+      "health": "Zustand der Pipeline",
+      "sources": "Quellen",
+      "roles": "Stellen",
+      "changed": "Was sich geändert hat",
+      "risks": "Risiken & To-dos",
+      "team": "Team"
+    },
+    "stats": {
+      "applications": "Bewerbungen",
+      "hires": "Einstellungen",
+      "offers": "Angebote",
+      "timeToHire": "Time to Hire",
+      "openRoles": "Offene Stellen",
+      "active": "Aktive Kandidaten",
+      "health": "Pipeline-Zustand"
+    },
+    "days": "{n} T.",
+    "cols": {
+      "stage": "Phase",
+      "active": "Aktiv",
+      "delta": "Δ ggü. Vormonat",
+      "source": "Quelle",
+      "applicants": "Bewerbungen",
+      "avgFit": "Ø KI-Passung"
+    },
+    "noSources": "Keine Quelldaten im Zeitraum.",
+    "daysOpen": "Tage offen: {n}",
+    "roleStats": "Aufrufe: {views} · Bewerbungen: {apps} · Einstellungen: {hires}",
+    "nothingUrgent": "Nichts Dringendes.",
+    "topRecruiters": "Aktivste Recruiter",
+    "noActivity": "Keine erfasste Aktivität.",
+    "reviewLoad": "Review-Auslastung",
+    "noReviewers": "Noch keine Reviewer zugewiesen.",
+    "savePdf": "Als PDF speichern"
+  }
+}

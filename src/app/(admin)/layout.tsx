@@ -9,6 +9,8 @@ import Topbar from "@/components/Topbar";
 import SheetHost from "@/components/SheetHost";
 import ThemeBoot, { type Prefs } from "@/components/ThemeBoot";
 import NextAuthProvider from "@/components/SessionProvider";
+import { getFormatter, getMessages } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
 
 const DEFAULT_PREFS: Prefs = {
   theme: "light",
@@ -51,8 +53,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   );
 
   const departments = (workspace.departments as string[]) || [];
+  const format = await getFormatter();
+  // The admin UI is almost all client components, so it gets every namespace.
+  const messages = await getMessages();
 
   return (
+    <NextIntlClientProvider messages={messages}>
     <NextAuthProvider>
       <ThemeBoot prefs={prefs} />
       <div className="ambient"><div className="blob" /></div>
@@ -81,7 +87,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           bio: user.bio || "",
           signature: user.signature || "",
           role: membership.role,
-          joinedAt: user.createdAt.toLocaleDateString(),
+          joinedAt: format.dateTime(user.createdAt, { dateStyle: "medium" }),
           notifications: (user.preferences?.notifications as any) || {},
         }}
       >
@@ -110,5 +116,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </SheetHost>
     </NextAuthProvider>
+    </NextIntlClientProvider>
   );
 }

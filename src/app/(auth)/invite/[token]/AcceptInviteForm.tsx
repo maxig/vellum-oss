@@ -4,6 +4,7 @@
 "use client";
 import * as React from "react";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 export default function AcceptInviteForm({
   token,
@@ -16,6 +17,7 @@ export default function AcceptInviteForm({
   workspaceName: string;
   invitedByName: string;
 }) {
+  const t = useTranslations("auth.invite");
   const [name, setName] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -32,7 +34,7 @@ export default function AcceptInviteForm({
     });
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
-      setError(j.error || "Could not accept invite.");
+      setError(j.error || t("failed"));
       setLoading(false);
       return;
     }
@@ -46,22 +48,22 @@ export default function AcceptInviteForm({
         <div className="sidebar-brand-logo">V</div>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600 }}>Vellum</div>
-          <div className="tiny">{invitedByName} invited you to {workspaceName}</div>
+          <div className="tiny">{t("invitedBy", { name: invitedByName, workspace: workspaceName })}</div>
         </div>
       </div>
-      <h1 style={{ fontSize: 26, marginBottom: 4 }}>Accept invite</h1>
-      <p style={{ color: "var(--ink-2)", marginBottom: 22 }}>Set up your account for <b>{email}</b>.</p>
+      <h1 style={{ fontSize: 26, marginBottom: 4 }}>{t("title")}</h1>
+      <p style={{ color: "var(--ink-2)", marginBottom: 22 }}>{t.rich("hint", { email, b: (c) => <b>{c}</b> })}</p>
       <form onSubmit={onSubmit} className="col" style={{ gap: 12 }}>
         <div>
-          <label className="label">Full name</label>
+          <label className="label">{t("name")}</label>
           <input className="input" required value={name} onChange={(e) => setName(e.target.value)} autoFocus />
         </div>
         <div>
-          <label className="label">Choose a password</label>
+          <label className="label">{t("password")}</label>
           <input className="input" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         {error && <div className="chip chip-danger" style={{ height: "auto", padding: "8px 12px", borderRadius: 10 }}>{error}</div>}
-        <button className="btn btn-primary btn-lg" type="submit" disabled={loading}>{loading ? "Creating…" : "Create account"}</button>
+        <button className="btn btn-primary btn-lg" type="submit" disabled={loading}>{loading ? t("creating") : t("create")}</button>
       </form>
     </div>
   );

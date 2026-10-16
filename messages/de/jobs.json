@@ -1,0 +1,253 @@
+{
+  "wizard": {
+    "crumb": "Neue Stelle",
+    "title": "Stellenanzeige erstellen",
+    "steps": {
+      "basics": "Grunddaten",
+      "describe": "Beschreibung",
+      "screen": "Screening",
+      "publish": "Veröffentlichen"
+    },
+    "basics": {
+      "title": "Wen sucht ihr?",
+      "hint": "Wir erstellen einen Entwurf, den du im nächsten Schritt bearbeiten kannst.",
+      "jobTitle": "Stellentitel",
+      "jobTitlePlaceholder": "z. B. Senior Product Designer",
+      "jobTitleExample": "Senior Product Designer",
+      "department": "Abteilung",
+      "addInSettings": "+ In Einstellungen hinzufügen",
+      "departmentPlaceholder": "z. B. Engineering",
+      "workMode": "Arbeitsmodell",
+      "location": "Hauptstandort",
+      "addOffice": "+ Standort hinzufügen",
+      "locationPlaceholder": "Berlin, Lissabon, Remote (EU)…",
+      "salary": "Gehaltsspanne",
+      "salaryHint": "Optional — {symbol}",
+      "min": "Min.",
+      "to": "bis",
+      "max": "Max.",
+      "employment": "Anstellungsart"
+    },
+    "describe": {
+      "title": "Beschreibung verfassen",
+      "hint": "Sag der KI, wen du suchst, oder schreib selbst. Bearbeiten kannst du später immer.",
+      "aiDraft": "KI-Entwurf",
+      "tone": "Tonfall:",
+      "tones": {
+        "direct": "Direkt",
+        "warm": "Herzlich",
+        "bold": "Mutig"
+      },
+      "promptPlaceholder": "Ein paar Sätze dazu, wen du suchst…",
+      "generating": "Wird erstellt…",
+      "generate": "Beschreibung erstellen",
+      "pitch": "Pitch",
+      "pitchHint": "eine Zeile, die neugierig macht",
+      "pitchPlaceholder": "Hilf uns, Kredite selbstverständlich zu machen.",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Worum es in der Rolle geht, woran man arbeitet und warum das spannend ist.",
+      "requirements": "Anforderungen",
+      "requirementsPlaceholder": "Eine pro Zeile — Aufzählungen gehen auch",
+      "niceToHave": "Wünschenswert",
+      "niceToHavePlaceholder": "Erfahrung in regulierten Branchen"
+    },
+    "screen": {
+      "title": "Screening-Fragen hinzufügen",
+      "hint": "Optional. Kandidaten beantworten sie im Bewerbungsformular.",
+      "types": {
+        "short": "kurz",
+        "long": "lang",
+        "yesno": "ja/nein"
+      },
+      "required": "Pflicht",
+      "questionPlaceholder": "Frage stellen…",
+      "add": "Frage hinzufügen",
+      "suggestions": "KI-Vorschläge",
+      "suggesting": "Fragen passend zu deiner Stellenbeschreibung werden erstellt…"
+    },
+    "publish": {
+      "title": "Wo soll sie erscheinen?",
+      "hint": "Das kannst du jederzeit ändern.",
+      "careers": "Vellum-Karriereseite",
+      "careersSub": "Deine Karriereseite in deinem Design",
+      "linkedinSub": "Kostenlos · ca. 3 Tage Prüfung",
+      "indeedSub": "Kostenlos · Bewerbungen werden automatisch übernommen",
+      "preview": "Vorschau",
+      "previewBrand": "Vellum · Karriere",
+      "descriptionPlaceholder": "Hier erscheint deine Beschreibung."
+    },
+    "continue": "Weiter",
+    "publishing": "Wird veröffentlicht…",
+    "publishJob": "Stelle veröffentlichen",
+    "saveDraft": "Entwurf speichern"
+  },
+  "detail": {
+    "confirmClose": "„{title}“ schließen? Die Stelle verschwindet sofort von der Karriereseite. Bestehende Bewerbungen bleiben in der Pipeline, und du kannst die Stelle jederzeit wieder öffnen.",
+    "confirmDelete": "„{title}“ endgültig löschen? Damit werden die Stelle, alle Bewerbungen, Verläufe und Screening-Fragen entfernt. Funnel- und Phasenauswertungen der Stelle bleiben erhalten.",
+    "deleteForbidden": "Nur Admins können Stellen löschen.",
+    "deleteFailed": "Die Stelle konnte nicht gelöscht werden.",
+    "allJobs": "Alle Stellen",
+    "openPublic": "Öffentlichen Link öffnen",
+    "openPipeline": "Pipeline öffnen",
+    "moreActions": "Weitere Aktionen",
+    "deleteJob": "Stelle löschen",
+    "postedDaysAgo": "Vor {days} T. veröffentlicht",
+    "publish": "Veröffentlichen",
+    "unpublish": "Zurückziehen",
+    "closeRole": "Stelle schließen",
+    "reopenRole": "Stelle wieder öffnen",
+    "reopenHint": "Erscheint sofort wieder auf der Karriereseite",
+    "publishForbidden": "Nur Admins können Stellen veröffentlichen, schließen oder wieder öffnen.",
+    "stats": {
+      "applicants": "Bewerbungen",
+      "newThisWeek": "Neu diese Woche",
+      "lateStages": "In späten Phasen",
+      "salary": "Gehaltsspanne"
+    },
+    "tabs": {
+      "description": "Beschreibung",
+      "screening": "Screening",
+      "process": "Bewerbungsprozess",
+      "team": "Hiring-Team",
+      "publish": "Veröffentlichung",
+      "analytics": "Auswertung"
+    },
+    "description": {
+      "title": "Stellenbeschreibung",
+      "rewriting": "Wird umgeschrieben…",
+      "aiRewrite": "Mit KI umschreiben",
+      "save": "Änderungen speichern",
+      "edit": "Beschreibung bearbeiten",
+      "pitch": "Pitch in einer Zeile",
+      "pitchPlaceholder": "Worum geht es in dieser Rolle, in einem Satz?",
+      "description": "Beschreibung",
+      "requirements": "Anforderungen",
+      "niceToHave": "Wünschenswert",
+      "onePerLine": "Eine pro Zeile",
+      "salary": "Gehaltsspanne",
+      "salaryPlaceholder": "85.000 € – 110.000 € · jährlich",
+      "about": "Über die Rolle",
+      "empty": "Noch keine Beschreibung. Klicke auf „Beschreibung bearbeiten“, um eine hinzuzufügen.",
+      "compensation": "Vergütung"
+    },
+    "screening": {
+      "newQuestion": "Neue Frage",
+      "title": "Screening-Fragen",
+      "hint": "Eigene Fragen, die bei der Bewerbung gestellt werden.",
+      "save": "Fragen speichern",
+      "edit": "Fragen bearbeiten",
+      "kinds": {
+        "text": "Kurzer Text",
+        "longtext": "Langer Text",
+        "yesno": "Ja/Nein",
+        "number": "Zahl"
+      },
+      "required": "Pflicht",
+      "labelPlaceholder": "Frage (z. B. Wie viele Jahre Erfahrung mit React?)",
+      "add": "Frage hinzufügen",
+      "empty": "Noch keine Screening-Fragen. Kandidaten werden nur die Standardfragen gestellt."
+    },
+    "process": {
+      "defaults": {
+        "intro": {
+          "n": "Kennenlernen",
+          "who": "Recruiter · 30 Min.",
+          "d": "Wir lernen uns und die Rolle kennen."
+        },
+        "working": {
+          "n": "Arbeitsgespräch",
+          "who": "Hiring Manager · 60 Min.",
+          "d": "Gemeinsam ein typisches Problem durchgehen."
+        },
+        "team": {
+          "n": "Team-Treffen",
+          "who": "2–3 Teammitglieder · 60 Min.",
+          "d": "Lerne die Menschen kennen, mit denen du täglich arbeitest."
+        },
+        "offer": {
+          "n": "Angebot",
+          "who": "Entscheidung innerhalb einer Woche",
+          "d": "Sobald sich alle kennengelernt haben, geht es schnell."
+        }
+      },
+      "newStep": "Neuer Schritt",
+      "title": "Bewerbungsprozess",
+      "hint": "Was Kandidaten nach der Bewerbung erwartet. Wird auf der öffentlichen Karriereseite angezeigt.",
+      "save": "Prozess speichern",
+      "edit": "Prozess bearbeiten",
+      "stepN": "Schritt {n}",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "removeStep": "Schritt entfernen",
+      "namePlaceholder": "Name des Schritts (z. B. Arbeitsgespräch)",
+      "whoPlaceholder": "Wer & Dauer (z. B. Hiring Manager · 60 Min.)",
+      "descPlaceholder": "Was Kandidaten erwartet",
+      "addStep": "Schritt hinzufügen",
+      "empty": "Noch kein Bewerbungsprozess festgelegt. Klicke auf „Prozess bearbeiten“, um einen anzulegen.",
+      "untitled": "Unbenannter Schritt"
+    },
+    "team": {
+      "presets": {
+        "recruiterLead": "Recruiter (Lead)",
+        "hiringManager": "Hiring Manager",
+        "interviewer": "Interviewer",
+        "reviewer": "Reviewer",
+        "sourcer": "Sourcer"
+      },
+      "forbidden": "Nur Admins können das Hiring-Team oder den Lead-Reviewer ändern.",
+      "saveFailed": "Speichern fehlgeschlagen.",
+      "confirmRemove": "{name} aus dem Hiring-Team entfernen?",
+      "lead": "Lead-Reviewer",
+      "leadHint": "Die Person, die Kandidaten für diese Stelle sichtet. Neue Bewerbungen übernehmen sie als Reviewer; pro Bewerbung lässt sich das im Kandidatenprofil ändern.",
+      "unassigned": "— Nicht zugewiesen —",
+      "title": "Hiring-Team",
+      "hint": "Workspace-Mitglieder, die an dieser Besetzung beteiligt sind. Sie sehen die Kandidaten dieser Stelle, können Notizen hinzufügen und Debriefings zu Interviews schreiben, an denen sie teilnehmen.",
+      "addMember": "Mitglied hinzufügen",
+      "person": "Person",
+      "pick": "Teammitglied wählen…",
+      "role": "Rolle bei dieser Besetzung",
+      "addToTeam": "Zum Team hinzufügen",
+      "empty": "Noch niemand im Hiring-Team. Klicke auf „Mitglied hinzufügen“, um jemanden zuzuweisen.",
+      "removeFromTeam": "Aus dem Team entfernen",
+      "removeLabel": "{name} entfernen"
+    },
+    "publishing": {
+      "careers": "{slug} Karriere",
+      "branded": "{url} · im eigenen Design",
+      "freeSync": "Kostenlos · Abgleich alle 24 h",
+      "otta": "Vorab geprüfte Kandidaten · kostenpflichtig",
+      "hn": "Erster Montag im Monat",
+      "title": "Wo sie veröffentlicht ist",
+      "hint": "Vellum gleicht diese Anzeige über alle aktivierten Kanäle ab.",
+      "live": "Live",
+      "toggle": "{name} umschalten",
+      "ossNote": "Externe Kanäle (LinkedIn / Indeed / Otta / HN) sind in der OSS-Edition nur Schalter — die Anbindung per Zugangsdaten ist Teil der SaaS-Roadmap."
+    },
+    "analytics": {
+      "funnel": "Funnel & Conversion",
+      "pulse": "Pipeline-Puls",
+      "days": "{n} T.",
+      "avgAge": "Durchschn. Alter der Bewerbungen",
+      "newThisWeek": "Neu diese Woche",
+      "published": "Veröffentlicht"
+    }
+  },
+  "list": {
+    "title": "Stellen",
+    "summary": "{total} insgesamt · {open} aktiv in Besetzung",
+    "all": "Alle",
+    "newJob": "Neue Stelle",
+    "cols": {
+      "role": "Stelle",
+      "location": "Standort",
+      "applicants": "Bewerbungen",
+      "open": "Offen",
+      "status": "Status"
+    },
+    "empty": "Noch keine Stellen. Lege deine erste an, um Bewerbungen zu sammeln.",
+    "emptyTab": "Derzeit keine Stellen mit Status „{status}“.",
+    "create": "Stelle anlegen",
+    "newCount": "{count} neu",
+    "days": "{n} T."
+  }
+}

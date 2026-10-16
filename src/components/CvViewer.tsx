@@ -3,6 +3,7 @@
 
 "use client";
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons } from "@/components/Icons";
 
 /**
@@ -21,6 +22,7 @@ export default function CvViewer({
   name?: string | null;
   height?: number;
 }) {
+  const t = useTranslations("candidates.sheet");
   const ext = (name?.split(".").pop() || url.split(".").pop() || "")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
@@ -32,7 +34,7 @@ export default function CvViewer({
     return (
       <iframe
         src={url}
-        title={name || "Resume"}
+        title={name || t("resumeTitle")}
         style={{
           width: "100%",
           height,
@@ -49,7 +51,7 @@ export default function CvViewer({
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={url}
-        alt={name || "Resume"}
+        alt={name || t("resumeTitle")}
         style={{
           width: "100%",
           maxHeight: height,
@@ -78,17 +80,17 @@ export default function CvViewer({
         <Icons.FileText size={22} style={{ color: "var(--ink-2)" }} />
       </div>
       <div style={{ fontSize: 13, marginBottom: 4 }}>
-        Preview not available for <b>.{ext || "this file"}</b>
+        {t.rich("cv.noPreview", { ext: ext ? `.${ext}` : t("cv.thisFile"), b: (c) => <b>{c}</b> })}
       </div>
       <p className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>
-        Download or open the file directly to view it.
+        {t("cv.openHint")}
       </p>
       <div className="row" style={{ gap: 8, justifyContent: "center" }}>
         <a href={url} target="_blank" rel="noreferrer" className="btn btn-sm">
-          <Icons.ArrowUpRight size={12} /> Open in new tab
+          <Icons.ArrowUpRight size={12} /> {t("cv.openNewTab")}
         </a>
         <a href={url} download className="btn btn-sm btn-ghost">
-          Download
+          {t("resume.download")}
         </a>
       </div>
     </div>

@@ -1,0 +1,29 @@
+{
+  "categories": {
+    "necessary": {
+      "title": "Unbedingt erforderlich",
+      "blurb": "Nötig, damit die Seite funktioniert — Anmeldung, Sicherheit und das Speichern deiner Einwilligung. Immer aktiv."
+    },
+    "functional": {
+      "title": "Funktional",
+      "blurb": "Verbessern dein Erlebnis, indem sie Einstellungen (Sprache, Design) speichern und Chat- oder Video-Widgets ermöglichen."
+    },
+    "marketing": {
+      "title": "Marketing & Analyse",
+      "blurb": "Messen, wie Kandidaten die Seite nutzen, und helfen uns, passende Inhalte anzubieten. Deaktiviert, bis du zustimmst."
+    }
+  },
+  "region": "Cookie-Einwilligung",
+  "title": "Wir verwenden Cookies",
+  "message": "Notwendige Cookies halten diese Seite am Laufen. Funktionale und Marketing-Cookies sind aus, bis du zustimmst.",
+  "policy": "Cookie-Richtlinie",
+  "reject": "Ablehnen",
+  "customize": "Anpassen",
+  "acceptAll": "Alle akzeptieren",
+  "prefsTitle": "Deine Cookie-Einstellungen",
+  "prefsHint": "Wähle, welchen Kategorien du zustimmst. Du kannst das jederzeit über den Link in der Fußzeile ändern.",
+  "alwaysOn": "Immer aktiv",
+  "rejectAll": "Alle ablehnen",
+  "save": "Auswahl speichern",
+  "preferences": "Cookie-Einstellungen"
+}

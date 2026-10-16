@@ -15,19 +15,22 @@ import * as React from "react";
 import { requireWorkspace } from "@/lib/workspace";
 import { buildMonthlyReport, type MonthlyReport } from "@/lib/recap-monthly";
 import { Glass, AIPill, Icons } from "@/components/primitives";
+import { getFormatter, getTranslations } from "next-intl/server";
 import PrintButton from "./PrintButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function MonthlyRecapPage() {
   const { workspace } = await requireWorkspace();
+  const t = await getTranslations("dashboard.monthly");
+  const format = await getFormatter();
   const report = await buildMonthlyReport(workspace.id);
 
   if (!report) {
     return (
       <div className="page">
-        <h1>Monthly recap</h1>
-        <p className="muted">Couldn't build the monthly report.</p>
+        <h1>{t("title")}</h1>
+        <p className="muted">{t("failed")}</p>
       </div>
     );
   }
@@ -37,8 +40,8 @@ export default async function MonthlyRecapPage() {
       {/* Toolbar — hidden in print. */}
       <div className="row recap-monthly-toolbar" style={{ marginBottom: 24, alignItems: "center" }}>
         <div style={{ flex: 1 }}>
-          <div className="tiny" style={{ marginBottom: 4 }}>Monthly recap · {report.workspaceName}</div>
-          <h1 style={{ fontSize: 28, letterSpacing: "-0.02em" }}>{prettyMonth(report.scopeStart)}</h1>
+          <div className="tiny" style={{ marginBottom: 4 }}>{t("title")} · {report.workspaceName}</div>
+          <h1 style={{ fontSize: 28, letterSpacing: "-0.02em" }}>{format.dateTime(report.scopeStart, { month: "long", year: "numeric" })}</h1>
         </div>
         <PrintButton />
       </div>
@@ -57,31 +60,31 @@ export default async function MonthlyRecapPage() {
       `}</style>
 
       {/* §1 Headline */}
-      <Section title="Headline" report={report} ai>
+      <Section title={t("sections.headline")} report={report} ai>
         <p style={{ fontSize: 16, lineHeight: 1.6 }}>{report.headline}</p>
       </Section>
 
       {/* §2 Numbers */}
-      <Section title="The numbers" report={report}>
+      <Section title={t("sections.numbers")} report={report}>
         <div className="recap-monthly-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
-          <Stat label="Applications" value={String(report.numbers.applications)} />
-          <Stat label="Hires" value={String(report.numbers.hires)} />
-          <Stat label="Offers" value={String(report.numbers.offers)} />
-          <Stat label="Time to hire" value={report.numbers.timeToHireDays != null ? `${report.numbers.timeToHireDays}d` : "—"} />
-          <Stat label="Open roles" value={String(report.numbers.openRoles)} />
-          <Stat label="Active candidates" value={String(report.numbers.activeCandidates)} />
-          <Stat label="Pipeline health" value={`${report.numbers.pipelineHealthScore} / 100`} />
+          <Stat label={t("stats.applications")} value={String(report.numbers.applications)} />
+          <Stat label={t("stats.hires")} value={String(report.numbers.hires)} />
+          <Stat label={t("stats.offers")} value={String(report.numbers.offers)} />
+          <Stat label={t("stats.timeToHire")} value={report.numbers.timeToHireDays != null ? t("days", { n: report.numbers.timeToHireDays }) : "—"} />
+          <Stat label={t("stats.openRoles")} value={String(report.numbers.openRoles)} />
+          <Stat label={t("stats.active")} value={String(report.numbers.activeCandidates)} />
+          <Stat label={t("stats.health")} value={`${report.numbers.pipelineHealthScore} / 100`} />
         </div>
       </Section>
 
       {/* §3 Pipeline health */}
-      <Section title="Pipeline health" report={report}>
+      <Section title={t("sections.health")} report={report}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ textAlign: "left", color: "var(--ink-2)", fontWeight: 500 }}>
-              <th style={{ padding: "8px 12px" }}>Stage</th>
-              <th style={{ padding: "8px 12px" }}>Active</th>
-              <th style={{ padding: "8px 12px" }}>Δ vs prior</th>
+              <th style={{ padding: "8px 12px" }}>{t("cols.stage")}</th>
+              <th style={{ padding: "8px 12px" }}>{t("cols.active")}</th>
+              <th style={{ padding: "8px 12px" }}>{t("cols.delta")}</th>
             </tr>
           </thead>
           <tbody>
@@ -99,16 +102,16 @@ export default async function MonthlyRecapPage() {
       </Section>
 
       {/* §4 Sources */}
-      <Section title="Sources" report={report}>
+      <Section title={t("sections.sources")} report={report}>
         {report.sources.length === 0 ? (
-          <p className="muted">No source data in scope.</p>
+          <p className="muted">{t("noSources")}</p>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", color: "var(--ink-2)", fontWeight: 500 }}>
-                <th style={{ padding: "8px 12px" }}>Source</th>
-                <th style={{ padding: "8px 12px" }}>Applicants</th>
-                <th style={{ padding: "8px 12px" }}>Avg AI fit</th>
+                <th style={{ padding: "8px 12px" }}>{t("cols.source")}</th>
+                <th style={{ padding: "8px 12px" }}>{t("cols.applicants")}</th>
+                <th style={{ padding: "8px 12px" }}>{t("cols.avgFit")}</th>
               </tr>
             </thead>
             <tbody>
@@ -125,27 +128,27 @@ export default async function MonthlyRecapPage() {
       </Section>
 
       {/* §5 Roles */}
-      <Section title="Roles" report={report}>
+      <Section title={t("sections.roles")} report={report}>
         <div className="recap-monthly-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
           {report.roles.map((r) => (
             <Glass key={r.jobId} faint style={{ padding: 14, borderRadius: 10 }}>
               <div style={{ fontWeight: 500, marginBottom: 6 }}>{r.title}</div>
-              <div className="tiny">Days open: {r.daysOpen}</div>
-              <div className="tiny">Views: {r.views} · Apps: {r.apps} · Hires: {r.hires}</div>
+              <div className="tiny">{t("daysOpen", { n: r.daysOpen })}</div>
+              <div className="tiny">{t("roleStats", { views: r.views, apps: r.apps, hires: r.hires })}</div>
             </Glass>
           ))}
         </div>
       </Section>
 
       {/* §6 What changed */}
-      <Section title="What changed" report={report} ai>
+      <Section title={t("sections.changed")} report={report} ai>
         <p style={{ fontSize: 14, lineHeight: 1.6 }}>{report.whatChanged}</p>
       </Section>
 
       {/* §7 Risks & housekeeping */}
-      <Section title="Risks & housekeeping" report={report}>
+      <Section title={t("sections.risks")} report={report}>
         {report.risks.length === 0 ? (
-          <p className="muted">Nothing urgent.</p>
+          <p className="muted">{t("nothingUrgent")}</p>
         ) : (
           <ul style={{ paddingLeft: 20 }}>
             {report.risks.map((r) => (
@@ -157,12 +160,12 @@ export default async function MonthlyRecapPage() {
       </Section>
 
       {/* §8 Team */}
-      <Section title="Team" report={report}>
+      <Section title={t("sections.team")} report={report}>
         <div className="recap-monthly-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
           <div>
-            <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink-2)", marginBottom: 6 }}>Top recruiters</div>
+            <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink-2)", marginBottom: 6 }}>{t("topRecruiters")}</div>
             {report.team.topRecruiters.length === 0 ? (
-              <p className="tiny">No tracked activity.</p>
+              <p className="tiny">{t("noActivity")}</p>
             ) : (
               <ul style={{ paddingLeft: 16, fontSize: 13.5 }}>
                 {report.team.topRecruiters.map((r) => (
@@ -172,9 +175,9 @@ export default async function MonthlyRecapPage() {
             )}
           </div>
           <div>
-            <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink-2)", marginBottom: 6 }}>Review load</div>
+            <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink-2)", marginBottom: 6 }}>{t("reviewLoad")}</div>
             {report.team.reviewLoad.length === 0 ? (
-              <p className="tiny">No reviewer assignments yet.</p>
+              <p className="tiny">{t("noReviewers")}</p>
             ) : (
               <ul style={{ paddingLeft: 16, fontSize: 13.5 }}>
                 {report.team.reviewLoad.map((r) => (
@@ -225,10 +228,6 @@ function renderText(text: string): string {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
   );
   return escaped.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
-}
-
-function prettyMonth(d: Date) {
-  return d.toLocaleString(undefined, { month: "long", year: "numeric" });
 }
 
 // Override the unused Icons import warning.
