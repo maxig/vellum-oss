@@ -1,0 +1,157 @@
+{
+  "dashboard": "Dashboard",
+  "applications": "Applications",
+  "pipeline": "Pipeline",
+  "pipelineBadge": "{count} active",
+  "jobs": "Jobs",
+  "candidates": "Candidates",
+  "inbox": "Inbox",
+  "calendar": "Calendar",
+  "analytics": "Analytics",
+  "company": "Company",
+  "careerSite": "Career site",
+  "settings": "Settings",
+  "workspaceCount": "{count, plural, one {# workspace} other {# workspaces}}",
+  "switchWorkspace": "Switch workspace",
+  "createWorkspace": "Create workspace",
+  "aiAssistant": "AI assistant",
+  "queueLoading": "Scanning your pipeline…",
+  "queueEmpty": "You're all caught up — nothing needs you right now.",
+  "queueCount": "<b>{count}</b> {count, plural, one {candidate needs} other {candidates need}} attention.",
+  "reviewQueue": "Review queue",
+  "notifications": {
+    "title": "Notifications",
+    "buttonLabel": "Notifications — {count} unread",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet."
+  },
+  "reviewQueueLabel": "Review queue — {count, plural, one {# item} other {# items}}",
+  "topbar": {
+    "dashboard": {
+      "title": "Dashboard",
+      "crumb": "Your workspace"
+    },
+    "applications": {
+      "title": "Applications",
+      "crumb": "All jobs"
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "crumb": "Jobs › Pipeline"
+    },
+    "jobs": {
+      "title": "Jobs",
+      "crumb": "All postings"
+    },
+    "candidates": {
+      "title": "Candidates",
+      "crumb": "Database"
+    },
+    "inbox": {
+      "title": "Inbox",
+      "crumb": "Conversations"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "crumb": "Career site"
+    },
+    "career": {
+      "title": "Career site",
+      "crumb": "Preview"
+    },
+    "settings": {
+      "title": "Settings",
+      "crumb": ""
+    },
+    "profile": {
+      "title": "Profile",
+      "crumb": ""
+    },
+    "groups": {
+      "job": "Jobs",
+      "candidate": "Candidates",
+      "thread": "Conversations",
+      "settings": "Settings"
+    },
+    "openMenu": "Open navigation menu",
+    "menu": "Menu",
+    "searchPlaceholder": "Search candidates, jobs, conversations…",
+    "searching": "Searching…",
+    "noMatches": "No matches for \"{query}\".",
+    "toggleTheme": "Toggle theme"
+  },
+  "queue": {
+    "loadFailed": "Couldn't load your queue. Try again.",
+    "waitSeconds": "Wait {seconds}s before refreshing again.",
+    "refreshInProgress": "Refresh in progress — try again shortly.",
+    "refreshFailed": "Refresh failed.",
+    "title": "Review queue",
+    "crumb": "AI assistant",
+    "close": "Close",
+    "loading": "Loading your queue…",
+    "inboxZeroLine": "Inbox zero. Nothing's blocked on you right now — nice work.",
+    "summary": "I scanned your pipeline and found <b>{count, plural, one {# candidate} other {# candidates}}</b> who need attention. Sorted by what's most time-sensitive.",
+    "showing": "Showing",
+    "scopeMine": "My candidates",
+    "scopeWorkspace": "Whole workspace",
+    "all": "All",
+    "bucketEmpty": "Nothing in this bucket needs you.",
+    "refreshing": "Refreshing…",
+    "cachedStale": "Queue cached {when}. Refreshing in background.",
+    "cached": "Queue cached {when}. Refreshes every hour.",
+    "refresh": "Refresh",
+    "customize": "Customize rules",
+    "done": "Done",
+    "aiTitle": "Surfaced by the AI overlay",
+    "urgent": "Urgent",
+    "open": "Open",
+    "actions": {
+      "reply": "Reply",
+      "schedule": "Schedule",
+      "decide": "Decide",
+      "nudge": "Nudge",
+      "complete": "Complete"
+    },
+    "allClear": "All clear here.",
+    "inboxZero": "Inbox zero.",
+    "nothingBlocked": "Nothing's blocked on you right now — nice work.",
+    "buckets": {
+      "no-reply": {
+        "label": "Awaiting your reply",
+        "short": "No reply"
+      },
+      "post-interview": {
+        "label": "Interviewed — waiting for your decision",
+        "short": "Post-interview"
+      },
+      "offer-pending": {
+        "label": "Offer extended — awaiting response",
+        "short": "Offer pending"
+      },
+      "stale-applied": {
+        "label": "Applied — no response in 3+ days",
+        "short": "Stale applications"
+      },
+      "schedule-needed": {
+        "label": "Moved to interview — no time booked yet",
+        "short": "Schedule needed"
+      },
+      "missing-debrief": {
+        "label": "Interviewed — debrief missing",
+        "short": "Missing debrief"
+      },
+      "reference-overdue": {
+        "label": "Reference checks overdue",
+        "short": "Reference overdue"
+      },
+      "long-cold-scorer": {
+        "label": "Strong fit but going cold",
+        "short": "Long-cold scorer"
+      },
+      "ai": {
+        "label": "AI noticed",
+        "short": "AI noticed"
+      }
+    }
+  }
+}

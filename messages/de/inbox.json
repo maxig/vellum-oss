@@ -1,0 +1,32 @@
+{
+  "smtpStatus": "SMTP meldete {status}",
+  "sendFailed": "Senden fehlgeschlagen.",
+  "savedInternal": "Als interne Nachricht gespeichert. {error}",
+  "fallbackDraft": "Danke für deine Rückmeldung. Sag mir gern, welcher Zeitpunkt dir am besten passt.",
+  "filters": {
+    "all": "Alle",
+    "unread": "Ungelesen",
+    "starred": "Markiert"
+  },
+  "search": "Nachrichten durchsuchen…",
+  "noMatching": "Keine passenden Unterhaltungen.",
+  "none": "Keine Unterhaltungen.",
+  "you": "Du:",
+  "select": "Wähle eine Unterhaltung",
+  "unstar": "Markierung entfernen",
+  "star": "Markieren",
+  "openProfile": "Profil öffnen",
+  "awaiting": "wartet auf deine Antwort",
+  "replyTo": "Antwort an {name}",
+  "drafting": "Entwurf wird erstellt…",
+  "aiDraft": "KI-Entwurf",
+  "replyPlaceholder": "Antwort schreiben… (⌘↵ zum Senden)",
+  "attach": "Anhängen",
+  "template": "Vorlage",
+  "schedule": "Termin",
+  "via": "über {address}",
+  "internalOnly": "Nur intern — <link>E-Mail verbinden</link>",
+  "sending": "Wird gesendet…",
+  "send": "Antwort senden",
+  "team": "Team"
+}

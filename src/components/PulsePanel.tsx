@@ -9,7 +9,8 @@
 
 import * as React from "react";
 import { Glass, AIPill, Icons } from "@/components/primitives";
-import { relativeTime } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 
 type Signal = {
   id: string;
@@ -30,16 +31,19 @@ type Breakdown = {
   sparkline: number[];
 };
 
-const BAND_META: Record<Breakdown["band"], { label: string; emoji: string; dot: string; tint: string; ink: string }> = {
-  hot:    { label: "Hot",      emoji: "🔥", dot: "oklch(70% 0.18 28)",  tint: "color-mix(in oklab, oklch(70% 0.18 28) 14%, transparent)",  ink: "oklch(55% 0.18 28)" },
-  warm:   { label: "Warm",     emoji: "☀",  dot: "oklch(72% 0.13 80)",  tint: "color-mix(in oklab, oklch(72% 0.13 80) 12%, transparent)",  ink: "oklch(50% 0.14 80)" },
-  cool:   { label: "Cool",     emoji: "🌤", dot: "oklch(72% 0.12 230)", tint: "color-mix(in oklab, oklch(72% 0.12 230) 14%, transparent)", ink: "oklch(50% 0.14 230)" },
-  cold:   { label: "Cold",     emoji: "❄️", dot: "oklch(60% 0.16 28)",  tint: "color-mix(in oklab, oklch(60% 0.16 28) 16%, transparent)",  ink: "oklch(50% 0.18 28)" },
-  silent: { label: "Silent",   emoji: "💤", dot: "oklch(70% 0.02 250)", tint: "var(--glass-bg-faint)",                                      ink: "var(--ink-2)" },
-  locked: { label: "Withdrew", emoji: "✖",  dot: "oklch(50% 0.02 250)", tint: "var(--glass-bg-faint)",                                      ink: "var(--ink-2)" },
+// Labels: common.pulse.bands.<band>
+const BAND_META: Record<Breakdown["band"], { emoji: string; dot: string; tint: string; ink: string }> = {
+  hot:    { emoji: "🔥", dot: "oklch(70% 0.18 28)",  tint: "color-mix(in oklab, oklch(70% 0.18 28) 14%, transparent)",  ink: "oklch(55% 0.18 28)" },
+  warm:   { emoji: "☀",  dot: "oklch(72% 0.13 80)",  tint: "color-mix(in oklab, oklch(72% 0.13 80) 12%, transparent)",  ink: "oklch(50% 0.14 80)" },
+  cool:   { emoji: "🌤", dot: "oklch(72% 0.12 230)", tint: "color-mix(in oklab, oklch(72% 0.12 230) 14%, transparent)", ink: "oklch(50% 0.14 230)" },
+  cold:   { emoji: "❄️", dot: "oklch(60% 0.16 28)",  tint: "color-mix(in oklab, oklch(60% 0.16 28) 16%, transparent)",  ink: "oklch(50% 0.18 28)" },
+  silent: { emoji: "💤", dot: "oklch(70% 0.02 250)", tint: "var(--glass-bg-faint)",                                      ink: "var(--ink-2)" },
+  locked: { emoji: "✖",  dot: "oklch(50% 0.02 250)", tint: "var(--glass-bg-faint)",                                      ink: "var(--ink-2)" },
 };
 
 export default function PulsePanel({ candidateId }: { candidateId: string }) {
+  const tp = useTranslations("common.pulse");
+  const relativeTime = useRelativeTime();
   const [data, setData] = React.useState<Breakdown | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [recomputing, setRecomputing] = React.useState(false);
@@ -77,7 +81,8 @@ export default function PulsePanel({ candidateId }: { candidateId: string }) {
   }
   if (!data) return null;
 
-  const meta = BAND_META[data.band] || BAND_META.warm;
+  const band = data.band in BAND_META ? data.band : "warm";
+  const meta = BAND_META[band];
 
   return (
     <Glass style={{ padding: 18, marginBottom: 18 }}>
@@ -91,31 +96,31 @@ export default function PulsePanel({ candidateId }: { candidateId: string }) {
           Pulse · {data.score} {meta.emoji}
         </span>
         <span style={{ flex: 1 }} />
-        <AIPill>{meta.label}</AIPill>
+        <AIPill>{tp(`bands.${band}`)}</AIPill>
         <button className="btn btn-sm btn-ghost" onClick={recompute} disabled={recomputing} style={{ marginLeft: 8 }}>
           {recomputing ? <span className="ai-shimmer" style={{ width: 12, height: 12, borderRadius: 50 }}/> : <Icons.Sparkle size={11} stroke={2}/>}
-          Recompute
+          {tp("recompute")}
         </button>
       </div>
 
       <Sparkline data={data.sparkline} />
 
       <div className="row" style={{ marginTop: 8, fontSize: 11.5, color: "var(--ink-2)" }}>
-        <span>14 days ago</span>
+        <span>{tp("daysAgo14")}</span>
         <span style={{ flex: 1 }} />
-        <span>today</span>
+        <span>{tp("today")}</span>
       </div>
 
       <div style={{ marginTop: 14, borderTop: "0.5px solid var(--line)", paddingTop: 12 }}>
         <div className="row" style={{ marginBottom: 8 }}>
           <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--ink-1)", flex: 1 }}>
-            Signals · {data.signals.length} in the last 60 days
+            {tp("signalsCount", { count: data.signals.length })}
           </span>
-          <span className="tiny">Baseline {data.baseline}</span>
+          <span className="tiny">{tp("baseline", { value: data.baseline })}</span>
         </div>
         {data.signals.length === 0 ? (
           <p className="muted" style={{ fontSize: 13, margin: 0 }}>
-            No signals yet — Pulse will update as the candidate engages with our communications.
+            {tp("noSignalsLong")}
           </p>
         ) : (
           <div className="col" style={{ gap: 4, maxHeight: 220, overflowY: "auto" }}>
@@ -128,7 +133,7 @@ export default function PulsePanel({ candidateId }: { candidateId: string }) {
                 }}>
                   {s.polarity === "neg" ? "−" : "+"}{s.weight}
                 </span>
-                <span style={{ flex: 1, color: "var(--ink-1)" }}>{prettySignal(s.kind)}</span>
+                <span style={{ flex: 1, color: "var(--ink-1)" }}>{SIGNAL_KINDS.has(s.kind) ? tp(`signalsLong.${s.kind as "message_received"}`) : s.kind}</span>
                 <span className="tiny mono">{relativeTime(new Date(s.at))}</span>
               </div>
             ))}
@@ -160,24 +165,10 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
-function prettySignal(kind: string): string {
-  switch (kind) {
-    case "message_received":    return "Replied to outbound";
-    case "message_fast_reply":  return "Replied fast";
-    case "message_long_reply":  return "Long, considered reply";
-    case "positive_sentiment":  return "Positive tone in last message";
-    case "question_asked":      return "Asked a question";
-    case "link_clicked":        return "Clicked a link";
-    case "email_opened":        return "Opened an email";
-    case "no_reply_overdue":    return "Outbound overdue — no reply";
-    case "no_open":             return "Several outbounds unopened";
-    case "stage_idle":          return "Stage idle past median";
-    case "negative_sentiment":  return "Concerns raised in last message";
-    case "reschedule_requested":return "Reschedule requested";
-    case "interview_no_show":   return "Interview no-show";
-    case "unsubscribe":         return "Unsubscribed from communications";
-    case "stage_advanced":      return "Advanced to next stage";
-    case "offer_sent":          return "Offer sent";
-    default:                    return kind;
-  }
-}
+// Labels: common.pulse.signalsLong.<kind>
+const SIGNAL_KINDS = new Set([
+  "message_received", "message_fast_reply", "message_long_reply", "positive_sentiment",
+  "question_asked", "link_clicked", "email_opened", "no_reply_overdue", "no_open",
+  "stage_idle", "negative_sentiment", "reschedule_requested", "interview_no_show",
+  "unsubscribe", "stage_advanced", "offer_sent",
+]);

@@ -5,6 +5,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Icons } from "@/components/Icons";
 import { Avatar } from "@/components/primitives";
 import { applyPrefs, type Prefs } from "@/components/ThemeBoot";
@@ -14,17 +15,18 @@ import TodoButton from "@/components/TodoButton";
 import NotificationBell from "@/components/NotificationBell";
 import { toggleMobileNav } from "@/lib/mobile-nav";
 
-const titles: Record<string, { title: string; crumb?: string }> = {
-  "/dashboard":  { title: "Dashboard",   crumb: "Your workspace" },
-  "/applications": { title: "Applications", crumb: "All jobs" },
-  "/pipeline":   { title: "Pipeline",    crumb: "Jobs › Pipeline" },
-  "/jobs":       { title: "Jobs",        crumb: "All postings" },
-  "/candidates": { title: "Candidates",  crumb: "Database" },
-  "/inbox":      { title: "Inbox",       crumb: "Conversations" },
-  "/analytics":  { title: "Analytics",   crumb: "Career site" },
-  "/career":     { title: "Career site", crumb: "Preview" },
-  "/settings":   { title: "Settings" },
-  "/profile":    { title: "Profile" },
+// Route → message keys under nav.topbar.<key>.title / .crumb
+const titles: Record<string, { key: string; crumb: boolean }> = {
+  "/dashboard":    { key: "dashboard", crumb: true },
+  "/applications": { key: "applications", crumb: true },
+  "/pipeline":     { key: "pipeline", crumb: true },
+  "/jobs":         { key: "jobs", crumb: true },
+  "/candidates":   { key: "candidates", crumb: true },
+  "/inbox":        { key: "inbox", crumb: true },
+  "/analytics":    { key: "analytics", crumb: true },
+  "/career":       { key: "career", crumb: true },
+  "/settings":     { key: "settings", crumb: false },
+  "/profile":      { key: "profile", crumb: false },
 };
 
 type SearchHit = {
@@ -48,6 +50,7 @@ export default function Topbar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("nav.topbar");
   const { openSheet } = useProfileSheet();
   const match = Object.keys(titles).find((p) => pathname === p || pathname.startsWith(p + "/")) || "/dashboard";
   const meta = titles[match];
@@ -161,17 +164,17 @@ export default function Topbar({
   // Visually group hits by kind so users scan faster.
   const grouped = React.useMemo(() => {
     const groups: { kind: SearchHit["kind"]; label: string; items: SearchHit[] }[] = [
-      { kind: "job", label: "Jobs", items: [] },
-      { kind: "candidate", label: "Candidates", items: [] },
-      { kind: "thread", label: "Conversations", items: [] },
-      { kind: "settings", label: "Settings", items: [] },
+      { kind: "job", label: t("groups.job"), items: [] },
+      { kind: "candidate", label: t("groups.candidate"), items: [] },
+      { kind: "thread", label: t("groups.thread"), items: [] },
+      { kind: "settings", label: t("groups.settings"), items: [] },
     ];
     for (const h of hits) {
       const g = groups.find((g) => g.kind === h.kind);
       if (g) g.items.push(h);
     }
     return groups.filter((g) => g.items.length > 0);
-  }, [hits]);
+  }, [hits, t]);
 
   // Track a flat-index so arrow navigation crosses group boundaries cleanly.
   let flatIdx = -1;
@@ -181,15 +184,15 @@ export default function Topbar({
       <button
         className="iconbtn topbar-hamburger"
         onClick={toggleMobileNav}
-        aria-label="Open navigation menu"
-        title="Menu"
+        aria-label={t("openMenu")}
+        title={t("menu")}
         style={{ marginRight: 4 }}
       >
         <Icons.Menu size={17} />
       </button>
       <div className="topbar-head">
-        {meta.crumb && <div className="topbar-crumb">{meta.crumb}</div>}
-        <div className="topbar-title">{meta.title}</div>
+        {meta.crumb && <div className="topbar-crumb">{t(`${meta.key}.crumb` as "dashboard.crumb")}</div>}
+        <div className="topbar-title">{t(`${meta.key}.title` as "dashboard.title")}</div>
       </div>
       <div style={{ flex: 1 }} />
       <div style={{ position: "relative" }}>
@@ -204,7 +207,7 @@ export default function Topbar({
             }}
             onFocus={() => setSearchOpen(true)}
             onKeyDown={handleKeyDown}
-            placeholder="Search candidates, jobs, conversations…"
+            placeholder={t("searchPlaceholder")}
           />
           <span className="tiny mono" style={{ background: "var(--glass-bg)", padding: "1px 6px", borderRadius: 5, border: "0.5px solid var(--line)" }}>⌘K</span>
         </div>
@@ -232,12 +235,12 @@ export default function Topbar({
             >
               {searchBusy && hits.length === 0 && (
                 <div className="tiny" style={{ padding: "12px 14px", color: "var(--ink-2)" }}>
-                  Searching…
+                  {t("searching")}
                 </div>
               )}
               {!searchBusy && hits.length === 0 && (
                 <div className="tiny" style={{ padding: "12px 14px", color: "var(--ink-2)" }}>
-                  No matches for "{query.trim()}".
+                  {t("noMatches", { query: query.trim() })}
                 </div>
               )}
               {grouped.map((g) => (
@@ -342,7 +345,7 @@ export default function Topbar({
       </div>
       {right}
       <ReviewQueueButton />
-      <button className="iconbtn" onClick={toggleTheme} title="Toggle theme">
+      <button className="iconbtn" onClick={toggleTheme} title={t("toggleTheme")} aria-label={t("toggleTheme")}>
         {theme === "dark" ? <Icons.Sun size={15} /> : <Icons.Moon size={15} />}
       </button>
       <TodoButton />

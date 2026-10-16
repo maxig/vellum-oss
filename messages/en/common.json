@@ -1,0 +1,154 @@
+{
+  "save": "Save",
+  "saving": "Saving…",
+  "saved": "Saved",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "remove": "Remove",
+  "edit": "Edit",
+  "close": "Close",
+  "add": "Add",
+  "back": "Back",
+  "next": "Next",
+  "loading": "Loading…",
+  "search": "Search",
+  "none": "None",
+  "optional": "Optional",
+  "somethingWentWrong": "Something went wrong.",
+  "tryAgain": "Try again",
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member"
+  },
+  "interviewKinds": {
+    "phone": "Phone screen",
+    "video": "Video call",
+    "onsite": "On-site",
+    "panel": "Panel"
+  },
+  "criterionKinds": {
+    "rating": "Rating (1–5)",
+    "text": "Text note",
+    "yesno": "Yes / No"
+  },
+  "workModes": {
+    "remote": "Remote",
+    "hybrid": "Hybrid",
+    "onsite": "On-site"
+  },
+  "employment": {
+    "fullTime": "Full-time",
+    "partTime": "Part-time",
+    "contract": "Contract",
+    "internship": "Internship"
+  },
+  "jobStatus": {
+    "open": "Open",
+    "draft": "Draft",
+    "closed": "Closed"
+  },
+  "pulse": {
+    "bands": {
+      "hot": "Hot",
+      "warm": "Warm",
+      "cool": "Cool",
+      "cold": "Cold",
+      "silent": "Silent",
+      "locked": "Withdrew"
+    },
+    "signalsTitle": "Signals · last 14 days",
+    "noSignals": "No signals yet.",
+    "baseline": "Baseline: {value}",
+    "signals": {
+      "message_received": "Replied to outbound",
+      "message_fast_reply": "Replied fast",
+      "message_long_reply": "Long, considered reply",
+      "positive_sentiment": "Positive tone",
+      "question_asked": "Asked a question",
+      "link_clicked": "Clicked a link",
+      "email_opened": "Opened an email",
+      "no_reply_overdue": "Outbound overdue",
+      "no_open": "Outbounds unopened",
+      "stage_idle": "Stage idle",
+      "negative_sentiment": "Concerns raised",
+      "reschedule_requested": "Reschedule requested",
+      "interview_no_show": "Interview no-show",
+      "unsubscribe": "Unsubscribed",
+      "stage_advanced": "Stage advanced",
+      "offer_sent": "Offer sent"
+    },
+    "recompute": "Recompute",
+    "daysAgo14": "14 days ago",
+    "today": "today",
+    "signalsCount": "Signals · {count} in the last 60 days",
+    "noSignalsLong": "No signals yet — Pulse will update as the candidate engages with our communications.",
+    "signalsLong": {
+      "message_received": "Replied to outbound",
+      "message_fast_reply": "Replied fast",
+      "message_long_reply": "Long, considered reply",
+      "positive_sentiment": "Positive tone in last message",
+      "question_asked": "Asked a question",
+      "link_clicked": "Clicked a link",
+      "email_opened": "Opened an email",
+      "no_reply_overdue": "Outbound overdue — no reply",
+      "no_open": "Several outbounds unopened",
+      "stage_idle": "Stage idle past median",
+      "negative_sentiment": "Concerns raised in last message",
+      "reschedule_requested": "Reschedule requested",
+      "interview_no_show": "Interview no-show",
+      "unsubscribe": "Unsubscribed from communications",
+      "stage_advanced": "Advanced to next stage",
+      "offer_sent": "Offer sent"
+    }
+  },
+  "yes": "Yes",
+  "no": "No",
+  "recommend": {
+    "strong_yes": "Strong yes",
+    "yes": "Yes",
+    "maybe": "Maybe",
+    "no": "No",
+    "strong_no": "Strong no"
+  },
+  "stars": {
+    "title": "{v} of {max}",
+    "titleWithCount": "{v} of {max} · {count, plural, one {# review} other {# reviews}}",
+    "none": "No rating yet",
+    "outOf": "{v} out of {max}",
+    "rating": "Rating",
+    "nStars": "{n, plural, one {# star} other {# stars}}"
+  },
+  "editor": {
+    "linkPrompt": "Link URL",
+    "linkInvalid": "Only http/https, mailto, tel, # or / links are allowed.",
+    "bold": "Bold",
+    "boldTitle": "Bold (Cmd-B)",
+    "italic": "Italic",
+    "italicTitle": "Italic (Cmd-I)",
+    "underline": "Underline",
+    "heading": "Heading",
+    "subheading": "Subheading",
+    "paragraph": "Paragraph",
+    "bulletList": "Bullet list",
+    "numberedList": "Numbered list",
+    "link": "Link",
+    "addLink": "Add link",
+    "clearFormatting": "Clear formatting"
+  },
+  "interviewTitles": {
+    "phone": "Phone interview",
+    "video": "Video interview",
+    "onsite": "On-site interview",
+    "panel": "Panel interview",
+    "other": "Interview"
+  },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "We couldn't find what you were looking for. It may have been moved or deleted.",
+    "toDashboard": "Go to dashboard",
+    "title": "Something went wrong",
+    "body": "This page hit an unexpected problem. You can try again, or head back to your dashboard.",
+    "tryAgain": "Try again"
+  }
+}

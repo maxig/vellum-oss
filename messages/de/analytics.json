@@ -1,0 +1,76 @@
+{
+  "title": "Karriereseiten-Analyse",
+  "subtitle": "Wie Besucher <b>{domain}</b> finden und nutzen.",
+  "other": "Sonstige",
+  "kpi": {
+    "views": "Seitenaufrufe",
+    "uniques": "Eindeutige Besucher",
+    "applies": "Bewerbungen",
+    "conversion": "Conversion-Rate"
+  },
+  "chartTitle": "Besuche & Bewerbungen",
+  "funnel": {
+    "title": "Conversion-Funnel",
+    "hint": "Wo Besucher zwischen Einstieg und Absenden abspringen.",
+    "visited": "Karriereseite besucht",
+    "viewedJob": "Stelle angesehen",
+    "clickedApply": "Auf „Bewerben“ geklickt",
+    "started": "Bewerbung begonnen",
+    "submitted": "Bewerbung abgeschickt"
+  },
+  "sources": {
+    "title": "Top-Quellen",
+    "hint": "Woher die Besuche kamen.",
+    "empty": "Noch keine Referrer-Daten.",
+    "direct": "Direkt",
+    "internal": "Interne Verweise"
+  },
+  "jobs": {
+    "title": "Meistgesehene Stellen",
+    "all": "Alle Stellen",
+    "empty": "In diesem Zeitraum noch keine Stellenaufrufe.",
+    "cols": {
+      "job": "STELLE",
+      "views": "AUFRUFE",
+      "applies": "BEWERBUNGEN",
+      "conv": "CONV."
+    }
+  },
+  "pages": {
+    "title": "Top-Seiten",
+    "empty": "In diesem Zeitraum noch keine Seitenaufrufe.",
+    "cols": {
+      "path": "PFAD",
+      "views": "AUFRUFE",
+      "time": "Ø ZEIT",
+      "bounce": "ABSPRUNG"
+    }
+  },
+  "geo": {
+    "title": "Woher die Besucher kommen",
+    "empty": "Noch kein Traffic mit Länderangabe. Das Land wird aus Request-Headern gelesen (Vercel / Cloudflare); es füllt sich, sobald die Seite hinter einem dieser Dienste läuft."
+  },
+  "devices": {
+    "title": "Geräte",
+    "empty": "In diesem Zeitraum noch keine Gerätedaten.",
+    "desktop": "Desktop",
+    "mobile": "Mobil",
+    "tablet": "Tablet"
+  },
+  "ai": {
+    "title": "Vellum AI · Wochenzusammenfassung",
+    "updated": "Aktualisiert {when}",
+    "mock": "Platzhalter",
+    "empty": "In diesem Zeitraum gibt es noch nicht genug Traffic für eine Zusammenfassung."
+  },
+  "vsPrev": "ggü. Vorperiode {value}",
+  "daysAgo": "vor {n} Tagen",
+  "today": "Heute",
+  "controls": {
+    "last": "Letzte {n} T.",
+    "compare": "Mit Vorperiode vergleichen",
+    "export": "Exportieren",
+    "regenerating": "Wird neu erstellt…",
+    "regenerate": "Neu erstellen"
+  }
+}

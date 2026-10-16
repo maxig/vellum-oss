@@ -1,0 +1,60 @@
+{
+  "crumb": "Time",
+  "title": "Calendar",
+  "previous": "Previous",
+  "today": "Today",
+  "next": "Next",
+  "modes": {
+    "day": "Day",
+    "week": "Week",
+    "agenda": "Agenda"
+  },
+  "refresh": "Refresh",
+  "connectHint": "<b>Connect a calendar</b> so Vellum can show your existing meetings and stop suggesting times you're already booked.",
+  "connect": "Connect",
+  "loadFailed": "Failed to load calendar: {error}",
+  "emptyWindow": "Nothing in this window. Your connected calendars are synced but this {period, select, day {day} week {week} other {fortnight}} is empty — try {widen, select, yes {widening the scope filter, } other {}}stepping forward, or opening Settings → Calendar to confirm the right calendar is selected.",
+  "rescheduleFailed": "Reschedule failed: {error}",
+  "filter": {
+    "button": "Filter",
+    "scope": "Scope",
+    "scopes": {
+      "mine": "Just me",
+      "team": "My team",
+      "workspace": "Whole workspace"
+    },
+    "show": "Show",
+    "interviews": "Interviews",
+    "followUps": "Follow-ups",
+    "busy": "External busy blocks"
+  },
+  "more": "+ {count} more",
+  "followUpLabels": {
+    "reply": "Reply to {name}",
+    "decide": "Decide on {name}",
+    "send_rejection": "Send rejection to {name}",
+    "debrief": "Debrief {name}",
+    "reference": "References for {name}",
+    "nudge_offer": "Nudge offer for {name}",
+    "ai_suggested": "Check in with {name}"
+  },
+  "markDone": "Mark done",
+  "dismiss": "Dismiss",
+  "locked": {
+    "cancelled": "Cancelled · can't be moved",
+    "noShow": "No-show · can't be moved",
+    "done": "Concluded · can't be moved",
+    "past": "Already happened · can't be moved"
+  },
+  "dragHint": "Drag to a new slot to reschedule, or click to open the candidate.",
+  "syncFailed": "Calendar sync failed — re-open settings",
+  "kinds": {
+    "phone": "Phone",
+    "video": "Video",
+    "onsite": "On-site",
+    "panel": "Panel"
+  },
+  "noTitle": "(no title)",
+  "busyChip": "Busy · {provider}",
+  "nothingScheduled": "Nothing scheduled in this window."
+}

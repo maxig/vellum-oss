@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "about": "Über uns",
+    "offices": "Standorte",
+    "stories": "Geschichten",
+    "careers": "Karriere",
+    "talk": "Kontakt"
+  },
+  "offices": {
+    "eyebrow": "Wo wir sind",
+    "title": "Unsere Standorte.",
+    "people": "{n} Personen"
+  },
+  "roles": {
+    "eyebrow": "Offene Stellen",
+    "title": "Arbeite mit uns."
+  },
+  "stories": {
+    "eyebrow": "Geschichten",
+    "title": "Die Menschen, in ihren eigenen Worten.",
+    "teamMember": "Teammitglied",
+    "noQuote": "Noch kein Zitat."
+  },
+  "values": {
+    "eyebrow": "Wie wir arbeiten",
+    "title": "Was uns wichtig ist."
+  },
+  "footer": {
+    "privacy": "Datenschutz",
+    "cookies": "Cookies",
+    "terms": "Nutzungsbedingungen"
+  },
+  "board": {
+    "allTeams": "Alle Teams",
+    "search": "Stellen durchsuchen…",
+    "clear": "Zurücksetzen",
+    "none": "Derzeit keine offenen Stellen. Schau bald wieder vorbei.",
+    "noMatch": "Keine Stellen passen zu diesem Filter.",
+    "view": "Stelle ansehen",
+    "showing": "{shown} von {total, plural, one {# Stelle} other {# Stellen}}"
+  },
+  "job": {
+    "teamMember": "Teammitglied",
+    "allRoles": "Alle Stellen",
+    "apply": "Jetzt bewerben",
+    "about": "Über die Stelle",
+    "comingSoon": "Weitere Details folgen in Kürze.",
+    "bring": "Was du mitbringst",
+    "niceToHave": "Wünschenswert",
+    "process": "Unser Bewerbungsprozess",
+    "compensation": "Vergütung"
+  },
+  "apply": {
+    "thanks": "Danke für deine Bewerbung.",
+    "received": "Wir haben deine Bewerbung für <b>{job}</b> erhalten. Jemand aus dem Team von {company} liest sie persönlich — meist innerhalb weniger Werktage. Wenn wir weitermachen möchten, melden wir uns per E-Mail.",
+    "otherRoles": "Weitere offene Stellen",
+    "back": "Zurück zur Stelle",
+    "title": "Bewerbung als <em>{job}</em>",
+    "requiredQuestion": "Bitte beantworte die Pflichtfrage: „{label}“",
+    "consentMissing": "Bitte stimme dem Hinweis zur Datenverarbeitung zu.",
+    "failed": "Absenden fehlgeschlagen. Bitte versuche es erneut.",
+    "name": "Vollständiger Name *",
+    "email": "E-Mail *",
+    "linkedin": "LinkedIn",
+    "portfolio": "Portfolio / Website",
+    "location": "Ort",
+    "locationPlaceholder": "Stadt, Land",
+    "resume": "Lebenslauf (PDF)",
+    "upload": "Zum Hochladen klicken oder Datei hierher ziehen",
+    "whyUs": "Warum wir?",
+    "whyUsPlaceholder": "Erzähl uns, was dich hierher geführt hat und an welcher Art von Arbeit du Freude hättest.",
+    "consent": "Ich willige ein, dass meine Bewerbungsdaten für diese Stelle gespeichert und geprüft werden. Ich kann jederzeit per E-Mail an das Hiring-Team die Löschung verlangen.",
+    "submitting": "Wird gesendet…",
+    "submit": "Bewerbung absenden"
+  },
+  "errors": {
+    "title": "Etwas ist schiefgelaufen",
+    "body": "Diese Seite wurde nicht richtig geladen. Bitte versuche es gleich noch einmal.",
+    "tryAgain": "Erneut versuchen",
+    "notFoundTitle": "Stelle nicht gefunden",
+    "notFoundBody": "Diese Stelle ist vielleicht schon besetzt oder nicht mehr offen. Sieh dir die aktuellen Stellen an.",
+    "viewRoles": "Offene Stellen ansehen"
+  }
+}

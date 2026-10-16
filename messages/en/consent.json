@@ -1,0 +1,29 @@
+{
+  "categories": {
+    "necessary": {
+      "title": "Strictly necessary",
+      "blurb": "Required for the site to work — authentication, security, and remembering your consent choice. Always on."
+    },
+    "functional": {
+      "title": "Functional",
+      "blurb": "Improve your experience by remembering preferences (language, theme) and powering chat or video widgets."
+    },
+    "marketing": {
+      "title": "Marketing & analytics",
+      "blurb": "Measure how candidates use the site and help us tailor follow-up content. Disabled until you opt in."
+    }
+  },
+  "region": "Cookie consent",
+  "title": "We use cookies",
+  "message": "Necessary cookies keep this site running. Functional and marketing cookies are off until you opt in.",
+  "policy": "Cookie policy",
+  "reject": "Reject",
+  "customize": "Customize",
+  "acceptAll": "Accept all",
+  "prefsTitle": "Your cookie preferences",
+  "prefsHint": "Choose which categories you're comfortable with. You can change this any time from the page footer.",
+  "alwaysOn": "Always on",
+  "rejectAll": "Reject all",
+  "save": "Save choices",
+  "preferences": "Cookie preferences"
+}

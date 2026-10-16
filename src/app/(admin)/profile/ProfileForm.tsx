@@ -4,9 +4,14 @@
 "use client";
 import * as React from "react";
 import { signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { useValueLabels } from "@/i18n/labels";
 import { Glass, Avatar, Chip, Icons } from "@/components/primitives";
 
 export default function ProfileForm({ user, role, workspaceName }: { user: { id: string; name: string; email: string; signature?: string | null }; role: string; workspaceName: string }) {
+  const t = useTranslations("profile");
+  const tc = useTranslations("common");
+  const labels = useValueLabels();
   const [name, setName] = React.useState(user.name);
   const [signature, setSignature] = React.useState(user.signature || "");
   const [password, setPassword] = React.useState("");
@@ -34,7 +39,7 @@ export default function ProfileForm({ user, role, workspaceName }: { user: { id:
             <h2 style={{ fontSize: 22 }}>{name || user.email}</h2>
             <div className="tiny">{user.email}</div>
             <div className="row" style={{ gap: 8, marginTop: 8 }}>
-              <Chip accent>{role}</Chip>
+              <Chip accent>{labels.role(role)}</Chip>
               <Chip>{workspaceName}</Chip>
             </div>
           </div>
@@ -42,36 +47,36 @@ export default function ProfileForm({ user, role, workspaceName }: { user: { id:
         <div className="col" style={{ gap: 14 }}>
           <div className="row" style={{ gap: 14 }}>
             <div style={{ flex: 1 }}>
-              <label className="label">Full name</label>
+              <label className="label">{t("fields.name")}</label>
               <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div style={{ flex: 1 }}>
-              <label className="label">New password <span className="tiny muted">(leave blank to keep)</span></label>
+              <label className="label">{t("page.newPassword")} <span className="tiny muted">{t("page.keep")}</span></label>
               <input className="input" type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="label">Email signature <span className="tiny muted">(overrides workspace default)</span></label>
+            <label className="label">{t("page.signature")} <span className="tiny muted">{t("page.overrides")}</span></label>
             <textarea
               className="input autogrow"
               data-max-lines="6"
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
-              placeholder={`Best,\n${name || "Your name"}`}
+              placeholder={t("page.signaturePlaceholder", { name: name || t("fields.yourName") })}
               style={{ fontFamily: "inherit", minHeight: 80 }}
             />
           </div>
         </div>
         <div className="row" style={{ marginTop: 18, justifyContent: "flex-end" }}>
-          {savedAt && <span className="tiny" style={{ color: "var(--accent-solid)", marginRight: 12 }}>Saved</span>}
-          <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+          {savedAt && <span className="tiny" style={{ color: "var(--accent-solid)", marginRight: 12 }}>{tc("saved")}</span>}
+          <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? tc("saving") : tc("save")}</button>
         </div>
       </Glass>
 
       <Glass className="card" style={{ padding: 24 }}>
-        <h2 style={{ fontSize: 18, marginBottom: 12 }}>Session</h2>
+        <h2 style={{ fontSize: 18, marginBottom: 12 }}>{t("page.session")}</h2>
         <button className="btn" onClick={() => signOut({ callbackUrl: "/login" })}>
-          <Icons.Logout size={13} /> Sign out
+          <Icons.Logout size={13} /> {t("signOut")}
         </button>
       </Glass>
     </div>

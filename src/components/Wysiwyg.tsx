@@ -3,6 +3,7 @@
 
 "use client";
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons } from "@/components/Icons";
 import { markdownToHtml } from "@/lib/markdown";
 
@@ -60,6 +61,7 @@ export default function Wysiwyg({
    */
   maxHeight?: string;
 }) {
+  const t = useTranslations("common.editor");
   const ref = React.useRef<HTMLDivElement | null>(null);
   const [focused, setFocused] = React.useState(false);
   // Remembers the last HTML we emitted to the parent, so we can tell the
@@ -151,10 +153,10 @@ export default function Wysiwyg({
   }
 
   function makeLink() {
-    const url = window.prompt("Link URL", "https://");
+    const url = window.prompt(t("linkPrompt"), "https://");
     if (!url) return;
     if (!/^(https?:|mailto:|tel:|\/|#)/i.test(url)) {
-      alert("Only http/https, mailto, tel, # or / links are allowed.");
+      alert(t("linkInvalid"));
       return;
     }
     exec("createLink", url);
@@ -184,34 +186,34 @@ export default function Wysiwyg({
           flexWrap: "wrap",
         }}
       >
-        <ToolButton label="Bold" onClick={() => exec("bold")} title="Bold (Cmd-B)">
+        <ToolButton label={t("bold")} onClick={() => exec("bold")} title={t("boldTitle")}>
           <b style={{ fontSize: 13 }}>B</b>
         </ToolButton>
-        <ToolButton label="Italic" onClick={() => exec("italic")} title="Italic (Cmd-I)">
+        <ToolButton label={t("italic")} onClick={() => exec("italic")} title={t("italicTitle")}>
           <i style={{ fontSize: 13 }}>I</i>
         </ToolButton>
-        <ToolButton label="Underline" onClick={() => exec("underline")} title="Underline">
+        <ToolButton label={t("underline")} onClick={() => exec("underline")}>
           <u style={{ fontSize: 13 }}>U</u>
         </ToolButton>
         <Sep />
-        <ToolButton label="Heading" onClick={() => exec("formatBlock", "<h3>")} title="Subheading">
+        <ToolButton label={t("heading")} onClick={() => exec("formatBlock", "<h3>")} title={t("subheading")}>
           <span style={{ fontSize: 12, fontWeight: 600 }}>H</span>
         </ToolButton>
-        <ToolButton label="Paragraph" onClick={() => exec("formatBlock", "<p>")} title="Paragraph">
+        <ToolButton label={t("paragraph")} onClick={() => exec("formatBlock", "<p>")}>
           <span style={{ fontSize: 11 }}>¶</span>
         </ToolButton>
         <Sep />
-        <ToolButton label="Bullet list" onClick={() => exec("insertUnorderedList")} title="Bullet list">
+        <ToolButton label={t("bulletList")} onClick={() => exec("insertUnorderedList")}>
           <span style={{ fontSize: 12 }}>•</span>
         </ToolButton>
-        <ToolButton label="Numbered list" onClick={() => exec("insertOrderedList")} title="Numbered list">
+        <ToolButton label={t("numberedList")} onClick={() => exec("insertOrderedList")}>
           <span style={{ fontSize: 11 }}>1.</span>
         </ToolButton>
         <Sep />
-        <ToolButton label="Link" onClick={makeLink} title="Add link">
+        <ToolButton label={t("link")} onClick={makeLink} title={t("addLink")}>
           <Icons.ArrowUpRight size={12} />
         </ToolButton>
-        <ToolButton label="Clear formatting" onClick={() => exec("removeFormat")} title="Clear formatting">
+        <ToolButton label={t("clearFormatting")} onClick={() => exec("removeFormat")}>
           <span style={{ fontSize: 11 }}>⌫</span>
         </ToolButton>
       </div>

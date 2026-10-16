@@ -4,8 +4,8 @@
 "use client";
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
-  CATEGORY_LABELS,
   CATEGORY_ORDER,
   CONSENT_CHANGED_EVENT,
   CONSENT_COOKIE,
@@ -50,6 +50,7 @@ type Props = {
 };
 
 export default function CookieConsent({ policyBase = "", title, message }: Props) {
+  const t = useTranslations("consent");
   const [mounted, setMounted] = React.useState(false);
   const [open, setOpen] = React.useState(false); // banner visible?
   const [expanded, setExpanded] = React.useState(false); // detail panel visible?
@@ -90,17 +91,16 @@ export default function CookieConsent({ policyBase = "", title, message }: Props
   const policyHref = `${policyBase}/cookies`;
 
   return (
-    <div className="cookie-banner-wrap" role="region" aria-label="Cookie consent">
+    <div className="cookie-banner-wrap" role="region" aria-label={t("region")}>
       <div className={`cookie-banner glass glass-strong${expanded ? " cookie-banner-tall" : ""}`}>
         {!expanded ? (
           <div className="cookie-banner-row">
             <div className="cookie-banner-copy">
-              <strong>{title || "We use cookies"}</strong>
+              <strong>{title || t("title")}</strong>
               <span className="cookie-banner-msg">
-                {message ||
-                  "Necessary cookies keep this site running. Functional and marketing cookies are off until you opt in."}{" "}
+                {message || t("message")}{" "}
                 <Link href={policyHref} className="cookie-banner-link">
-                  Cookie policy
+                  {t("policy")}
                 </Link>
               </span>
             </div>
@@ -110,7 +110,7 @@ export default function CookieConsent({ policyBase = "", title, message }: Props
                 className="btn btn-sm"
                 onClick={() => decide({ functional: false, marketing: false })}
               >
-                Reject
+                {t("reject")}
               </button>
               <button
                 type="button"
@@ -126,14 +126,14 @@ export default function CookieConsent({ policyBase = "", title, message }: Props
                   setExpanded(true);
                 }}
               >
-                Customize
+                {t("customize")}
               </button>
               <button
                 type="button"
                 className="btn btn-sm btn-primary"
                 onClick={() => decide({ functional: true, marketing: true })}
               >
-                Accept all
+                {t("acceptAll")}
               </button>
             </div>
           </div>
@@ -141,20 +141,18 @@ export default function CookieConsent({ policyBase = "", title, message }: Props
           <div className="cookie-banner-detail">
             <div className="cookie-banner-detail-head">
               <div>
-                <strong style={{ fontSize: 13.5 }}>Your cookie preferences</strong>
+                <strong style={{ fontSize: 13.5 }}>{t("prefsTitle")}</strong>
                 <div className="tiny" style={{ marginTop: 2 }}>
-                  Choose which categories you&rsquo;re comfortable with. You can change this any time from the page
-                  footer.
+                  {t("prefsHint")}
                 </div>
               </div>
               <Link href={policyHref} className="tiny cookie-banner-link" style={{ marginLeft: 12, whiteSpace: "nowrap" }}>
-                Cookie policy →
+                {t("policy")} →
               </Link>
             </div>
 
             <div className="cookie-cats">
               {CATEGORY_ORDER.map((cat) => {
-                const meta = CATEGORY_LABELS[cat];
                 const isNecessary = cat === "necessary";
                 const checked = isNecessary ? true : !!pending[cat];
                 return (
@@ -169,10 +167,10 @@ export default function CookieConsent({ policyBase = "", title, message }: Props
                     />
                     <div className="cookie-cat-text">
                       <div className="row" style={{ gap: 8, alignItems: "center" }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-0)" }}>{meta.title}</span>
-                        {isNecessary && <span className="tiny" style={{ color: "var(--ink-2)" }}>Always on</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-0)" }}>{t(`categories.${cat}.title`)}</span>
+                        {isNecessary && <span className="tiny" style={{ color: "var(--ink-2)" }}>{t("alwaysOn")}</span>}
                       </div>
-                      <div className="tiny" style={{ marginTop: 2, lineHeight: 1.45 }}>{meta.blurb}</div>
+                      <div className="tiny" style={{ marginTop: 2, lineHeight: 1.45 }}>{t(`categories.${cat}.blurb`)}</div>
                     </div>
                   </label>
                 );
@@ -185,21 +183,21 @@ export default function CookieConsent({ policyBase = "", title, message }: Props
                 className="btn btn-sm"
                 onClick={() => decide({ functional: false, marketing: false })}
               >
-                Reject all
+                {t("rejectAll")}
               </button>
               <button
                 type="button"
                 className="btn btn-sm"
                 onClick={() => decide({ functional: pending.functional, marketing: pending.marketing })}
               >
-                Save choices
+                {t("save")}
               </button>
               <button
                 type="button"
                 className="btn btn-sm btn-primary"
                 onClick={() => decide({ functional: true, marketing: true })}
               >
-                Accept all
+                {t("acceptAll")}
               </button>
             </div>
           </div>
@@ -212,11 +210,12 @@ export default function CookieConsent({ policyBase = "", title, message }: Props
 /** Trigger that opens the preferences panel — used from page footers. */
 export function CookiePreferencesLink({
   className = "tiny",
-  children = "Cookie preferences",
+  children,
 }: {
   className?: string;
   children?: React.ReactNode;
 }) {
+  const t = useTranslations("consent");
   return (
     <a
       href="#cookie-preferences"
@@ -226,7 +225,7 @@ export function CookiePreferencesLink({
         window.dispatchEvent(new CustomEvent("vellum:open-cookie-preferences"));
       }}
     >
-      {children}
+      {children ?? t("preferences")}
     </a>
   );
 }

@@ -34,20 +34,26 @@ export function initials(name: string) {
   );
 }
 
-export function relativeTime(d: Date | string) {
+/**
+ * Compact "3 days ago" in the given UI language. Client components get the
+ * locale via useRelativeTime() (src/i18n/format.ts); server code passes
+ * getLocale() explicitly.
+ */
+export function relativeTime(d: Date | string, locale: string = "en") {
   const date = typeof d === "string" ? new Date(d) : d;
-  const diff = Date.now() - date.getTime();
-  const sec = Math.round(diff / 1000);
-  if (sec < 60) return "just now";
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "short" });
+  const sec = Math.round((date.getTime() - Date.now()) / 1000);
+  const abs = Math.abs(sec);
+  if (abs < 60) return rtf.format(0, "second");
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min} min ago`;
+  if (Math.abs(min) < 60) return rtf.format(min, "minute");
   const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr} hr ago`;
+  if (Math.abs(hr) < 24) return rtf.format(hr, "hour");
   const day = Math.round(hr / 24);
-  if (day < 7) return `${day}d ago`;
-  if (day < 30) return `${Math.round(day / 7)}w ago`;
-  if (day < 365) return `${Math.round(day / 30)}mo ago`;
-  return `${Math.round(day / 365)}y ago`;
+  if (Math.abs(day) < 7) return rtf.format(day, "day");
+  if (Math.abs(day) < 30) return rtf.format(Math.round(day / 7), "week");
+  if (Math.abs(day) < 365) return rtf.format(Math.round(day / 30), "month");
+  return rtf.format(Math.round(day / 365), "year");
 }
 
 export function currencySymbol(code: string | null | undefined) {

@@ -1,0 +1,32 @@
+{
+  "smtpStatus": "SMTP returned {status}",
+  "sendFailed": "Could not send.",
+  "savedInternal": "Saved as internal message. {error}",
+  "fallbackDraft": "Thanks for getting back to me. Let me know what timing works best on your end.",
+  "filters": {
+    "all": "All",
+    "unread": "Unread",
+    "starred": "Starred"
+  },
+  "search": "Search messages…",
+  "noMatching": "No matching conversations.",
+  "none": "No conversations.",
+  "you": "You:",
+  "select": "Select a conversation",
+  "unstar": "Unstar",
+  "star": "Star",
+  "openProfile": "Open profile",
+  "awaiting": "awaiting your reply",
+  "replyTo": "Reply to {name}",
+  "drafting": "Drafting…",
+  "aiDraft": "AI draft",
+  "replyPlaceholder": "Type your reply… (⌘↵ to send)",
+  "attach": "Attach",
+  "template": "Template",
+  "schedule": "Schedule",
+  "via": "via {address}",
+  "internalOnly": "Internal only — <link>connect email</link>",
+  "sending": "Sending…",
+  "send": "Send reply",
+  "team": "Team"
+}

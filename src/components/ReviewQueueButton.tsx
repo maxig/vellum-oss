@@ -14,6 +14,7 @@
  */
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons } from "@/components/Icons";
 import { useProfileSheet } from "@/components/SheetHost";
 import { useReviewQueueCount } from "@/components/useReviewQueueCount";
@@ -22,7 +23,8 @@ export default function ReviewQueueButton() {
   const { openReviewQueue } = useProfileSheet();
   const { count, hasUrgent } = useReviewQueueCount();
 
-  const label = "Review queue";
+  const t = useTranslations("nav");
+  const label = t("reviewQueue");
   const c = count;
   const showBadge = c > 0;
   const badgeText = c > 9 ? "9+" : String(c);
@@ -40,7 +42,7 @@ export default function ReviewQueueButton() {
         padding: "0 12px",
         gap: 8,
       }}
-      aria-label={`${label} — ${c} item${c === 1 ? "" : "s"}`}
+      aria-label={t("reviewQueueLabel", { count: c })}
     >
       <Icons.Sparkle size={13} stroke={2} />
       <span style={{ fontSize: 12.5 }}>{label}</span>

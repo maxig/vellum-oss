@@ -7,11 +7,15 @@ import { requireWorkspace } from "@/lib/workspace";
 import { publicScheme } from "@/lib/app-host";
 import { Glass, Chip, Icons } from "@/components/primitives";
 import { db } from "@/lib/db";
+import { getTranslations } from "next-intl/server";
+import { getValueLabels } from "@/i18n/labels-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function CareerPreviewPage() {
   const { workspace } = await requireWorkspace();
+  const t = await getTranslations("settings.preview");
+  const labels = await getValueLabels();
   const [jobs, careerSite] = await Promise.all([
     db.job.findMany({ where: { workspaceId: workspace.id, status: "Open" }, orderBy: { publishedAt: "desc" } }),
     db.careerSite.findUnique({ where: { workspaceId: workspace.id } }),
@@ -28,8 +32,7 @@ export default async function CareerPreviewPage() {
       <Glass faint className="career-preview-banner">
         <Icons.Globe size={12} />
         <span>
-          You're previewing your career site at{" "}
-          <b className="mono" style={{ color: "var(--ink-1)" }}>{displayDomain}</b>
+          {t.rich("banner", { domain: displayDomain, b: (c) => <b className="mono" style={{ color: "var(--ink-1)" }}>{c}</b> })}
         </span>
         {customDomain && (
           <span
@@ -43,29 +46,29 @@ export default async function CareerPreviewPage() {
               borderColor: "transparent",
             }}
           >
-            <span className="chip-dot" /> {verified ? "CNAME live" : "CNAME pending"}
+            <span className="chip-dot" /> {verified ? t("cnameLive") : t("cnamePending")}
           </span>
         )}
         <span style={{ flex: 1 }} />
         <Link href="/settings?tab=career" className="btn btn-sm btn-ghost">
-          <Icons.Settings size={12} /> Edit content
+          <Icons.Settings size={12} /> {t("edit")}
         </Link>
         <a href={publicUrl} target="_blank" rel="noreferrer" className="btn btn-sm">
-          <Icons.ArrowUpRight size={11} /> Open as visitor
+          <Icons.ArrowUpRight size={11} /> {t("openVisitor")}
         </a>
       </Glass>
 
       <Glass className="career-preview-frame">
         <iframe
           src={publicUrl}
-          title={`${workspace.name} career site preview`}
+          title={t("iframeTitle", { name: workspace.name })}
           style={{ width: "100%", height: 920, border: 0, background: "white", display: "block" }}
         />
       </Glass>
 
       <Glass className="card" style={{ padding: 24, marginTop: 14 }}>
-        <h2 style={{ fontSize: 18, marginBottom: 12 }}>Live job pages</h2>
-        {jobs.length === 0 && <div className="muted">No open jobs to preview.</div>}
+        <h2 style={{ fontSize: 18, marginBottom: 12 }}>{t("liveJobs")}</h2>
+        {jobs.length === 0 && <div className="muted">{t("noJobs")}</div>}
         {jobs.map((j) => (
           <div key={j.id} className="row" style={{ padding: "10px 0", borderBottom: "0.5px solid var(--line)" }}>
             <div style={{ flex: 1 }}>
@@ -74,7 +77,7 @@ export default async function CareerPreviewPage() {
                 {publicUrl}/jobs/{j.slug}
               </a>
             </div>
-            <Chip good dot>Open</Chip>
+            <Chip good dot>{labels.jobStatus("Open")}</Chip>
           </div>
         ))}
       </Glass>

@@ -5,8 +5,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Glass, Avatar, Icons } from "@/components/primitives";
-import { relativeTime } from "@/lib/utils";
+import { useRelativeTime } from "@/i18n/format";
 import ProfileSheet from "@/components/ProfileSheet";
 
 type Application = {
@@ -45,6 +46,8 @@ export default function CandidateView({
   threadId: string | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("candidates.view");
+  const relativeTime = useRelativeTime();
 
   const [activeAppId, setActiveAppId] = React.useState<string | null>(
     applications[0]?.id || null,
@@ -67,7 +70,7 @@ export default function CandidateView({
   if (applications.length === 0 || !activeAppId) {
     return (
       <div className="page">
-        <Link href="/candidates" className="tiny" style={{ color: "var(--ink-2)" }}>← All candidates</Link>
+        <Link href="/candidates" className="tiny" style={{ color: "var(--ink-2)" }}>← {t("all")}</Link>
         <div className="row" style={{ marginTop: 14, marginBottom: 22, gap: 18 }}>
           <Avatar name={candidate.name} size="xl" />
           <div style={{ flex: 1 }}>
@@ -82,8 +85,7 @@ export default function CandidateView({
         </div>
         <Glass className="card" style={{ padding: 22 }}>
           <p className="muted" style={{ fontSize: 13 }}>
-            {candidate.name} doesn't have any applications yet. Attach them to a job from the candidates database
-            to see the full applicant view.
+            {t("noApplications", { name: candidate.name })}
           </p>
         </Glass>
       </div>
@@ -125,13 +127,13 @@ export default function CandidateView({
             flexWrap: "wrap",
           }}
         >
-          <span className="tiny" style={{ marginRight: 4 }}>Applications</span>
+          <span className="tiny" style={{ marginRight: 4 }}>{t("applications")}</span>
           {applications.map((a) => (
             <button
               key={a.id}
               className={`btn btn-sm ${a.id === activeAppId ? "btn-primary" : "btn-ghost"}`}
               onClick={() => setActiveAppId(a.id)}
-              title={`Applied ${relativeTime(a.appliedAt)}`}
+              title={t("applied", { when: relativeTime(a.appliedAt) })}
             >
               {a.jobTitle}
             </button>

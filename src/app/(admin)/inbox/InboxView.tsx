@@ -6,7 +6,8 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Glass, Chip, Avatar, Icons } from "@/components/primitives";
-import { relativeTime } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 import { emailToText, stripHtml } from "@/lib/sanitize";
 import ProfileSheet from "@/components/ProfileSheet";
 import Wysiwyg from "@/components/Wysiwyg";
@@ -55,6 +56,9 @@ export default function InboxView({
   stages?: { id: string; key: string; name: string; color: string }[];
 }) {
   const router = useRouter();
+  // `tr`, not `t` — `t` is the thread loop variable below.
+  const tr = useTranslations("inbox");
+  const relativeTime = useRelativeTime();
   const [reply, setReply] = React.useState(currentUser.signature ? `\n\n${currentUser.signature}` : "");
   const [sending, setSending] = React.useState(false);
   const [composing, setComposing] = React.useState(false);
@@ -100,7 +104,7 @@ export default function InboxView({
       let smtpError: string | null = null;
       if (response && response.status !== 412) {
         const json = await response.json().catch(() => ({}));
-        smtpError = json?.error || `SMTP returned ${response.status}`;
+        smtpError = json?.error || tr("smtpStatus", { status: response.status });
       }
       const internal = await fetch(`/api/threads/${active.id}/messages`, {
         method: "POST",
@@ -109,13 +113,13 @@ export default function InboxView({
       });
       if (!internal.ok) {
         const j = await internal.json().catch(() => ({}));
-        setSendError(j?.error || smtpError || "Could not send.");
+        setSendError(j?.error || smtpError || tr("sendFailed"));
         setSending(false);
         return;
       }
       // Internal save succeeded but SMTP didn't — surface the original error so
       // the recruiter knows the candidate didn't actually receive a real email.
-      if (smtpError) setSendError(`Saved as internal message. ${smtpError}`);
+      if (smtpError) setSendError(tr("savedInternal", { error: smtpError }));
     }
 
     setReply("");
@@ -143,7 +147,7 @@ export default function InboxView({
     })
       .then((r) => r.json())
       .then((j) => {
-        let text: string = j.text || "Thanks for getting back to me. Let me know what timing works best on your end.";
+        let text: string = j.text || tr("fallbackDraft");
         if (currentUser.signature) {
           text += `\n\n${currentUser.signature}`;
         }
@@ -161,9 +165,9 @@ export default function InboxView({
   }
 
   const filters: { id: string; l: string }[] = [
-    { id: "all", l: "All" },
-    { id: "unread", l: "Unread" },
-    { id: "starred", l: "Starred" },
+    { id: "all", l: tr("filters.all") },
+    { id: "unread", l: tr("filters.unread") },
+    { id: "starred", l: tr("filters.starred") },
   ];
 
   return (
@@ -175,7 +179,7 @@ export default function InboxView({
             <Glass faint className="inbox-search">
               <Icons.Search size={14} style={{ color: "var(--ink-2)" }} />
               <input
-                placeholder="Search messages…"
+                placeholder={tr("search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{ background: "transparent", border: 0, outline: 0, color: "var(--ink-0)", fontSize: 13, width: "100%" }}
@@ -206,7 +210,7 @@ export default function InboxView({
           <div className="scroll" style={{ flex: 1, overflowY: "auto" }}>
             {filteredThreads.length === 0 && (
               <div className="muted" style={{ padding: 28, textAlign: "center" }}>
-                {search ? "No matching conversations." : "No conversations."}
+                {search ? tr("noMatching") : tr("none")}
               </div>
             )}
             {filteredThreads.map((t) => {
@@ -258,7 +262,7 @@ export default function InboxView({
                     className="inbox-preview"
                     style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.4 }}
                   >
-                    {t.lastDirection === "out" && <span style={{ color: "var(--ink-2)" }}>You: </span>}
+                    {t.lastDirection === "out" && <span style={{ color: "var(--ink-2)" }}>{tr("you")} </span>}
                     {previewText}
                   </div>
                   <div className="row" style={{ marginTop: 6, gap: 5 }}>
@@ -290,7 +294,7 @@ export default function InboxView({
         {/* Thread */}
         {!active ? (
           <div className="muted" style={{ padding: 40, textAlign: "center", margin: "auto" }}>
-            Select a conversation
+            {tr("select")}
           </div>
         ) : (
           <div className="inbox-thread-pane">
@@ -307,7 +311,7 @@ export default function InboxView({
                   {active.jobTitle ? ` · ${active.jobTitle}` : ""}
                 </div>
               </div>
-              <button className="iconbtn" onClick={toggleStar} title={active.starred ? "Unstar" : "Star"}>
+              <button className="iconbtn" onClick={toggleStar} title={active.starred ? tr("unstar") : tr("star")} aria-label={active.starred ? tr("unstar") : tr("star")}>
                 <Icons.Star
                   size={15}
                   fill={active.starred ? "oklch(75% 0.15 80)" : "none"}
@@ -317,7 +321,7 @@ export default function InboxView({
               </button>
               {active.applicationId && (
                 <button className="btn btn-sm" onClick={() => setOpenProfile(active.applicationId)}>
-                  <Icons.ArrowUpRight size={11} /> Open profile
+                  <Icons.ArrowUpRight size={11} /> {tr("openProfile")}
                 </button>
               )}
               <div className="iconbtn"><Icons.MoreH size={15} /></div>
@@ -331,7 +335,7 @@ export default function InboxView({
                 ))}
                 {active.messages[active.messages.length - 1]?.direction === "in" && (
                   <div className="row" style={{ gap: 8, color: "var(--ink-2)", marginTop: 4, alignSelf: "flex-start" }}>
-                    <span className="tiny">awaiting your reply</span>
+                    <span className="tiny">{tr("awaiting")}</span>
                   </div>
                 )}
               </div>
@@ -342,7 +346,7 @@ export default function InboxView({
               <div className="inbox-composer-inner">
                 <Glass faint style={{ borderRadius: 12, padding: 12, position: "relative" }}>
                   <div className="row" style={{ marginBottom: 8 }}>
-                    <span className="tiny">Reply to {active.candidateName.split(" ")[0]}</span>
+                    <span className="tiny">{tr("replyTo", { name: active.candidateName.split(" ")[0] })}</span>
                     <span style={{ flex: 1 }} />
                     <button
                       className="btn btn-sm btn-ghost"
@@ -350,14 +354,14 @@ export default function InboxView({
                       onClick={aiDraft}
                       disabled={composing}
                     >
-                      <Icons.Sparkle size={12} stroke={2} /> {composing ? "Drafting…" : "AI draft"}
+                      <Icons.Sparkle size={12} stroke={2} /> {composing ? tr("drafting") : tr("aiDraft")}
                     </button>
                   </div>
                   <div style={{ position: "relative" }}>
                     <Wysiwyg
                       value={reply}
                       onChange={setReply}
-                      placeholder="Type your reply… (⌘↵ to send)"
+                      placeholder={tr("replyPlaceholder")}
                       minHeight={120}
                       maxLines={15}
                       onKeyDown={(e) => {
@@ -378,20 +382,20 @@ export default function InboxView({
                     <div className="chip chip-danger" style={{ marginTop: 8 }}>{sendError}</div>
                   )}
                   <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
-                    <button type="button" className="iconbtn" style={{ width: 28, height: 28 }} aria-label="Attach">
+                    <button type="button" className="iconbtn" style={{ width: 28, height: 28 }} aria-label={tr("attach")}>
                       <Icons.Paperclip size={13} />
                     </button>
-                    <button type="button" className="iconbtn" style={{ width: 28, height: 28 }} aria-label="Template">
+                    <button type="button" className="iconbtn" style={{ width: 28, height: 28 }} aria-label={tr("template")}>
                       <Icons.FileText size={13} />
                     </button>
-                    <button type="button" className="iconbtn" style={{ width: 28, height: 28 }} aria-label="Schedule">
+                    <button type="button" className="iconbtn" style={{ width: 28, height: 28 }} aria-label={tr("schedule")}>
                       <Icons.Calendar size={13} />
                     </button>
                     {emailEnabled ? (
-                      <Chip dot="oklch(68% 0.16 150)">via {fromAddress || "SMTP"}</Chip>
+                      <Chip dot="oklch(68% 0.16 150)">{tr("via", { address: fromAddress || "SMTP" })}</Chip>
                     ) : (
                       <Chip>
-                        Internal only — <Link href="/settings?tab=email" style={{ color: "var(--accent-solid)" }}>connect email</Link>
+                        {tr.rich("internalOnly", { link: (c) => <Link href="/settings?tab=email" style={{ color: "var(--accent-solid)" }}>{c}</Link> })}
                       </Chip>
                     )}
                     <span style={{ flex: 1 }} />
@@ -401,7 +405,7 @@ export default function InboxView({
                       onClick={send}
                       disabled={sending || !stripHtml(reply).trim() || composing}
                     >
-                      <Icons.Send size={11} stroke={2} /> {sending ? "Sending…" : "Send reply"}
+                      <Icons.Send size={11} stroke={2} /> {sending ? tr("sending") : tr("send")}
                     </button>
                   </div>
                 </Glass>
@@ -435,15 +439,17 @@ function MessageBubble({ m, candidateName }: { m: ActiveThread["messages"][numbe
       </div>
     );
   }
+  const tr = useTranslations("inbox");
+  const relativeTime = useRelativeTime();
   const isOut = m.direction === "out";
   const display = emailToText(m.body);
   return (
     <div className={`inbox-message ${isOut ? "inbox-message-out" : "inbox-message-in"}`}>
-      <Avatar name={m.from || (isOut ? "Team" : candidateName)} size="md" />
+      <Avatar name={m.from || (isOut ? tr("team") : candidateName)} size="md" />
       <div className="inbox-message-body">
         <div className="row" style={{ gap: 6, marginBottom: 4 }}>
           <span style={{ fontSize: 12, fontWeight: 500, color: "var(--ink-0)" }}>
-            {m.from || (isOut ? "Team" : candidateName)}
+            {m.from || (isOut ? tr("team") : candidateName)}
           </span>
           <span className="tiny">{relativeTime(m.createdAt)}</span>
         </div>

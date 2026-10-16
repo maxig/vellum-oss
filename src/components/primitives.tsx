@@ -2,6 +2,7 @@
 // Copyright (C) 2026 MG Tech AS
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Icons } from "./Icons";
 
 // ── Glass container ──────────────────────────────────────────────────
@@ -193,7 +194,7 @@ export function Stars({
   onChange,
   clearable = true,
   showValue = false,
-  ariaLabel = "Rating",
+  ariaLabel,
 }: {
   value: number | null;
   count?: number;
@@ -205,6 +206,7 @@ export function Stars({
   showValue?: boolean;
   ariaLabel?: string;
 }) {
+  const t = useTranslations("common.stars");
   const [hover, setHover] = React.useState<number | null>(null);
 
   if (!onChange) {
@@ -213,8 +215,8 @@ export function Stars({
       <span
         className="stars"
         style={{ display: "inline-flex", alignItems: "center", gap }}
-        title={value != null ? `${v} of ${max}${count ? ` · ${count} review${count === 1 ? "" : "s"}` : ""}` : "No rating yet"}
-        aria-label={value != null ? `${v} out of ${max}` : "No rating yet"}
+        title={value != null ? (count ? t("titleWithCount", { v, max, count }) : t("title", { v, max })) : t("none")}
+        aria-label={value != null ? t("outOf", { v, max }) : t("none")}
       >
         {Array.from({ length: max }).map((_, i) => (
           <StarGlyph key={i} size={size} fill={i < Math.floor(v) ? 1 : i === Math.floor(v) ? v - Math.floor(v) : 0} />
@@ -231,7 +233,7 @@ export function Stars({
 
   const shown = hover ?? value ?? 0;
   return (
-    <span className="stars" role="radiogroup" aria-label={ariaLabel} style={{ display: "inline-flex", alignItems: "center", gap }}>
+    <span className="stars" role="radiogroup" aria-label={ariaLabel ?? t("rating")} style={{ display: "inline-flex", alignItems: "center", gap }}>
       {Array.from({ length: max }).map((_, i) => {
         const n = i + 1;
         const active = n <= shown;
@@ -241,7 +243,7 @@ export function Stars({
             type="button"
             role="radio"
             aria-checked={value === n}
-            aria-label={`${n} star${n === 1 ? "" : "s"}`}
+            aria-label={t("nStars", { n })}
             onMouseEnter={() => setHover(n)}
             onMouseLeave={() => setHover(null)}
             onClick={() => onChange(clearable && value === n ? null : n)}

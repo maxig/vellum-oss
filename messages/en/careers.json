@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "about": "About",
+    "offices": "Offices",
+    "stories": "Stories",
+    "careers": "Careers",
+    "talk": "Talk to us"
+  },
+  "offices": {
+    "eyebrow": "Where we are",
+    "title": "Our offices.",
+    "people": "{n} people"
+  },
+  "roles": {
+    "eyebrow": "Open roles",
+    "title": "Come work with us."
+  },
+  "stories": {
+    "eyebrow": "Stories",
+    "title": "The people, in their own words.",
+    "teamMember": "Team member",
+    "noQuote": "No quote yet."
+  },
+  "values": {
+    "eyebrow": "How we work",
+    "title": "A few things we mean."
+  },
+  "footer": {
+    "privacy": "Privacy",
+    "cookies": "Cookies",
+    "terms": "Terms"
+  },
+  "board": {
+    "allTeams": "All teams",
+    "search": "Search roles…",
+    "clear": "Clear",
+    "none": "No open roles right now. Check back soon.",
+    "noMatch": "No roles match this filter.",
+    "view": "View role",
+    "showing": "Showing {shown} of {total, plural, one {# role} other {# roles}}"
+  },
+  "job": {
+    "teamMember": "Team member",
+    "allRoles": "All roles",
+    "apply": "Apply for this role",
+    "about": "About the role",
+    "comingSoon": "More details coming soon.",
+    "bring": "What you'll bring",
+    "niceToHave": "Nice to have",
+    "process": "Our hiring process",
+    "compensation": "Compensation"
+  },
+  "apply": {
+    "thanks": "Thanks for applying.",
+    "received": "We've received your application for <b>{job}</b>. Someone on the {company} team will read it personally — usually within a few business days. If we want to move forward, you'll hear from us by email.",
+    "otherRoles": "See other open roles",
+    "back": "Back to role",
+    "title": "Apply for <em>{job}</em>",
+    "requiredQuestion": "Please answer the required question: \"{label}\"",
+    "consentMissing": "Please accept the data processing notice.",
+    "failed": "Could not submit. Please try again.",
+    "name": "Full name *",
+    "email": "Email *",
+    "linkedin": "LinkedIn",
+    "portfolio": "Portfolio / website",
+    "location": "Location",
+    "locationPlaceholder": "City, country",
+    "resume": "Resume / CV (PDF)",
+    "upload": "Click or drag to upload",
+    "whyUs": "Why us?",
+    "whyUsPlaceholder": "Tell us what drew you here, and what kind of work you'd love to do.",
+    "consent": "I consent to have my application data stored and reviewed for this role. I can request deletion at any time by emailing the hiring team.",
+    "submitting": "Submitting…",
+    "submit": "Submit application"
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "body": "This page didn't load properly. Please try again in a moment.",
+    "tryAgain": "Try again",
+    "notFoundTitle": "Position not found",
+    "notFoundBody": "This role may have been filled or is no longer open. Browse the current openings instead.",
+    "viewRoles": "View open roles"
+  }
+}

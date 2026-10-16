@@ -57,6 +57,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         currency: workspace.currency || "EUR",
         departments: Array.isArray(workspace.departments) ? (workspace.departments as string[]) : [],
         timezone: workspace.timezone || "Europe/Berlin",
+        locale: workspace.locale,
         signature: workspace.signature || "",
         defaults:
           workspace.defaults && typeof workspace.defaults === "object"
@@ -64,7 +65,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             : {},
         cookieConfig: normalizeCookieConfig((workspace as { cookieConfig?: unknown }).cookieConfig),
       }}
-      currentUser={{ id: user.id, name: user.name, email: user.email, role: membership.role, theme: user.preferences?.theme || "light", density: user.preferences?.density || "cozy", accent: user.preferences?.accent || "indigo", glassIntensity: user.preferences?.glassIntensity ?? 1.0 }}
+      currentUser={{ id: user.id, name: user.name, email: user.email, role: membership.role, theme: user.preferences?.theme || "light", density: user.preferences?.density || "cozy", accent: user.preferences?.accent || "indigo", glassIntensity: user.preferences?.glassIntensity ?? 1.0, locale: user.preferences?.locale ?? null }}
       careerSite={careerSite ? {
         brand: careerSite.brand,
         hero: careerSite.hero,

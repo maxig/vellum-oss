@@ -63,6 +63,7 @@ model UserPreference {
   // (driven by role in resolveRules()). Otherwise: "mine" or "workspace".
   // See REVIEW_QUEUE_FEATURE.md §6.2.
   reviewScope    String?
+  locale         String? // en | de — null falls back to Workspace.locale
 }
 
 // ─── Workspaces ───────────────────────────────────────────────────────
@@ -77,6 +78,7 @@ model Workspace {
   currency    String   @default("EUR") // ISO 4217 — applied to every salary input + public career site listings
   departments Json     @default("[]") // string[] — selectable list shown in the New job wizard, editable in Settings
   timezone    String   @default("Europe/Berlin")
+  locale      String   @default("en") // UI language default for members without their own (UserPreference.locale)
   signature   String?  @db.Text // default reply signature used as a starter when composing in the inbox
   defaults    Json     @default("{}") // {autoSendConfirmations: bool, aiRejectionDrafts: bool, showSalaryPublicly: bool, …}
   createdAt   DateTime @default(now())

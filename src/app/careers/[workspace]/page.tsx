@@ -13,6 +13,7 @@ import { recordCareerEvent } from "@/lib/career-events";
 import CookieConsent, { CookiePreferencesLink } from "@/components/CookieConsent";
 import CookieScripts from "@/components/CookieScripts";
 import { normalizeCookieConfig } from "@/lib/cookies";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -136,6 +137,7 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
     },
   });
   if (!ws) notFound();
+  const t = await getTranslations("careers");
 
   // Career-site landing analytics — counts every distinct anon session
   // hitting the index. Fire-and-forget; the recorder swallows its own
@@ -161,11 +163,11 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
             <span className="gs-name">{site.brand.name}</span>
           </Link>
           <div style={{ flex: 1 }} />
-          <a className="tiny career-nav-extra" href="#about" style={{ color: "var(--ink-1)", fontSize: 13 }}>About</a>
-          <a className="tiny career-nav-extra" href="#offices" style={{ color: "var(--ink-1)", fontSize: 13 }}>Offices</a>
-          <a className="tiny career-nav-extra" href="#stories" style={{ color: "var(--ink-1)", fontSize: 13 }}>Stories</a>
-          <a className="tiny" href="#roles" style={{ color: "var(--ink-0)", fontSize: 13, fontWeight: 500 }}>Careers</a>
-          <a className="btn btn-sm btn-primary career-nav-extra" href={`mailto:${site.footer.email}`}>Talk to us</a>
+          <a className="tiny career-nav-extra" href="#about" style={{ color: "var(--ink-1)", fontSize: 13 }}>{t("nav.about")}</a>
+          <a className="tiny career-nav-extra" href="#offices" style={{ color: "var(--ink-1)", fontSize: 13 }}>{t("nav.offices")}</a>
+          <a className="tiny career-nav-extra" href="#stories" style={{ color: "var(--ink-1)", fontSize: 13 }}>{t("nav.stories")}</a>
+          <a className="tiny" href="#roles" style={{ color: "var(--ink-0)", fontSize: 13, fontWeight: 500 }}>{t("nav.careers")}</a>
+          <a className="btn btn-sm btn-primary career-nav-extra" href={`mailto:${site.footer.email}`}>{t("nav.talk")}</a>
         </Glass>
       </div>
 
@@ -237,14 +239,14 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
 
       {site.offices.length > 0 && (
         <section id="offices" className="career-section">
-          <div className="section-h" style={{ marginBottom: 6 }}>Where we are</div>
-          <h2 style={{ fontSize: 30, marginBottom: 22 }}>Our offices.</h2>
+          <div className="section-h" style={{ marginBottom: 6 }}>{t("offices.eyebrow")}</div>
+          <h2 style={{ fontSize: 30, marginBottom: 22 }}>{t("offices.title")}</h2>
           <div className="career-offices-grid">
             {site.offices.map((o, i) => (
               <Glass key={`${o.city}-${i}`} faint style={{ padding: 22, borderRadius: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                 <div className="row" style={{ alignItems: "baseline" }}>
                   <h3 style={{ flex: 1, fontSize: 20, letterSpacing: "-0.01em" }}>{o.city || "—"}</h3>
-                  {o.employees && <Chip>{o.employees} people</Chip>}
+                  {o.employees && <Chip>{t("offices.people", { n: o.employees })}</Chip>}
                 </div>
                 {o.country && <div className="tiny" style={{ color: "var(--ink-1)" }}>{o.country}</div>}
                 {o.address && (
@@ -262,8 +264,8 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
       <section id="roles" className="career-section">
         <div className="row" style={{ marginBottom: 22, alignItems: "baseline" }}>
           <div style={{ flex: 1 }}>
-            <div className="section-h" style={{ marginBottom: 6 }}>Open roles</div>
-            <h2 style={{ fontSize: 30 }}>Come work with us.</h2>
+            <div className="section-h" style={{ marginBottom: 6 }}>{t("roles.eyebrow")}</div>
+            <h2 style={{ fontSize: 30 }}>{t("roles.title")}</h2>
           </div>
         </div>
 
@@ -288,8 +290,8 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
 
       {site.stories.length > 0 && (
         <section id="stories" className="career-section">
-          <div className="section-h" style={{ marginBottom: 6 }}>Stories</div>
-          <h2 style={{ fontSize: 30, marginBottom: 22 }}>The people, in their own words.</h2>
+          <div className="section-h" style={{ marginBottom: 6 }}>{t("stories.eyebrow")}</div>
+          <h2 style={{ fontSize: 30, marginBottom: 22 }}>{t("stories.title")}</h2>
           <div className="career-story-grid">
             {site.stories.map((story, i) => {
               const photo = story.photoUrl?.trim();
@@ -300,7 +302,7 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={photo}
-                      alt={story.name || "Team member"}
+                      alt={story.name || t("stories.teamMember")}
                       style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12 }}
                     />
                   ) : (
@@ -316,7 +318,7 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
                     </div>
                   )}
                   <blockquote className="serif" style={{ fontSize: 19, lineHeight: 1.35, margin: 0, letterSpacing: "-0.01em" }}>
-                    <RichText html={story.quote} fallback={<em className="muted">No quote yet.</em>} />
+                    <RichText html={story.quote} fallback={<em className="muted">{t("stories.noQuote")}</em>} />
                   </blockquote>
                   <div style={{ marginTop: "auto" }}>
                     <div style={{ fontSize: 13.5, fontWeight: 500 }}>{story.name}{story.role ? `, ${story.role}` : ""}</div>
@@ -331,8 +333,8 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
 
       {!!site.values.length && (
         <section className="career-section">
-          <div className="section-h" style={{ marginBottom: 6 }}>How we work</div>
-          <h2 style={{ fontSize: 30, marginBottom: 22 }}>A few things we mean.</h2>
+          <div className="section-h" style={{ marginBottom: 6 }}>{t("values.eyebrow")}</div>
+          <h2 style={{ fontSize: 30, marginBottom: 22 }}>{t("values.title")}</h2>
           <div className="career-values-grid">
             {site.values.map((value, i) => (
               <Glass key={`${value.t}-${i}`} faint style={{ padding: 20, borderRadius: 14 }}>
@@ -392,9 +394,9 @@ export default async function CareersHome({ params }: { params: Promise<{ worksp
             <div className="tiny">{site.footer.company}</div>
           </div>
           <div className="row" style={{ gap: 18, flexWrap: "wrap" }}>
-            <a className="tiny" href="/privacy">Privacy</a>
-            <a className="tiny" href="/cookies">Cookies</a>
-            <a className="tiny" href="/terms">Terms</a>
+            <a className="tiny" href="/privacy">{t("footer.privacy")}</a>
+            <a className="tiny" href="/cookies">{t("footer.cookies")}</a>
+            <a className="tiny" href="/terms">{t("footer.terms")}</a>
             <CookiePreferencesLink />
             <a className="tiny" href={`mailto:${site.footer.email}`}>{site.footer.email}</a>
           </div>

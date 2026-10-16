@@ -4,7 +4,8 @@
 "use client";
 import * as React from "react";
 import { Glass, Chip, Avatar, AIPill, RingScore, Stars, Icons } from "@/components/primitives";
-import { relativeTime } from "@/lib/utils";
+import { useFormatter, useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 import ScheduleModal from "@/components/ScheduleModal";
 import DebriefModal from "@/components/DebriefModal";
 import { TodoRow, type Todo } from "@/components/TodoButton";
@@ -110,23 +111,33 @@ type SheetData = {
 
 type RightTab = "activity" | "comments" | "evaluation" | "messages" | "todos";
 const PIPELINE_KEYS = ["applied", "screen", "interview", "offer", "hired"];
-const RECOMMEND_LABELS: Record<string, string> = {
-  strong_yes: "Strong yes",
-  yes: "Yes",
-  maybe: "Maybe",
-  no: "No",
-  strong_no: "Strong no",
-};
+// Labels: common.recommend.<key>
+const RECOMMEND_KEYS = new Set(["strong_yes", "yes", "maybe", "no", "strong_no"]);
+// Stored in English (the canonical value in Application.rejectReason) and
+// shown through candidates.sheet.rejectReasons.<key>.
 const REJECT_REASONS = [
-  "Experience gap",
-  "Skills mismatch",
-  "Location / relocation",
-  "Compensation mismatch",
-  "Culture / values fit",
-  "Position filled",
-  "Candidate withdrew",
-  "Other",
-];
+  { value: "Experience gap", key: "experience" },
+  { value: "Skills mismatch", key: "skills" },
+  { value: "Location / relocation", key: "location" },
+  { value: "Compensation mismatch", key: "compensation" },
+  { value: "Culture / values fit", key: "culture" },
+  { value: "Position filled", key: "filled" },
+  { value: "Candidate withdrew", key: "withdrew" },
+  { value: "Other", key: "other" },
+] as const;
+type RejectReasonKey = (typeof REJECT_REASONS)[number]["key"];
+
+/** Translate the canonical reason prefix of a stored "Reason — note" string. */
+function displayRejectReason(stored: string, label: (key: RejectReasonKey) => string): string {
+  const hit = REJECT_REASONS.find((r) => stored === r.value || stored.startsWith(`${r.value} — `));
+  return hit ? label(hit.key) + stored.slice(hit.value.length) : stored;
+}
+
+/** "Video interview" etc. for an Interview.kind value. */
+function interviewTitle(kind: string | null | undefined, tc: ReturnType<typeof useTranslations<"common">>): string {
+  const k = kind && ["phone", "video", "onsite", "panel"].includes(kind) ? (kind as "phone") : "other";
+  return tc(`interviewTitles.${k}`);
+}
 
 // ─── Main component ───────────────────────────────────────────────────
 export default function ProfileSheet({
@@ -145,6 +156,9 @@ export default function ProfileSheet({
   onChanged?: () => void;
 }) {
   const canDelete = currentRole === "owner" || currentRole === "admin";
+  const t = useTranslations("candidates.sheet");
+  const tc = useTranslations("common");
+  const relativeTime = useRelativeTime();
   const [data, setData] = React.useState<SheetData | null>(null);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [rightTab, setRightTab] = React.useState<RightTab>("activity");
@@ -199,17 +213,17 @@ export default function ProfileSheet({
     setLoadError(null);
     const res = await fetch(`/api/applications/${applicationId}/sheet`, { cache: "no-store" }).catch(() => null);
     if (!res) {
-      setLoadError("Could not load applicant.");
+      setLoadError(t("loadFailed"));
       return;
     }
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setLoadError(j?.error || "Could not load applicant.");
+      setLoadError(j?.error || t("loadFailed"));
       return;
     }
     const json = (await res.json()) as SheetData;
     setData(json);
-  }, [applicationId]);
+  }, [applicationId, t]);
 
   React.useEffect(() => {
     load();
@@ -244,10 +258,10 @@ export default function ProfileSheet({
       setData((current) =>
         current ? { ...current, application: { ...current.application, reviewerId: previous } } : current,
       );
-      flash("Could not change reviewer.");
+      flash(t("toast.reviewerFailed"));
       return;
     }
-    flash(nextId ? "Reviewer updated." : "Reviewer cleared.");
+    flash(nextId ? t("toast.reviewerUpdated") : t("toast.reviewerCleared"));
     onChanged?.();
   }
 
@@ -276,10 +290,10 @@ export default function ProfileSheet({
     setStageBusy(false);
     if (!res?.ok) {
       setData((current) => (current ? { ...current, application: { ...current.application, ...prev } } : current));
-      flash("Could not move stage.");
+      flash(t("toast.moveFailed"));
       return;
     }
-    flash(`Moved to ${stage?.name || "stage"}.`);
+    flash(t("toast.moved", { stage: stage?.name || t("toast.stage") }));
     onChanged?.();
   }
 
@@ -302,28 +316,25 @@ export default function ProfileSheet({
     }).catch(() => null);
     setRejecting(false);
     if (!res?.ok) {
-      flash("Could not reject.");
+      flash(t("toast.rejectFailed"));
       return;
     }
     setShowReject(false);
-    flash(`${data.candidate.name.split(" ")[0]} rejected.`);
+    flash(t("toast.rejected", { name: data.candidate.name.split(" ")[0] }));
     onChanged?.();
     onClose();
   }
 
   async function deleteCandidate() {
     if (!data || deleting) return;
-    const ok = window.confirm(
-      `Permanently delete ${data.candidate.name}? Their PII, notes, threads, and applications will be removed. ` +
-        `Funnel and stage analytics stay intact.`,
-    );
+    const ok = window.confirm(t("confirmDeleteCandidate", { name: data.candidate.name }));
     if (!ok) return;
     setDeleting(true);
     const res = await fetch(`/api/candidates/${data.candidate.id}`, { method: "DELETE" });
     setDeleting(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      flash(json?.error === "forbidden" ? "Only admins can delete candidates." : "Could not delete.");
+      flash(json?.error === "forbidden" ? t("toast.deleteCandidateForbidden") : t("toast.deleteFailed"));
       return;
     }
     onChanged?.();
@@ -332,16 +343,14 @@ export default function ProfileSheet({
 
   async function deleteApplication() {
     if (!data || deleting) return;
-    const ok = window.confirm(
-      `Delete this application for ${data.application.jobTitle}? The candidate and their other applications stay.`,
-    );
+    const ok = window.confirm(t("confirmDeleteApplication", { job: data.application.jobTitle }));
     if (!ok) return;
     setDeleting(true);
     const res = await fetch(`/api/applications/${data.application.id}`, { method: "DELETE" });
     setDeleting(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      flash(json?.error === "forbidden" ? "Only admins can delete applications." : "Could not delete.");
+      flash(json?.error === "forbidden" ? t("toast.deleteApplicationForbidden") : t("toast.deleteFailed"));
       return;
     }
     onChanged?.();
@@ -359,10 +368,10 @@ export default function ProfileSheet({
     const json = await res?.json().catch(() => null);
     if (json?.text) {
       setData({ ...data, application: { ...data.application, aiSummary: json.text } });
-      flash("AI summary refreshed.");
+      flash(t("toast.summaryRefreshed"));
       onChanged?.();
     } else {
-      flash("Could not generate summary.");
+      flash(t("toast.summaryFailed"));
     }
     setAiBusy(false);
   }
@@ -379,7 +388,7 @@ export default function ProfileSheet({
     }).catch(() => null);
     setNoteBusy(false);
     if (!res?.ok) {
-      flash("Could not save note.");
+      flash(t("toast.noteFailed"));
       return;
     }
     const json = await res.json().catch(() => ({}));
@@ -391,7 +400,7 @@ export default function ProfileSheet({
       ],
     });
     setNoteText("");
-    flash("Note added.");
+    flash(t("toast.noteAdded"));
     onChanged?.();
   }
 
@@ -404,7 +413,7 @@ export default function ProfileSheet({
     if (score == null) {
       const res = await fetch(`/api/applications/${appId}/rating`, { method: "DELETE" }).catch(() => null);
       if (!res?.ok) {
-        flash("Could not remove rating.");
+        flash(t("toast.ratingRemoveFailed"));
         return;
       }
       setData((cur) => (cur ? { ...cur, ratings: cur.ratings.filter((r) => r.authorId !== currentUser.id) } : cur));
@@ -417,7 +426,7 @@ export default function ProfileSheet({
       body: JSON.stringify({ score, comment: comment?.trim() || null }),
     }).catch(() => null);
     if (!res?.ok) {
-      flash("Could not save rating.");
+      flash(t("toast.ratingFailed"));
       return;
     }
     const json = await res.json().catch(() => ({}));
@@ -433,7 +442,7 @@ export default function ProfileSheet({
       };
       return { ...cur, ratings: [mine, ...cur.ratings.filter((r) => r.authorId !== currentUser.id)] };
     });
-    flash("Rating saved.");
+    flash(t("toast.ratingSaved"));
     onChanged?.();
   }
 
@@ -461,7 +470,7 @@ export default function ProfileSheet({
     if (!data || !trimmed) return false;
     const thread = await ensureThread();
     if (!thread) {
-      flash("Could not start conversation.");
+      flash(t("toast.threadFailed"));
       return false;
     }
     // Try SMTP first; if email isn't configured (412) silently fall back to an
@@ -480,7 +489,7 @@ export default function ProfileSheet({
     }
     if (!res?.ok) {
       const json = await res?.json().catch(() => ({}));
-      flash(json?.error || "Could not send message.");
+      flash(json?.error || t("toast.sendFailed"));
       return false;
     }
     const json = await res.json().catch(() => ({}));
@@ -498,7 +507,7 @@ export default function ProfileSheet({
           }
         : current,
     );
-    flash("Sent.");
+    flash(t("toast.sent"));
     onChanged?.();
     return true;
   }
@@ -511,14 +520,14 @@ export default function ProfileSheet({
         <div className="sheet sheet-md">
           <div className="sheet-hd">
             <div className="grow">
-              <h2 style={{ fontSize: 17 }}>Couldn't load applicant</h2>
+              <h2 style={{ fontSize: 17 }}>{t("loadFailedTitle")}</h2>
             </div>
-            <button className="iconbtn" onClick={onClose} aria-label="Close"><Icons.X size={15} /></button>
+            <button className="iconbtn" onClick={onClose} aria-label={tc("close")}><Icons.X size={15} /></button>
           </div>
           <div style={{ padding: 24 }}>
             <p className="muted">{loadError}</p>
             <div className="row" style={{ marginTop: 14, justifyContent: "flex-end" }}>
-              <button className="btn" onClick={load}>Try again</button>
+              <button className="btn" onClick={load}>{tc("tryAgain")}</button>
             </div>
           </div>
         </div>
@@ -533,7 +542,7 @@ export default function ProfileSheet({
         <div className="sheet sheet-md">
           <div className="sheet-hd">
             <div className="grow"><div className="ai-shimmer" style={{ width: 220, height: 18, borderRadius: 4 }} /></div>
-            <button className="iconbtn" onClick={onClose} aria-label="Close"><Icons.X size={15} /></button>
+            <button className="iconbtn" onClick={onClose} aria-label={tc("close")}><Icons.X size={15} /></button>
           </div>
           <div style={{ padding: 24 }}>
             <div className="ai-shimmer" style={{ height: 80, borderRadius: 12, marginBottom: 14 }} />
@@ -550,7 +559,7 @@ export default function ProfileSheet({
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div ref={dialogRef} className="sheet glass glass-strong profile-sheet" role="dialog" aria-modal="true" aria-label={`${candidate.name} applicant details`}>
+      <div ref={dialogRef} className="sheet glass glass-strong profile-sheet" role="dialog" aria-modal="true" aria-label={t("dialogLabel", { name: candidate.name })}>
         {/* Header */}
         <div className="profile-header">
           <div className="row" style={{ gap: 14 }}>
@@ -562,15 +571,15 @@ export default function ProfileSheet({
                   <span className="chip"><Icons.MapPin size={11} /> {candidate.location}</span>
                 )}
                 {rejected && (
-                  <span title={application.rejectReason ? `Reason: ${application.rejectReason}` : undefined}>
-                    <Chip dot="oklch(58% 0.2 28)">Rejected{application.rejectReason ? ` · ${application.rejectReason}` : ""}</Chip>
+                  <span title={application.rejectReason ? t("reasonTitle", { reason: displayRejectReason(application.rejectReason, (k) => t(`rejectReasons.${k}`)) }) : undefined}>
+                    <Chip dot="oklch(58% 0.2 28)">{t("rejected")}{application.rejectReason ? ` · ${displayRejectReason(application.rejectReason, (k) => t(`rejectReasons.${k}`))}` : ""}</Chip>
                   </span>
                 )}
-                {typeof application.aiFit === "number" && <Chip accent dot>{application.aiFit}% fit</Chip>}
+                {typeof application.aiFit === "number" && <Chip accent dot>{t("fit", { n: application.aiFit })}</Chip>}
               </div>
               <div className="tiny" style={{ marginTop: 3 }}>
-                {application.jobTitle} · Applied {relativeTime(application.appliedAt)}
-                {candidate.source ? ` · via ${candidate.source}` : ""}
+                {application.jobTitle} · {t("applied", { when: relativeTime(application.appliedAt) })}
+                {candidate.source ? ` · ${t("via", { source: candidate.source })}` : ""}
               </div>
             </div>
             {typeof application.aiFit === "number" ? <RingScore value={application.aiFit} size={44} /> : null}
@@ -579,7 +588,7 @@ export default function ProfileSheet({
               <button
                 className="iconbtn"
                 onClick={() => setMenuOpen((v) => !v)}
-                aria-label="More actions"
+                aria-label={t("moreActions")}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 disabled={deleting}
@@ -610,7 +619,7 @@ export default function ProfileSheet({
                     style={{ width: "100%", justifyContent: "flex-start", color: "oklch(50% 0.18 28)" }}
                     onClick={() => { setMenuOpen(false); deleteApplication(); }}
                   >
-                    <Icons.Trash size={12} /> Delete this application
+                    <Icons.Trash size={12} /> {t("deleteApplication")}
                   </button>
                   <button
                     role="menuitem"
@@ -618,13 +627,13 @@ export default function ProfileSheet({
                     style={{ width: "100%", justifyContent: "flex-start", color: "oklch(50% 0.18 28)" }}
                     onClick={() => { setMenuOpen(false); deleteCandidate(); }}
                   >
-                    <Icons.Trash size={12} /> Delete candidate
+                    <Icons.Trash size={12} /> {t("deleteCandidate")}
                   </button>
                 </div>
               )}
             </div>
             )}
-            <button className="iconbtn" onClick={onClose} aria-label="Close applicant">
+            <button className="iconbtn" onClick={onClose} aria-label={t("closeApplicant")}>
               <Icons.X size={15} />
             </button>
           </div>
@@ -643,10 +652,10 @@ export default function ProfileSheet({
               }}
             >
               <div className="row" style={{ marginBottom: 10 }}>
-                <AIPill>AI summary</AIPill>
+                <AIPill>{t("aiSummary")}</AIPill>
                 <span style={{ flex: 1 }} />
                 <button className="btn btn-sm btn-ghost" onClick={regenerateSummary} disabled={aiBusy}>
-                  <Icons.Sparkle size={12} stroke={2} /> {aiBusy ? "Generating…" : application.aiSummary ? "Regenerate" : "Generate"}
+                  <Icons.Sparkle size={12} stroke={2} /> {aiBusy ? t("generating") : application.aiSummary ? t("regenerate") : t("generate")}
                 </button>
               </div>
               {aiBusy ? (
@@ -655,11 +664,11 @@ export default function ProfileSheet({
                 <p style={{ fontSize: 14, color: "var(--ink-0)", lineHeight: 1.6, marginBottom: 12 }}>{application.aiSummary}</p>
               ) : (
                 <p className="muted" style={{ marginBottom: 12 }}>
-                  No AI summary yet — click Generate to draft one from the application.
+                  {t("noSummary")}
                 </p>
               )}
               <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-                {typeof application.aiFit === "number" && <Chip accent dot>{application.aiFit}% role fit</Chip>}
+                {typeof application.aiFit === "number" && <Chip accent dot>{t("roleFit", { n: application.aiFit })}</Chip>}
                 {candidate.skills.slice(0, 3).map((skill) => (
                   <Chip key={skill} dot="oklch(68% 0.16 150)">{skill}</Chip>
                 ))}
@@ -700,7 +709,7 @@ export default function ProfileSheet({
 
             {/* Reviewer */}
             <section style={{ marginTop: 18 }}>
-              <h4 style={{ margin: "0 0 8px" }}>Reviewer</h4>
+              <h4 style={{ margin: "0 0 8px" }}>{t("reviewer")}</h4>
               {members ? (
                 <select
                   className="select"
@@ -708,7 +717,7 @@ export default function ProfileSheet({
                   onChange={(e) => setReviewer(e.target.value || null)}
                   style={{ width: "100%" }}
                 >
-                  <option value="">— Unassigned —</option>
+                  <option value="">{t("unassigned")}</option>
                   {members.map((m) => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
@@ -724,7 +733,7 @@ export default function ProfileSheet({
 
             {application.whyUs && (
               <div style={{ marginTop: 18 }}>
-                <h4 style={{ marginBottom: 8 }}>Cover letter</h4>
+                <h4 style={{ marginBottom: 8 }}>{t("coverLetter")}</h4>
                 <Glass faint style={{ padding: 14, borderRadius: 10 }}>
                   <RichText html={application.whyUs} style={{ fontSize: 13, color: "var(--ink-1)", lineHeight: 1.6 }} />
                 </Glass>
@@ -733,7 +742,7 @@ export default function ProfileSheet({
 
             {application.screeningQuestions.length > 0 && (
               <div style={{ marginTop: 18 }}>
-                <h4 style={{ marginBottom: 8 }}>Screening answers</h4>
+                <h4 style={{ marginBottom: 8 }}>{t("screeningAnswers")}</h4>
                 <div className="col" style={{ gap: 8 }}>
                   {application.screeningQuestions.map((q) => {
                     const answer = application.screeningAnswers[q.id];
@@ -744,7 +753,7 @@ export default function ProfileSheet({
                         {typeof answer === "string" && /<[a-z]/i.test(answer) ? (
                           <RichText html={answer} style={{ fontSize: 13, marginTop: 3 }} />
                         ) : (
-                          <div style={{ fontSize: 13, marginTop: 3, whiteSpace: "pre-wrap" }}>{String(answer)}</div>
+                          <div style={{ fontSize: 13, marginTop: 3, whiteSpace: "pre-wrap" }}>{answer === "Yes" ? tc("yes") : answer === "No" ? tc("no") : String(answer)}</div>
                         )}
                       </Glass>
                     );
@@ -754,13 +763,13 @@ export default function ProfileSheet({
             )}
 
             <div style={{ marginTop: 18 }}>
-              <h4 style={{ marginBottom: 8 }}>Resume</h4>
+              <h4 style={{ marginBottom: 8 }}>{t("resumeTitle")}</h4>
               <ResumeBlock data={data} />
             </div>
 
             {data.otherApplications.length > 0 && (
               <div style={{ marginTop: 18 }}>
-                <h4 style={{ marginBottom: 8 }}>Also applied to</h4>
+                <h4 style={{ marginBottom: 8 }}>{t("alsoApplied")}</h4>
                 <div className="col" style={{ gap: 6 }}>
                   {data.otherApplications.map((other) => (
                     <Glass key={other.id} faint style={{ padding: 10, borderRadius: 10 }}>
@@ -781,21 +790,21 @@ export default function ProfileSheet({
             <div className="profile-tabs">
               {(
                 [
-                  { id: "activity", l: "Activity" },
-                  { id: "comments", l: "Comments", n: data.notes.length },
-                  { id: "evaluation", l: "Evaluation", n: data.interviews.length },
-                  { id: "todos", l: "To-dos", n: data.todosOpen },
-                  { id: "messages", l: "Messages", n: data.thread?.messages.length || 0 },
-                ] as { id: RightTab; l: string; n?: number }[]
-              ).map((t) => (
+                  { id: "activity" },
+                  { id: "comments", n: data.notes.length },
+                  { id: "evaluation", n: data.interviews.length },
+                  { id: "todos", n: data.todosOpen },
+                  { id: "messages", n: data.thread?.messages.length || 0 },
+                ] as { id: RightTab; n?: number }[]
+              ).map((tb) => (
                 <button
-                  key={t.id}
-                  className={`profile-tab ${rightTab === t.id ? "active" : ""}`}
-                  onClick={() => setRightTab(t.id)}
+                  key={tb.id}
+                  className={`profile-tab ${rightTab === tb.id ? "active" : ""}`}
+                  onClick={() => setRightTab(tb.id)}
                   type="button"
                 >
-                  {t.l}
-                  {t.n ? <span className="profile-tab-count">{t.n}</span> : null}
+                  {t(`tabs.${tb.id}`)}
+                  {tb.n ? <span className="profile-tab-count">{tb.n}</span> : null}
                 </button>
               ))}
             </div>
@@ -832,22 +841,22 @@ export default function ProfileSheet({
             className="btn btn-sm btn-danger"
             onClick={() => setShowReject(true)}
             disabled={rejecting || rejected}
-            title="Reject and remove from the active board"
+            title={t("rejectTitle")}
           >
-            <Icons.X size={13} /> {rejected ? "Rejected" : "Reject"}
+            <Icons.X size={13} /> {rejected ? t("rejected") : t("reject")}
           </button>
           <button className="btn btn-sm" onClick={advanceStage} disabled={stageBusy || atLastStage || rejected}>
-            <Icons.ArrowRight size={13} /> Next stage
+            <Icons.ArrowRight size={13} /> {t("nextStage")}
           </button>
           <button className="btn btn-sm" onClick={() => setScheduling(true)}>
-            <Icons.Calendar size={13} /> Book meeting
+            <Icons.Calendar size={13} /> {t("bookMeeting")}
           </button>
           <span style={{ flex: 1 }} />
           <button className="btn btn-sm btn-ghost" onClick={() => setRightTab("comments")}>
-            <Icons.Comment size={13} /> Comment
+            <Icons.Comment size={13} /> {t("comment")}
           </button>
           <button className="btn btn-sm btn-primary" onClick={() => setRightTab("messages")}>
-            <Icons.Mail size={13} /> Message
+            <Icons.Mail size={13} /> {t("message")}
           </button>
         </div>
       </div>
@@ -882,7 +891,7 @@ export default function ProfileSheet({
           <DebriefModal
             interviewId={iv.id}
             candidateName={candidate.name}
-            interviewKind={`${iv.kind} interview`}
+            interviewKind={interviewTitle(iv.kind, tc)}
             stageKey={data.application.stageKey}
             initial={
               iv.debrief
@@ -926,6 +935,9 @@ function RatingBlock({
   currentUser: { id: string; name: string };
   onSave: (score: number | null, comment: string | null) => void | Promise<void>;
 }) {
+  const t = useTranslations("candidates.sheet.rating");
+  const tc = useTranslations("common");
+  const relativeTime = useRelativeTime();
   const myRating = ratings.find((r) => r.authorId === currentUser.id) || null;
   const others = ratings.filter((r) => r.authorId !== currentUser.id);
   const count = ratings.length;
@@ -949,12 +961,12 @@ function RatingBlock({
   return (
     <section className="profile-rating">
       <div className="row" style={{ marginBottom: 10 }}>
-        <h4 style={{ margin: 0, flex: 1 }}>Team rating</h4>
+        <h4 style={{ margin: 0, flex: 1 }}>{t("title")}</h4>
         {avg != null && (
           <span className="row" style={{ gap: 6 }}>
             <Stars value={avg} size={14} />
             <span className="tiny" style={{ color: "var(--ink-1)", fontVariantNumeric: "tabular-nums" }}>
-              {avg.toFixed(1)} · {count} review{count === 1 ? "" : "s"}
+              {t("summary", { avg: avg.toFixed(1), count })}
             </span>
           </span>
         )}
@@ -963,14 +975,14 @@ function RatingBlock({
       <Glass faint style={{ padding: 12, borderRadius: 10 }}>
         <div className="row" style={{ gap: 10 }}>
           <Avatar name={currentUser.name} size="sm" />
-          <span className="tiny" style={{ flex: 1 }}>Your rating</span>
-          <Stars value={myRating?.score ?? null} size={18} onChange={(n) => onSave(n, comment)} ariaLabel="Your rating" />
+          <span className="tiny" style={{ flex: 1 }}>{t("yours")}</span>
+          <Stars value={myRating?.score ?? null} size={18} onChange={(n) => onSave(n, comment)} ariaLabel={t("yours")} />
         </div>
         <div className="row" style={{ gap: 6, marginTop: 8 }}>
           <input
             className="input"
             style={{ flex: 1, height: 30, fontSize: 12.5 }}
-            placeholder={myRating ? "Add a note to your rating…" : "Rate first to add a note"}
+            placeholder={myRating ? t("notePlaceholder") : t("rateFirst")}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             disabled={!myRating}
@@ -980,7 +992,7 @@ function RatingBlock({
           />
           {myRating && commentDirty && (
             <button className="btn btn-sm btn-primary" onClick={saveComment} disabled={commentBusy}>
-              {commentBusy ? "Saving…" : "Save"}
+              {commentBusy ? tc("saving") : tc("save")}
             </button>
           )}
         </div>
@@ -1010,11 +1022,12 @@ function RatingBlock({
 }
 
 function DetailsBlock({ data }: { data: SheetData }) {
+  const t = useTranslations("candidates.sheet.details");
   const { candidate } = data;
   return (
     <div className="col" style={{ gap: 18 }}>
       <div className="profile-meta-grid">
-        <span className="tiny">Email</span>
+        <span className="tiny">{t("email")}</span>
         <span>
           {candidate.email ? (
             <a href={`mailto:${candidate.email}`} style={{ color: "var(--accent-solid)" }}>{candidate.email}</a>
@@ -1022,13 +1035,13 @@ function DetailsBlock({ data }: { data: SheetData }) {
             <span className="muted">—</span>
           )}
         </span>
-        <span className="tiny">Years exp.</span>
-        <span>{candidate.years != null ? `${candidate.years} years` : <span className="muted">—</span>}</span>
-        <span className="tiny">Current role</span>
+        <span className="tiny">{t("years")}</span>
+        <span>{candidate.years != null ? t("yearsValue", { n: candidate.years }) : <span className="muted">—</span>}</span>
+        <span className="tiny">{t("currentRole")}</span>
         <span>{candidate.currentRole || <span className="muted">—</span>}</span>
-        <span className="tiny">Source</span>
+        <span className="tiny">{t("source")}</span>
         <span>{candidate.source || <span className="muted">—</span>}</span>
-        <span className="tiny">Links</span>
+        <span className="tiny">{t("links")}</span>
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           {candidate.linkedin && (
             <a className="chip" href={absHref(candidate.linkedin, "https://linkedin.com/in/")} target="_blank" rel="noreferrer">
@@ -1042,7 +1055,7 @@ function DetailsBlock({ data }: { data: SheetData }) {
           )}
           {candidate.portfolio && (
             <a className="chip" href={absHref(candidate.portfolio, "https://")} target="_blank" rel="noreferrer">
-              <Icons.Globe size={11} /> Portfolio
+              <Icons.Globe size={11} /> {t("portfolio")}
             </a>
           )}
           {!candidate.linkedin && !candidate.github && !candidate.portfolio && <span className="muted">—</span>}
@@ -1051,7 +1064,7 @@ function DetailsBlock({ data }: { data: SheetData }) {
 
       {!!candidate.skills.length && (
         <div>
-          <h4 style={{ marginBottom: 8 }}>Skills &amp; tags</h4>
+          <h4 style={{ marginBottom: 8 }}>{t("skills")}</h4>
           <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
             {candidate.skills.map((s) => <span key={s} className="chip">{s}</span>)}
           </div>
@@ -1062,13 +1075,14 @@ function DetailsBlock({ data }: { data: SheetData }) {
 }
 
 function ResumeBlock({ data }: { data: SheetData }) {
+  const t = useTranslations("candidates.sheet.resume");
   const { application, candidate } = data;
   if (!application.resumeUrl) {
     return (
       <Glass faint style={{ padding: 18, borderRadius: 12 }}>
         <div className="row" style={{ gap: 10 }}>
           <Icons.FileText size={14} style={{ color: "var(--ink-2)" }} />
-          <span className="muted">{candidate.name} didn't attach a resume.</span>
+          <span className="muted">{t("none", { name: candidate.name })}</span>
         </div>
       </Glass>
     );
@@ -1082,10 +1096,10 @@ function ResumeBlock({ data }: { data: SheetData }) {
             {application.resumeName || "resume.pdf"}
           </span>
           <a href={application.resumeUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">
-            <Icons.ArrowUpRight size={12} /> Open
+            <Icons.ArrowUpRight size={12} /> {t("open")}
           </a>
           <a href={application.resumeUrl} download className="btn btn-sm btn-ghost">
-            <Icons.Upload size={12} style={{ transform: "rotate(180deg)" }} /> Download
+            <Icons.Upload size={12} style={{ transform: "rotate(180deg)" }} /> {t("download")}
           </a>
         </div>
         <CvViewer url={application.resumeUrl} name={application.resumeName} />
@@ -1097,6 +1111,8 @@ function ResumeBlock({ data }: { data: SheetData }) {
 }
 
 function ParsedResume({ text }: { text: string | null }) {
+  const t = useTranslations("candidates.sheet.resume");
+  const format = useFormatter();
   const [open, setOpen] = React.useState(false);
   const has = !!text && text.trim().length > 0;
   return (
@@ -1105,12 +1121,12 @@ function ParsedResume({ text }: { text: string | null }) {
         <Icons.Sparkle size={13} style={{ color: "var(--ink-2)" }} />
         <span className="tiny" style={{ flex: 1 }}>
           {has
-            ? `Parsed resume text · ${text!.length.toLocaleString()} chars`
-            : "No parsed text — file may be a scanned PDF or unsupported format"}
+            ? t("parsed", { chars: format.number(text!.length) })
+            : t("notParsed")}
         </span>
         {has && (
           <button className="btn btn-sm btn-ghost" onClick={() => setOpen((v) => !v)}>
-            {open ? "Hide" : "Show"}
+            {open ? t("hide") : t("show")}
           </button>
         )}
       </div>
@@ -1140,24 +1156,27 @@ function ParsedResume({ text }: { text: string | null }) {
 
 // ─── Right-pane tabs ──────────────────────────────────────────────────
 function ActivityTab({ data }: { data: SheetData }) {
+  const t = useTranslations("candidates.sheet.activity");
+  const tc = useTranslations("common");
+  const relativeTime = useRelativeTime();
   const items: { d: string; t: string; who: string; icon: string }[] = [
-    { d: relativeTime(data.application.appliedAt), t: `Application received for ${data.application.jobTitle}`, who: data.candidate.source || "Career site", icon: "Globe" },
+    { d: relativeTime(data.application.appliedAt), t: t("received", { job: data.application.jobTitle }), who: data.candidate.source || t("careerSite"), icon: "Globe" },
     ...data.activity.map((a) => ({
       d: relativeTime(a.createdAt),
       t: a.body,
-      who: a.actorName || "System",
+      who: a.actorName || t("system"),
       icon: a.icon || "Sparkle",
     })),
     ...data.interviews.map((iv) => ({
       d: relativeTime(iv.scheduledAt),
-      t: `${iv.kind ? iv.kind[0].toUpperCase() + iv.kind.slice(1) : "Interview"} interview scheduled`,
-      who: "Hiring team",
+      t: t("scheduled", { title: interviewTitle(iv.kind, tc) }),
+      who: t("hiringTeam"),
       icon: "Calendar",
     })),
   ];
   return (
     <div>
-      {items.length === 0 && <p className="muted">No activity yet.</p>}
+      {items.length === 0 && <p className="muted">{t("empty")}</p>}
       {items.map((it, i) => {
         const Ic = (Icons as Record<string, React.FC<{ size?: number }>>)[it.icon] || Icons.Sparkle;
         return (
@@ -1187,10 +1206,13 @@ function CommentsTab({
   onSubmit: (e: React.FormEvent) => void;
   busy: boolean;
 }) {
+  const t = useTranslations("candidates.sheet.comments");
+  const tc = useTranslations("common");
+  const relativeTime = useRelativeTime();
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="col" style={{ gap: 12 }}>
-        {notes.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>No comments yet — start the internal discussion below.</p>}
+        {notes.length === 0 && <p className="muted" style={{ fontSize: 12.5 }}>{t("empty")}</p>}
         {notes.map((note) => (
           <div key={note.id} className="row" style={{ gap: 10, alignItems: "flex-start" }}>
             <Avatar name={note.author} size="sm" />
@@ -1205,11 +1227,11 @@ function CommentsTab({
         ))}
       </div>
       <form onSubmit={onSubmit}>
-        <Wysiwyg value={noteText} onChange={setNoteText} placeholder="Comment, @mention…" minHeight={70} />
+        <Wysiwyg value={noteText} onChange={setNoteText} placeholder={t("placeholder")} minHeight={70} />
         <div className="row" style={{ gap: 6, marginTop: 6 }}>
           <span style={{ flex: 1 }} />
           <button type="submit" className="btn btn-sm btn-primary" disabled={!stripHtml(noteText).trim() || busy}>
-            <Icons.Send size={11} stroke={2} /> {busy ? "Saving…" : "Add comment"}
+            <Icons.Send size={11} stroke={2} /> {busy ? tc("saving") : t("add")}
           </button>
         </div>
       </form>
@@ -1226,10 +1248,13 @@ function EvaluationTab({
   onWriteDebrief: (id: string) => void;
   onSchedule: () => void;
 }) {
+  const t = useTranslations("candidates.sheet.evaluation");
+  const tc = useTranslations("common");
+  const format = useFormatter();
   return (
     <div className="col" style={{ gap: 8 }}>
       {interviews.length === 0 ? (
-        <p className="muted" style={{ fontSize: 12.5 }}>No interviews scheduled yet. Book one to collect structured feedback.</p>
+        <p className="muted" style={{ fontSize: 12.5 }}>{t("empty")}</p>
       ) : (
         interviews.map((iv) => {
           const d = new Date(iv.scheduledAt);
@@ -1245,14 +1270,14 @@ function EvaluationTab({
                   }}
                 >
                   <span className="tiny" style={{ fontSize: 9, textTransform: "uppercase" }}>
-                    {d.toLocaleString(undefined, { weekday: "short" })}
+                    {format.dateTime(d, { weekday: "short" })}
                   </span>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{d.getDate()}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, textTransform: "capitalize" }}>{iv.kind} interview</div>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{interviewTitle(iv.kind, tc)}</div>
                   <div className="tiny mono">
-                    {d.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" })} · {iv.durationMin} min
+                    {format.dateTime(d, { hour: "2-digit", minute: "2-digit" })} · {t("minutes", { n: iv.durationMin })}
                   </div>
                 </div>
               </div>
@@ -1273,7 +1298,7 @@ function EvaluationTab({
                       {iv.debrief.rating != null && <Stars value={iv.debrief.rating} size={12} />}
                       {iv.debrief.recommend && (
                         <span className="chip" style={{ height: 18, fontSize: 10.5, padding: "0 6px" }}>
-                          {RECOMMEND_LABELS[iv.debrief.recommend] || iv.debrief.recommend}
+                          {RECOMMEND_KEYS.has(iv.debrief.recommend) ? tc(`recommend.${iv.debrief.recommend as "yes"}`) : iv.debrief.recommend}
                         </span>
                       )}
                       {iv.debrief.kitName && <span className="tiny muted">{iv.debrief.kitName}</span>}
@@ -1297,7 +1322,7 @@ function EvaluationTab({
                             {c.kind === "rating" &&
                               (c.score != null ? <Stars value={c.score} size={11} /> : <span className="tiny muted">—</span>)}
                             {c.kind === "yesno" && (
-                              <span className="tiny" style={{ color: "var(--ink-1)" }}>{c.yesno == null ? "—" : c.yesno ? "Yes" : "No"}</span>
+                              <span className="tiny" style={{ color: "var(--ink-1)" }}>{c.yesno == null ? "—" : c.yesno ? tc("yes") : tc("no")}</span>
                             )}
                           </div>
                         );
@@ -1313,16 +1338,16 @@ function EvaluationTab({
                   <span
                     className="chip"
                     style={{ height: 20, fontSize: 11, padding: "0 6px", background: "var(--accent-soft)", color: "var(--accent-solid)", borderColor: "transparent" }}
-                    title={`Debriefed by ${iv.debrief.authorName}`}
+                    title={t("debriefedBy", { name: iv.debrief.authorName })}
                   >
-                    <Icons.Check size={10} /> Debriefed
+                    <Icons.Check size={10} /> {t("debriefed")}
                   </span>
                 ) : past ? (
-                  <span className="tiny" style={{ color: "oklch(60% 0.18 28)" }}>Debrief missing</span>
+                  <span className="tiny" style={{ color: "oklch(60% 0.18 28)" }}>{t("missing")}</span>
                 ) : null}
                 <span style={{ flex: 1 }} />
                 <button type="button" className="btn btn-sm btn-ghost" onClick={() => onWriteDebrief(iv.id)} style={{ height: 24, fontSize: 11, padding: "0 8px" }}>
-                  <Icons.FileText size={11} /> {iv.debrief ? "Edit debrief" : "Write debrief"}
+                  <Icons.FileText size={11} /> {iv.debrief ? t("edit") : t("write")}
                 </button>
               </div>
             </Glass>
@@ -1330,7 +1355,7 @@ function EvaluationTab({
         })
       )}
       <button className="btn btn-sm" style={{ marginTop: 6, width: "100%" }} onClick={onSchedule}>
-        <Icons.Calendar size={12} /> Schedule interview
+        <Icons.Calendar size={12} /> {t("schedule")}
       </button>
     </div>
   );
@@ -1347,6 +1372,8 @@ function TodosTab({
   currentUser: { id: string; name: string };
   onChanged?: () => void;
 }) {
+  const t = useTranslations("candidates.sheet.todos");
+  const tc = useTranslations("common");
   const [todos, setTodos] = React.useState<Todo[] | null>(null);
   const [title, setTitle] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -1379,24 +1406,24 @@ function TodosTab({
     }
   }
 
-  async function toggle(t: Todo) {
-    setTodos((cur) => (cur ? cur.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)) : cur));
-    const res = await fetch(`/api/todos/${t.id}`, {
+  async function toggle(td: Todo) {
+    setTodos((cur) => (cur ? cur.map((x) => (x.id === td.id ? { ...x, done: !x.done } : x)) : cur));
+    const res = await fetch(`/api/todos/${td.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !t.done }),
+      body: JSON.stringify({ done: !td.done }),
     }).catch(() => null);
     if (!res?.ok) {
-      setTodos((cur) => (cur ? cur.map((x) => (x.id === t.id ? { ...x, done: t.done } : x)) : cur));
+      setTodos((cur) => (cur ? cur.map((x) => (x.id === td.id ? { ...x, done: td.done } : x)) : cur));
       return;
     }
     onChanged?.();
   }
-  async function remove(t: Todo) {
-    setTodos((cur) => (cur ? cur.filter((x) => x.id !== t.id) : cur));
-    const res = await fetch(`/api/todos/${t.id}`, { method: "DELETE" }).catch(() => null);
+  async function remove(td: Todo) {
+    setTodos((cur) => (cur ? cur.filter((x) => x.id !== td.id) : cur));
+    const res = await fetch(`/api/todos/${td.id}`, { method: "DELETE" }).catch(() => null);
     if (!res?.ok) {
-      setTodos((cur) => (cur && !cur.some((x) => x.id === t.id) ? [t, ...cur] : cur));
+      setTodos((cur) => (cur && !cur.some((x) => x.id === td.id) ? [td, ...cur] : cur));
       return;
     }
     onChanged?.();
@@ -1410,22 +1437,22 @@ function TodosTab({
             className="input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Add a to-do for this candidate…"
+            placeholder={t("placeholder")}
             style={{ flex: 1, height: 32, fontSize: 12.5 }}
           />
           <button type="submit" className="btn btn-sm btn-primary" disabled={!title.trim() || busy} style={{ height: 32 }}>
-            <Icons.Plus size={12} /> Add
+            <Icons.Plus size={12} /> {tc("add")}
           </button>
         </div>
       </form>
       {todos === null ? (
         <div className="ai-shimmer" style={{ height: 44, borderRadius: 8 }} />
       ) : todos.length === 0 ? (
-        <p className="muted" style={{ fontSize: 12.5 }}>No to-dos yet — add one above to track follow-through on this candidate.</p>
+        <p className="muted" style={{ fontSize: 12.5 }}>{t("empty")}</p>
       ) : (
         <div className="col" style={{ gap: 2 }}>
-          {todos.map((t) => (
-            <TodoRow key={t.id} t={t} me={currentUser.id} onToggle={() => toggle(t)} onRemove={() => remove(t)} hideCandidate />
+          {todos.map((td) => (
+            <TodoRow key={td.id} t={td} me={currentUser.id} onToggle={() => toggle(td)} onRemove={() => remove(td)} hideCandidate />
           ))}
         </div>
       )}
@@ -1445,6 +1472,8 @@ function MessagesTab({
   // Seed the composer with the signature once (currentUser is a stable prop
   // from the server layout). Deliberately NOT re-seeded on change: a reactive
   // effect here refilled the box every time the user cleared it.
+  const t = useTranslations("candidates.sheet.messages");
+  const relativeTime = useRelativeTime();
   const [reply, setReply] = React.useState(currentUser.signature ? `\n\n${currentUser.signature}` : "");
   const [composing, setComposing] = React.useState(false);
   const [sending, setSending] = React.useState(false);
@@ -1453,11 +1482,11 @@ function MessagesTab({
     setComposing(true);
     setReply("");
     const candidate = data.candidate;
-    let text = `Hi ${candidate.name.split(" ")[0]},\n\nThanks so much for applying to the ${data.application.jobTitle} role — your background looks like a great match for what we're working on. We'd love to set up a 30-minute conversation this week to learn more about how you approach this kind of work.\n\nDoes Thursday at 14:00 work? Happy to send alternatives.`;
+    let text = t("draft", { name: candidate.name.split(" ")[0], job: data.application.jobTitle });
     if (currentUser.signature) {
       text += `\n\n${currentUser.signature}`;
     } else {
-      text += `\n\nWarmly,\n${currentUser.name.split(" ")[0]}`;
+      text += `\n\n${t("signoff", { name: currentUser.name.split(" ")[0] })}`;
     }
     let i = 0;
     const tick = () => {
@@ -1483,22 +1512,22 @@ function MessagesTab({
     <div className="col" style={{ gap: 14 }}>
       {messages.length === 0 ? (
         <Glass faint style={{ padding: 14, borderRadius: 12 }}>
-          <p className="muted" style={{ fontSize: 13 }}>No messages yet — write below to start a conversation.</p>
+          <p className="muted" style={{ fontSize: 13 }}>{t("empty")}</p>
         </Glass>
       ) : (
         <div className="col" style={{ gap: 10 }}>
           {messages.map((m) => (
             <Glass key={m.id} faint style={{ padding: 14, borderRadius: 12 }}>
               <div className="row" style={{ marginBottom: 6 }}>
-                <Avatar name={m.fromName || (m.direction === "in" ? data.candidate.name : "Team")} size="sm" />
+                <Avatar name={m.fromName || (m.direction === "in" ? data.candidate.name : t("team"))} size="sm" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5 }}>
-                    <b style={{ fontWeight: 500 }}>{m.fromName || (m.direction === "in" ? data.candidate.name : m.direction === "system" ? "System" : "Team")}</b>
+                    <b style={{ fontWeight: 500 }}>{m.fromName || (m.direction === "in" ? data.candidate.name : m.direction === "system" ? t("system") : t("team"))}</b>
                     <span className="tiny"> · {relativeTime(m.createdAt)}</span>
                   </div>
                 </div>
-                {m.direction === "out" && <span className="chip" style={{ fontSize: 10.5, height: 18, padding: "0 6px" }}>Sent</span>}
-                {m.direction === "system" && <span className="chip" style={{ fontSize: 10.5, height: 18, padding: "0 6px" }}>System</span>}
+                {m.direction === "out" && <span className="chip" style={{ fontSize: 10.5, height: 18, padding: "0 6px" }}>{t("sent")}</span>}
+                {m.direction === "system" && <span className="chip" style={{ fontSize: 10.5, height: 18, padding: "0 6px" }}>{t("system")}</span>}
               </div>
               <MessageBody body={m.body} />
             </Glass>
@@ -1509,20 +1538,20 @@ function MessagesTab({
       <Glass faint style={{ padding: 14, borderRadius: 12 }}>
         <div className="row" style={{ marginBottom: 10 }}>
           <Icons.Mail size={13} style={{ color: "var(--ink-2)" }} />
-          <span className="tiny">Reply to {data.candidate.name.split(" ")[0]}</span>
+          <span className="tiny">{t("replyTo", { name: data.candidate.name.split(" ")[0] })}</span>
           <span style={{ flex: 1 }} />
           <button className="btn btn-sm btn-ghost" onClick={generateReply} disabled={composing}>
-            <Icons.Sparkle size={12} stroke={2} /> AI draft
+            <Icons.Sparkle size={12} stroke={2} /> {t("aiDraft")}
           </button>
         </div>
         <div style={{ position: "relative" }}>
-          <Wysiwyg value={reply} onChange={setReply} placeholder="Write a message…" minHeight={120} maxLines={20} />
+          <Wysiwyg value={reply} onChange={setReply} placeholder={t("placeholder")} minHeight={120} maxLines={20} />
           {composing && <div className="ai-shimmer" style={{ position: "absolute", inset: 0, pointerEvents: "none", borderRadius: 10 }} />}
         </div>
         <div className="row" style={{ marginTop: 10, gap: 6 }}>
           <span style={{ flex: 1 }} />
           <button className="btn btn-sm btn-primary" onClick={send} disabled={!stripHtml(reply).trim() || sending || composing}>
-            <Icons.Send size={11} stroke={2} /> {sending ? "Sending…" : "Send"}
+            <Icons.Send size={11} stroke={2} /> {sending ? t("sending") : t("send")}
           </button>
         </div>
       </Glass>
@@ -1542,7 +1571,9 @@ function RejectModal({
   onCancel: () => void;
   onConfirm: (reason: string) => void;
 }) {
-  const [reason, setReason] = React.useState(REJECT_REASONS[0]);
+  const t = useTranslations("candidates.sheet");
+  const tc = useTranslations("common");
+  const [reason, setReason] = React.useState<string>(REJECT_REASONS[0].value);
   const [note, setNote] = React.useState("");
   const dialogRef = React.useRef<HTMLDivElement>(null);
   useDialogA11y(dialogRef);
@@ -1560,41 +1591,41 @@ function RejectModal({
   return (
     <>
       <div className="scrim" onClick={onCancel} />
-      <div ref={dialogRef} className="sheet glass glass-strong sheet-md" role="dialog" aria-modal="true" aria-label={`Reject ${candidateName}`}>
+      <div ref={dialogRef} className="sheet glass glass-strong sheet-md" role="dialog" aria-modal="true" aria-label={t("rejectLabel", { name: candidateName })}>
         <div className="sheet-hd">
           <div className="grow">
-            <div className="topbar-crumb">Reject applicant</div>
+            <div className="topbar-crumb">{t("rejectApplicant")}</div>
             <h2 style={{ fontSize: 18 }}>{candidateName}</h2>
           </div>
-          <button className="iconbtn" onClick={onCancel} aria-label="Close">
+          <button className="iconbtn" onClick={onCancel} aria-label={tc("close")}>
             <Icons.X size={15} />
           </button>
         </div>
         <div className="sheet-body" style={{ padding: 22 }}>
-          <label className="label">Reason</label>
+          <label className="label">{t("reason")}</label>
           <select className="select" value={reason} onChange={(e) => setReason(e.target.value)} style={{ width: "100%" }}>
             {REJECT_REASONS.map((r) => (
-              <option key={r} value={r}>{r}</option>
+              <option key={r.value} value={r.value}>{t(`rejectReasons.${r.key}`)}</option>
             ))}
           </select>
-          <label className="label" style={{ marginTop: 14 }}>Note <span className="muted">(optional)</span></label>
+          <label className="label" style={{ marginTop: 14 }}>{t("note")} <span className="muted">({tc("optional")})</span></label>
           <textarea
             className="input"
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Context for the team…"
+            placeholder={t("notePlaceholder")}
             style={{ fontFamily: "inherit" }}
           />
           <p className="tiny muted" style={{ marginTop: 10 }}>
-            They&apos;ll be removed from the active board. You can still send a rejection note from Messages.
+            {t("rejectHint")}
           </p>
         </div>
         <div className="sheet-ft">
           <span style={{ flex: 1 }} />
-          <button className="btn btn-sm" onClick={onCancel} disabled={busy}>Cancel</button>
+          <button className="btn btn-sm" onClick={onCancel} disabled={busy}>{tc("cancel")}</button>
           <button className="btn btn-sm btn-danger" onClick={() => onConfirm(full)} disabled={busy}>
-            <Icons.X size={12} /> {busy ? "Rejecting…" : "Reject"}
+            <Icons.X size={12} /> {busy ? t("rejecting") : t("reject")}
           </button>
         </div>
       </div>

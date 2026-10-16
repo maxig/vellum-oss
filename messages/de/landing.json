@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "features": "Funktionen",
+    "ai": "KI",
+    "selfHost": "Selbst hosten",
+    "signIn": "Anmelden"
+  },
+  "startFree": "Kostenlos starten",
+  "hero": {
+    "chip": "Open Source · AGPL · Selbst gehostet",
+    "title": "Recruiting-Software, die sich<br></br><hl>selbst erklärt.</hl>",
+    "lede": "Vellum ist ein KI-gestütztes Bewerbermanagement für Teams, die eine schöne Pipeline, ruhige Zusammenarbeit und eine Candidate Experience wollen, die sich nicht wie ein Formular anfühlt.",
+    "howItWorks": "So funktioniert es",
+    "docker": "<code>docker compose up</code> und du hast ein funktionierendes ATS unter <code>localhost:3000</code>."
+  },
+  "showcase": {
+    "applied": "Beworben",
+    "screen": "Screening",
+    "interview": "Interview",
+    "offer": "Angebot",
+    "nudge": "KI-Hinweis"
+  },
+  "features": {
+    "eyebrow": "Was drin ist",
+    "title": "Alles, was ein Hiring-Team braucht. <muted>Nichts, was es nicht braucht.</muted>",
+    "lede": "Ein Workspace für Stellen, Kandidaten, Unterhaltungen und Entscheidungen — gebaut für kleine Teams, die liefern, und große Teams, denen Qualität wichtig ist.",
+    "items": {
+      "kanban": {
+        "title": "Kanban-Pipeline",
+        "body": "Kandidaten per Drag & Drop durch die Phasen bewegen, mit WIP-Limits, eigenen Pipelines pro Stelle und vollständiger Historie."
+      },
+      "ai": {
+        "title": "KI-Bewertung",
+        "body": "Zusammenfassungen, Passungswerte und Interview-Rückblicke. Immer gekennzeichnet, immer prüfbar, nie automatisch entscheidend."
+      },
+      "careers": {
+        "title": "Karriereseiten im eigenen Design",
+        "body": "SEO-fähige Stellenanzeigen auf deiner Domain mit CNAME, JSON-LD und einem Editor ohne Code."
+      },
+      "inbox": {
+        "title": "Zentraler Posteingang",
+        "body": "E-Mail, Terminplanung und Team-Kommentare in einem Verlauf. Der Kontext folgt dem Kandidaten."
+      },
+      "calendar": {
+        "title": "Kalender-Synchronisierung",
+        "body": "Zwei-Wege-Sync mit Google, Microsoft und CalDAV. Verfügbarkeit, Reservierungen und Konfliktprüfung."
+      },
+      "privacy": {
+        "title": "Datenschutz eingebaut",
+        "body": "Strikte Trennung der Workspaces, Schwärzung personenbezogener Daten vor KI-Aufrufen, vollständiges Audit-Log, DSGVO-taugliche Exporte."
+      }
+    }
+  },
+  "ai": {
+    "eyebrow": "KI mit angezogener Bremse",
+    "title": "Hilfreich im Prozess. <hl>Nie an dessen Stelle.</hl>",
+    "lede": "Vellum entwirft, fasst zusammen und schlägt vor — Menschen übernehmen, bearbeiten oder ignorieren. Keine automatischen Absagen, keine stillen Entscheidungen, keine versteckten Prompts.",
+    "points": {
+      "provider": "Wähle deinen Anbieter — Anthropic, OpenAI, Google oder lokal mit Ollama.",
+      "redaction": "Schwärzung personenbezogener Daten, bevor Inhalte deinen Workspace verlassen.",
+      "budgets": "Token-Budgets und Nutzungsberichte pro Funktion.",
+      "caching": "Zwischenspeicherung der Antworten pro Workspace, Modell und Prompt.",
+      "labeled": "Jede KI-generierte Stelle ist deutlich gekennzeichnet."
+    },
+    "card": {
+      "title": "Interview-Rückblick",
+      "meta": "Marta Nowak · Senior Engineer · 47 Min.",
+      "draft": "KI-Entwurf",
+      "body": "Starkes Gespür für Systeme — hat den Migrationsplan mit klaren Fehlerszenarien durchgesprochen. Hat höflich einer Suggestivfrage widersprochen, ein gutes Zeichen. In den ersten 10 Minuten etwas nervös, beim Code dann entspannt.",
+      "chip1": "Starkes technisches Signal",
+      "chip2": "Teamorientiert",
+      "chip3": "Gehaltsvorstellung: im Rahmen",
+      "edit": "Bearbeiten",
+      "send": "An das Team senden"
+    }
+  },
+  "self": {
+    "eyebrow": "In Minuten selbst gehostet",
+    "title": "Deine Daten, <hl>deine Server.</hl>",
+    "lede": "Vellum ist Open Source unter AGPL. Betreibe es auf einem 5-$-VPS, in deinem Enterprise-k8s-Cluster oder irgendwo dazwischen. Mit eigenem SSO, eigenen KI-Schlüsseln und eigener Aufbewahrungsrichtlinie.",
+    "github": "Auf GitHub ansehen",
+    "docs": "Zur Dokumentation"
+  },
+  "cta": {
+    "title": "Führe dein erstes Interview <hl>noch heute Nachmittag.</hl>",
+    "lede": "Workspace anlegen, Stelle importieren, Team einladen. Keine Kreditkarte, kein Demo-Termin.",
+    "haveAccount": "Ich habe schon ein Konto"
+  },
+  "footer": {
+    "copyright": "© {year} Vellum. KI-gestütztes Bewerbermanagement.",
+    "privacy": "Datenschutz",
+    "terms": "Nutzungsbedingungen",
+    "cookies": "Cookies"
+  }
+}

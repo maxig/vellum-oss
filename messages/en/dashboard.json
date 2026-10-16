@@ -1,0 +1,127 @@
+{
+  "recap": {
+    "snapshot": "Snapshot",
+    "scopes": {
+      "today": "Today",
+      "week": "Week",
+      "month": "Month"
+    },
+    "titles": {
+      "recap": {
+        "today": "Today's recap",
+        "week": "This week's recap",
+        "month": "This month's recap"
+      },
+      "snapshot": {
+        "today": "Today's snapshot",
+        "week": "This week's snapshot",
+        "month": "This month's snapshot"
+      }
+    },
+    "regenerate": "Regenerate now",
+    "rateLimited": "Rate-limited — try again in a minute",
+    "updated": "updated {when}",
+    "warmingUp": "warming up…",
+    "quiet": "Quiet so far — the recap will fill in as activity picks up.",
+    "preparing": "Vellum is preparing your first recap. It will appear here in a minute or two.",
+    "aiPaused": "AI insights paused — check Settings → AI.",
+    "replyThreads": "Reply to {count, plural, one {# thread} other {# threads}}",
+    "openInbox": "Open inbox",
+    "openPipeline": "Open pipeline"
+  },
+  "otherSource": "Other",
+  "there": "there",
+  "greeting": {
+    "late": "Working late",
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "waiting": "You have <hl>{count, plural, one {# candidate} other {# candidates}}</hl> waiting on you.",
+  "needInterview": "{count} need an interview scheduled",
+  "needReply": "{count} need a first reply",
+  "waiting48": "{count} have been waiting more than 48 hours",
+  "inboxZero": "Inbox zero — <hl>nice.</hl>",
+  "calmSummary": "{roles, plural, one {# open role} other {# open roles}} · {applicants} new applicants in the last 4 weeks.",
+  "invite": "Invite teammate",
+  "newJob": "New job",
+  "stats": {
+    "active": "Active candidates",
+    "activeDelta": "↑ {count} in 4 weeks",
+    "openRoles": "Open roles",
+    "drafts": "{count} draft",
+    "allLive": "all live",
+    "timeToHire": "Time to hire",
+    "days": "days",
+    "hires90": "{count, plural, one {# hire} other {# hires}} · 90d",
+    "noHires": "no hires yet",
+    "acceptRate": "Offer accept rate",
+    "acceptDelta": "{hired} hired · {not} not"
+  },
+  "pipeline": "Pipeline overview",
+  "openPipeline": "Open pipeline",
+  "noStages": "No stages yet — visit Settings to create your pipeline.",
+  "chartTitle": "Applications · last 12 weeks",
+  "mom": "{delta}% MoM",
+  "firstWave": "first wave",
+  "weekBar": "Week {week}: {count, plural, one {# application} other {# applications}}",
+  "weeksAgo12": "12 weeks ago",
+  "thisWeek": "This week",
+  "upcoming": "Upcoming interviews",
+  "pipelineLink": "Pipeline",
+  "nothingScheduled": "Nothing scheduled yet.",
+  "sources": "Where they come from",
+  "noApplicants": "No applicants yet.",
+  "activity": "Activity",
+  "viewAll": "View all",
+  "noActivity": "No activity yet. Publish a job and the feed lights up.",
+  "activityKinds": {
+    "moved": "moved a candidate",
+    "noted": "left a note",
+    "scheduled": "scheduled an interview",
+    "applied": "applied",
+    "ai": "ran AI",
+    "published": "published a job"
+  },
+  "monthly": {
+    "title": "Monthly recap",
+    "failed": "Couldn't build the monthly report.",
+    "sections": {
+      "headline": "Headline",
+      "numbers": "The numbers",
+      "health": "Pipeline health",
+      "sources": "Sources",
+      "roles": "Roles",
+      "changed": "What changed",
+      "risks": "Risks & housekeeping",
+      "team": "Team"
+    },
+    "stats": {
+      "applications": "Applications",
+      "hires": "Hires",
+      "offers": "Offers",
+      "timeToHire": "Time to hire",
+      "openRoles": "Open roles",
+      "active": "Active candidates",
+      "health": "Pipeline health"
+    },
+    "days": "{n}d",
+    "cols": {
+      "stage": "Stage",
+      "active": "Active",
+      "delta": "Δ vs prior",
+      "source": "Source",
+      "applicants": "Applicants",
+      "avgFit": "Avg AI fit"
+    },
+    "noSources": "No source data in scope.",
+    "daysOpen": "Days open: {n}",
+    "roleStats": "Views: {views} · Apps: {apps} · Hires: {hires}",
+    "nothingUrgent": "Nothing urgent.",
+    "topRecruiters": "Top recruiters",
+    "noActivity": "No tracked activity.",
+    "reviewLoad": "Review load",
+    "noReviewers": "No reviewer assignments yet.",
+    "savePdf": "Save as PDF"
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "save": "Speichern",
+  "saving": "Speichert…",
+  "saved": "Gespeichert",
+  "cancel": "Abbrechen",
+  "delete": "Löschen",
+  "remove": "Entfernen",
+  "edit": "Bearbeiten",
+  "close": "Schließen",
+  "add": "Hinzufügen",
+  "back": "Zurück",
+  "next": "Weiter",
+  "loading": "Lädt…",
+  "search": "Suchen",
+  "none": "Keine",
+  "optional": "Optional",
+  "somethingWentWrong": "Etwas ist schiefgelaufen.",
+  "tryAgain": "Erneut versuchen",
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Mitglied"
+  },
+  "interviewKinds": {
+    "phone": "Telefoninterview",
+    "video": "Videocall",
+    "onsite": "Vor Ort",
+    "panel": "Panel"
+  },
+  "criterionKinds": {
+    "rating": "Bewertung (1–5)",
+    "text": "Textnotiz",
+    "yesno": "Ja / Nein"
+  },
+  "workModes": {
+    "remote": "Remote",
+    "hybrid": "Hybrid",
+    "onsite": "Vor Ort"
+  },
+  "employment": {
+    "fullTime": "Vollzeit",
+    "partTime": "Teilzeit",
+    "contract": "Freie Mitarbeit",
+    "internship": "Praktikum"
+  },
+  "jobStatus": {
+    "open": "Offen",
+    "draft": "Entwurf",
+    "closed": "Geschlossen"
+  },
+  "pulse": {
+    "bands": {
+      "hot": "Heiß",
+      "warm": "Warm",
+      "cool": "Kühl",
+      "cold": "Kalt",
+      "silent": "Still",
+      "locked": "Zurückgezogen"
+    },
+    "signalsTitle": "Signale · letzte 14 Tage",
+    "noSignals": "Noch keine Signale.",
+    "baseline": "Ausgangswert: {value}",
+    "signals": {
+      "message_received": "Auf Nachricht geantwortet",
+      "message_fast_reply": "Schnell geantwortet",
+      "message_long_reply": "Ausführliche Antwort",
+      "positive_sentiment": "Positiver Ton",
+      "question_asked": "Frage gestellt",
+      "link_clicked": "Link geklickt",
+      "email_opened": "E-Mail geöffnet",
+      "no_reply_overdue": "Antwort überfällig",
+      "no_open": "Nachrichten ungeöffnet",
+      "stage_idle": "Phase stockt",
+      "negative_sentiment": "Bedenken geäußert",
+      "reschedule_requested": "Terminverschiebung angefragt",
+      "interview_no_show": "Nicht zum Interview erschienen",
+      "unsubscribe": "Abgemeldet",
+      "stage_advanced": "Phase vorgerückt",
+      "offer_sent": "Angebot verschickt"
+    },
+    "recompute": "Neu berechnen",
+    "daysAgo14": "vor 14 Tagen",
+    "today": "heute",
+    "signalsCount": "Signale · {count} in den letzten 60 Tagen",
+    "noSignalsLong": "Noch keine Signale — Pulse aktualisiert sich, sobald der Kandidat auf unsere Nachrichten reagiert.",
+    "signalsLong": {
+      "message_received": "Auf Nachricht geantwortet",
+      "message_fast_reply": "Schnell geantwortet",
+      "message_long_reply": "Ausführliche Antwort",
+      "positive_sentiment": "Positiver Ton in der letzten Nachricht",
+      "question_asked": "Frage gestellt",
+      "link_clicked": "Link geklickt",
+      "email_opened": "E-Mail geöffnet",
+      "no_reply_overdue": "Antwort überfällig",
+      "no_open": "Mehrere Nachrichten ungeöffnet",
+      "stage_idle": "Phase stockt länger als üblich",
+      "negative_sentiment": "Bedenken in der letzten Nachricht",
+      "reschedule_requested": "Terminverschiebung angefragt",
+      "interview_no_show": "Nicht zum Interview erschienen",
+      "unsubscribe": "Von der Kommunikation abgemeldet",
+      "stage_advanced": "In die nächste Phase gerückt",
+      "offer_sent": "Angebot verschickt"
+    }
+  },
+  "yes": "Ja",
+  "no": "Nein",
+  "recommend": {
+    "strong_yes": "Klares Ja",
+    "yes": "Ja",
+    "maybe": "Vielleicht",
+    "no": "Nein",
+    "strong_no": "Klares Nein"
+  },
+  "stars": {
+    "title": "{v} von {max}",
+    "titleWithCount": "{v} von {max} · {count, plural, one {# Bewertung} other {# Bewertungen}}",
+    "none": "Noch keine Bewertung",
+    "outOf": "{v} von {max}",
+    "rating": "Bewertung",
+    "nStars": "{n, plural, one {# Stern} other {# Sterne}}"
+  },
+  "editor": {
+    "linkPrompt": "Link-URL",
+    "linkInvalid": "Nur http/https-, mailto-, tel-, #- oder /-Links sind erlaubt.",
+    "bold": "Fett",
+    "boldTitle": "Fett (Cmd-B)",
+    "italic": "Kursiv",
+    "italicTitle": "Kursiv (Cmd-I)",
+    "underline": "Unterstrichen",
+    "heading": "Überschrift",
+    "subheading": "Zwischenüberschrift",
+    "paragraph": "Absatz",
+    "bulletList": "Aufzählung",
+    "numberedList": "Nummerierte Liste",
+    "link": "Link",
+    "addLink": "Link einfügen",
+    "clearFormatting": "Formatierung entfernen"
+  },
+  "interviewTitles": {
+    "phone": "Telefoninterview",
+    "video": "Videointerview",
+    "onsite": "Interview vor Ort",
+    "panel": "Panel-Interview",
+    "other": "Interview"
+  },
+  "errors": {
+    "notFoundTitle": "Seite nicht gefunden",
+    "notFoundBody": "Wir konnten nicht finden, wonach du suchst. Vielleicht wurde es verschoben oder gelöscht.",
+    "toDashboard": "Zum Dashboard",
+    "title": "Etwas ist schiefgelaufen",
+    "body": "Auf dieser Seite ist ein unerwarteter Fehler aufgetreten. Versuch es erneut oder geh zurück zum Dashboard.",
+    "tryAgain": "Erneut versuchen"
+  }
+}

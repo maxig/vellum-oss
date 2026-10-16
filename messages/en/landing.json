@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "features": "Features",
+    "ai": "AI",
+    "selfHost": "Self-host",
+    "signIn": "Sign in"
+  },
+  "startFree": "Start free",
+  "hero": {
+    "chip": "Open source · AGPL · Self-hosted",
+    "title": "Hiring software that<br></br><hl>feels obvious.</hl>",
+    "lede": "Vellum is an AI-first applicant tracking system for teams who want a beautiful pipeline, calm collaboration, and a candidate experience that doesn't feel like a form.",
+    "howItWorks": "See how it works",
+    "docker": "<code>docker compose up</code> and you have a working ATS at <code>localhost:3000</code>."
+  },
+  "showcase": {
+    "applied": "Applied",
+    "screen": "Screen",
+    "interview": "Interview",
+    "offer": "Offer",
+    "nudge": "AI nudge"
+  },
+  "features": {
+    "eyebrow": "What's inside",
+    "title": "Everything a hiring team needs. <muted>Nothing it doesn't.</muted>",
+    "lede": "One workspace for jobs, candidates, conversations, and decisions — built for small teams that ship and large teams that care about craft.",
+    "items": {
+      "kanban": {
+        "title": "Kanban pipeline",
+        "body": "Drag candidates through stages, with WIP limits, sub-pipelines per role, and history baked in."
+      },
+      "ai": {
+        "title": "AI evaluation",
+        "body": "Summaries, fit scores, and interview recaps. Always labeled, always reviewable, never auto-deciding."
+      },
+      "careers": {
+        "title": "Branded career sites",
+        "body": "SEO-ready job listings on your domain with CNAME, JSON-LD, and a no-code editor."
+      },
+      "inbox": {
+        "title": "Unified inbox",
+        "body": "Email, scheduling, and team comments in one thread. Context follows the candidate."
+      },
+      "calendar": {
+        "title": "Calendar sync",
+        "body": "Two-way sync with Google, Microsoft, and CalDAV. Availability, holds, and conflict checks."
+      },
+      "privacy": {
+        "title": "Built for privacy",
+        "body": "Row-level workspace isolation, PII redaction before AI calls, full audit log, GDPR-ready exports."
+      }
+    }
+  },
+  "ai": {
+    "eyebrow": "AI, with the brakes on",
+    "title": "Helpful in the loop. <hl>Never out of it.</hl>",
+    "lede": "Vellum drafts, summarizes, and suggests — humans accept, edit, or ignore. No auto-rejects, no silent decisions, no hidden prompts.",
+    "points": {
+      "provider": "Choose your provider — Anthropic, OpenAI, Google, or local Ollama.",
+      "redaction": "PII redaction before content leaves your workspace.",
+      "budgets": "Per-feature token budgets and usage reporting.",
+      "caching": "Response caching keyed by workspace + model + prompt.",
+      "labeled": "Every AI-generated surface is clearly labeled."
+    },
+    "card": {
+      "title": "Interview recap",
+      "meta": "Marta Nowak · Senior Engineer · 47 min",
+      "draft": "AI draft",
+      "body": "Strong systems instinct — walked through the migration plan with clear failure modes. Pushed back politely on a leading question, which is a good sign. Slightly nervous in the first 10 minutes, settled in once we moved to code.",
+      "chip1": "Strong technical signal",
+      "chip2": "Collaborative",
+      "chip3": "Comp expectation: in range",
+      "edit": "Edit",
+      "send": "Send to team"
+    }
+  },
+  "self": {
+    "eyebrow": "Self-host in minutes",
+    "title": "Your data, <hl>your servers.</hl>",
+    "lede": "Vellum is open source under AGPL. Run it on a $5 VPS, your enterprise k8s cluster, or anything in between. Bring your own SSO, your own AI keys, your own retention policy.",
+    "github": "View on GitHub",
+    "docs": "Read the docs"
+  },
+  "cta": {
+    "title": "Run your first interview <hl>this afternoon.</hl>",
+    "lede": "Spin up a workspace, import a job, and invite your team. No credit card, no demo call.",
+    "haveAccount": "I already have an account"
+  },
+  "footer": {
+    "copyright": "© {year} Vellum. AI-first applicant tracking.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "cookies": "Cookies"
+  }
+}

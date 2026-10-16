@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { workspaceId, slugify } from "@/lib/utils";
 import { DEFAULT_STAGES } from "@/lib/design";
 import { seedDemoData } from "@/lib/seed-demo";
+import { resolveLocale } from "@/i18n/request";
 
 const Body = z.object({
   name: z.string().min(1).max(60),
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
       color: d.color,
       industry: d.industry,
       size: d.size,
+      // New workspaces default to the language their creator is using.
+      locale: await resolveLocale(),
       memberships: { create: { userId: session.user.id, role: "owner" } },
       stages: { create: DEFAULT_STAGES.map((s, i) => ({ key: s.key, name: s.name, color: s.color, position: i })) },
       careerSite: {

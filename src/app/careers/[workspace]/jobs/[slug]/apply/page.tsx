@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { Glass, Icons, WorkspaceMark } from "@/components/primitives";
 import ApplyForm from "./ApplyForm";
+import { getTranslations } from "next-intl/server";
 import { recordCareerEvent } from "@/lib/career-events";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
     include: { screening: { orderBy: { position: "asc" } } },
   });
   if (!job) notFound();
+  const t = await getTranslations("careers.apply");
 
   // Track form interactions for `apply_dropoff`. `form_start` fires on
   // page render; `apply_complete` fires when the thank-you screen renders.
@@ -50,12 +52,12 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
         <section style={{ maxWidth: 720, margin: "80px auto", padding: "0 32px", textAlign: "center" }}>
           <Glass className="card" style={{ padding: 56 }}>
             <Icons.Check size={32} stroke={2.2} style={{ color: "var(--accent-solid)" }} />
-            <h1 style={{ marginTop: 14 }}>Thanks for applying.</h1>
+            <h1 style={{ marginTop: 14 }}>{t("thanks")}</h1>
             <p style={{ marginTop: 14, fontSize: 16, lineHeight: 1.55 }}>
-              We've received your application for <b>{job.title}</b>. Someone on the {ws.name} team will read it personally — usually within a few business days. If we want to move forward, you'll hear from us by email.
+              {t.rich("received", { job: job.title, company: ws.name, b: (c) => <b>{c}</b> })}
             </p>
             <div className="row" style={{ justifyContent: "center", marginTop: 24 }}>
-              <Link href="/" className="btn">See other open roles</Link>
+              <Link href="/" className="btn">{t("otherRoles")}</Link>
             </div>
           </Glass>
         </section>
@@ -69,11 +71,11 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
         <WorkspaceMark workspace={{ name: ws.name, color: ws.color }} />
         <div style={{ fontWeight: 600, fontSize: 17 }}>{ws.name}</div>
         <div style={{ flex: 1 }} />
-        <Link href={`/jobs/${job.slug}`} className="tiny" style={{ color: "var(--ink-1)" }}>← Back to role</Link>
+        <Link href={`/jobs/${job.slug}`} className="tiny" style={{ color: "var(--ink-1)" }}>← {t("back")}</Link>
       </Glass>
 
       <section style={{ maxWidth: 760, margin: "40px auto", padding: "0 32px" }}>
-        <h1 style={{ fontSize: 36 }}>Apply for <span className="serif" style={{ fontStyle: "italic" }}>{job.title}</span></h1>
+        <h1 style={{ fontSize: 36 }}>{t.rich("title", { job: job.title, em: (c) => <span className="serif" style={{ fontStyle: "italic" }}>{c}</span> })}</h1>
         <p className="muted" style={{ marginTop: 8 }}>{[job.department, job.location].filter(Boolean).join(" · ")}</p>
 
         <Glass className="card" style={{ padding: 36, marginTop: 28 }}>

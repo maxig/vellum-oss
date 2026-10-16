@@ -12,13 +12,35 @@ function isPassthrough(pathname: string): boolean {
   );
 }
 
+/**
+ * Request header naming the workspace whose public career site is being
+ * rendered. src/i18n/request.ts reads it so candidates see the site in the
+ * workspace's language. Always set (or stripped) here, never trusted from the
+ * client.
+ */
+export const CAREER_SITE_HEADER = "x-vellum-career-site";
+
+function careerHeaders(req: NextRequest, slug: string | null) {
+  const headers = new Headers(req.headers);
+  if (slug) headers.set(CAREER_SITE_HEADER, slug);
+  else headers.delete(CAREER_SITE_HEADER);
+  return headers;
+}
+
 /** Rewrite "/" → "/careers/<slug>", "/jobs/x" → "/careers/<slug>/jobs/x", etc. */
 function toCareerSite(req: NextRequest, slug: string) {
   const url = req.nextUrl.clone();
-  if (url.pathname.startsWith(`/careers/${slug}`)) return NextResponse.next();
+  const request = { headers: careerHeaders(req, slug) };
+  if (url.pathname.startsWith(`/careers/${slug}`)) return NextResponse.next({ request });
   const rest = url.pathname === "/" ? "" : url.pathname;
   url.pathname = `/careers/${slug}${rest}`;
-  return NextResponse.rewrite(url);
+  return NextResponse.rewrite(url, { request });
+}
+
+/** Pass through, tagging direct /careers/<slug> URLs and stripping a spoofed header. */
+function passThrough(req: NextRequest) {
+  const m = /^\/careers\/([^/]+)/.exec(req.nextUrl.pathname);
+  return NextResponse.next({ request: { headers: careerHeaders(req, m ? m[1] : null) } });
 }
 
 export async function middleware(req: NextRequest) {
@@ -62,7 +84,7 @@ export async function middleware(req: NextRequest) {
     if (slug) return toCareerSite(req, slug);
   }
 
-  return NextResponse.next();
+  return passThrough(req);
 }
 
 export const config = {

@@ -5,6 +5,8 @@ import * as React from "react";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import ThemeBoot from "@/components/ThemeBoot";
+import { NextIntlClientProvider } from "next-intl";
+import { pickMessages } from "@/i18n/pick";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +20,13 @@ export default async function CareersLayout({
   const { workspace } = await params;
   const ws = await db.workspace.findUnique({ where: { slug: workspace } });
   if (!ws) notFound();
+  const messages = await pickMessages(["common", "consent", "careers"]);
 
   return (
-    <>
+    <NextIntlClientProvider messages={messages}>
       <ThemeBoot prefs={{ theme: "light", density: "cozy", accent: "indigo", glassIntensity: 1.0 }} />
       <div className="ambient"><div className="blob" /></div>
       <div className="career-shell scroll-y">{children}</div>
-    </>
+    </NextIntlClientProvider>
   );
 }

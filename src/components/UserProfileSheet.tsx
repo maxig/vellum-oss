@@ -4,6 +4,8 @@
 "use client";
 import * as React from "react";
 import { signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { useValueLabels } from "@/i18n/labels";
 import { Glass, Avatar, Chip, Icons } from "@/components/primitives";
 
 export type UserProfileInitial = {
@@ -59,6 +61,9 @@ export default function UserProfileSheet({
   onClose: () => void;
   onSaved?: () => void;
 }) {
+  const t = useTranslations("profile");
+  const tc = useTranslations("common");
+  const labels = useValueLabels();
   const [tab, setTab] = React.useState<Tab>("profile");
   const [form, setForm] = React.useState({
     name: initial.name,
@@ -105,10 +110,10 @@ export default function UserProfileSheet({
     }).catch(() => null);
     setSaving(false);
     if (!res?.ok) {
-      flash("Could not save.");
+      flash(t("saveFailed"));
       return;
     }
-    flash("Saved.");
+    flash(t("saved"));
     onSaved?.();
     onClose();
   }
@@ -120,7 +125,7 @@ export default function UserProfileSheet({
         className="sheet glass glass-strong"
         role="dialog"
         aria-modal="true"
-        aria-label="Your profile"
+        aria-label={t("dialogLabel")}
         style={{
           width: "min(720px, calc(100vw - 48px))",
           height: "auto",
@@ -152,7 +157,7 @@ export default function UserProfileSheet({
             type="button"
             className="iconbtn"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tc("close")}
             style={{
               position: "absolute",
               top: 14,
@@ -186,10 +191,10 @@ export default function UserProfileSheet({
                     {form.pronouns}
                   </span>
                 )}
-                <Chip accent>{initial.role}</Chip>
+                <Chip accent>{labels.role(initial.role)}</Chip>
               </div>
               <div className="tiny" style={{ marginTop: 3 }}>
-                {form.title || "—"} · joined {initial.joinedAt}
+                {form.title || "—"} · {t("joined", { date: initial.joinedAt })}
               </div>
             </div>
           </div>
@@ -202,16 +207,16 @@ export default function UserProfileSheet({
         >
           {(
             [
-              { id: "profile", l: "Profile" },
-              { id: "stats", l: "My stats" },
-              { id: "prefs", l: "Notifications" },
-              { id: "account", l: "Account" },
-            ] as { id: Tab; l: string }[]
-          ).map((t) => (
+              { id: "profile" },
+              { id: "stats" },
+              { id: "prefs" },
+              { id: "account" },
+            ] as { id: Tab }[]
+          ).map((tb) => (
             <button
-              key={t.id}
+              key={tb.id}
               type="button"
-              onClick={() => setTab(t.id)}
+              onClick={() => setTab(tb.id)}
               style={{
                 padding: "10px 12px",
                 fontSize: 13,
@@ -219,13 +224,13 @@ export default function UserProfileSheet({
                 background: "transparent",
                 border: 0,
                 font: "inherit",
-                color: tab === t.id ? "var(--ink-0)" : "var(--ink-2)",
-                borderBottom: tab === t.id ? "1.5px solid var(--accent-solid)" : "1.5px solid transparent",
+                color: tab === tb.id ? "var(--ink-0)" : "var(--ink-2)",
+                borderBottom: tab === tb.id ? "1.5px solid var(--accent-solid)" : "1.5px solid transparent",
                 marginBottom: "-0.5px",
                 cursor: "default",
               }}
             >
-              {t.l}
+              {t(`tabs.${tb.id}`)}
             </button>
           ))}
         </div>
@@ -236,7 +241,7 @@ export default function UserProfileSheet({
         >
           {tab === "profile" && (
             <div className="col" style={{ gap: 14 }}>
-              <UPField label="Full name">
+              <UPField label={t("fields.name")}>
                 <input
                   className="input"
                   value={form.name}
@@ -244,24 +249,24 @@ export default function UserProfileSheet({
                 />
               </UPField>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <UPField label="Job title">
+                <UPField label={t("fields.title")}>
                   <input
                     className="input"
                     value={form.title}
                     onChange={(e) => set("title", e.target.value)}
-                    placeholder="Talent Partner"
+                    placeholder={t("fields.titlePlaceholder")}
                   />
                 </UPField>
-                <UPField label="Pronouns">
+                <UPField label={t("fields.pronouns")}>
                   <input
                     className="input"
                     value={form.pronouns}
                     onChange={(e) => set("pronouns", e.target.value)}
-                    placeholder="she/her"
+                    placeholder={t("fields.pronounsPlaceholder")}
                   />
                 </UPField>
               </div>
-              <UPField label="Email" hint="Changing email requires re-verification">
+              <UPField label={t("fields.email")} hint={t("fields.emailHint")}>
                 <input
                   className="input"
                   value={form.email}
@@ -270,7 +275,7 @@ export default function UserProfileSheet({
                 />
               </UPField>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <UPField label="Location">
+                <UPField label={t("fields.location")}>
                   <input
                     className="input"
                     value={form.location}
@@ -278,7 +283,7 @@ export default function UserProfileSheet({
                     placeholder="Berlin, DE"
                   />
                 </UPField>
-                <UPField label="Time zone">
+                <UPField label={t("fields.timezone")}>
                   <input
                     className="input"
                     value={form.timezone}
@@ -293,15 +298,15 @@ export default function UserProfileSheet({
                   </datalist>
                 </UPField>
               </div>
-              <UPField label="Working hours" hint="Shown to teammates booking with you">
+              <UPField label={t("fields.workingHours")} hint={t("fields.workingHoursHint")}>
                 <input
                   className="input"
                   value={form.workingHours}
                   onChange={(e) => set("workingHours", e.target.value)}
-                  placeholder="Mon–Fri 9:00–17:00 CET"
+                  placeholder={t("fields.workingHoursPlaceholder")}
                 />
               </UPField>
-              <UPField label="Bio">
+              <UPField label={t("fields.bio")}>
                 <textarea
                   className="input autogrow"
                   data-max-lines="6"
@@ -310,14 +315,14 @@ export default function UserProfileSheet({
                   style={{ fontFamily: "inherit" }}
                 />
               </UPField>
-              <UPField label="Default email signature" hint="Overrides the workspace default">
+              <UPField label={t("fields.signature")} hint={t("fields.signatureHint")}>
                 <textarea
                   className="input autogrow"
                   data-max-lines="6"
                   value={form.signature}
                   onChange={(e) => set("signature", e.target.value)}
                   style={{ fontFamily: "inherit" }}
-                  placeholder={`Warmly,\n${form.name || "Your name"}`}
+                  placeholder={t("fields.signaturePlaceholder", { name: form.name || t("fields.yourName") })}
                 />
               </UPField>
             </div>
@@ -327,59 +332,59 @@ export default function UserProfileSheet({
 
           {tab === "prefs" && (
             <div className="col" style={{ gap: 0 }}>
-              <h4 style={{ marginBottom: 8 }}>Email me when…</h4>
+              <h4 style={{ marginBottom: 8 }}>{t("notif.emailHeading")}</h4>
               <UPToggle
-                title="A new application is submitted"
+                title={t("notif.newApplication")}
                 on={notif.emailNewApplication}
                 onChange={(v) => setNotifKey("emailNewApplication", v)}
               />
               <UPToggle
-                title="A candidate replies to me"
+                title={t("notif.candidateReply")}
                 on={notif.emailCandidateReply}
                 onChange={(v) => setNotifKey("emailCandidateReply", v)}
               />
               <UPToggle
-                title="I'm @mentioned in a comment"
+                title={t("notif.mention")}
                 on={notif.emailMention}
                 onChange={(v) => setNotifKey("emailMention", v)}
               />
               <UPToggle
-                title="An interview is 30 min away"
+                title={t("notif.interviewReminder")}
                 on={notif.emailInterviewReminder}
                 onChange={(v) => setNotifKey("emailInterviewReminder", v)}
               />
               <UPToggle
-                title="A teammate moves a candidate I'm following"
+                title={t("notif.followed")}
                 on={notif.emailFollowedCandidate}
                 onChange={(v) => setNotifKey("emailFollowedCandidate", v)}
               />
               <UPToggle
-                title="Weekly hiring digest"
-                sub="Every Monday morning · 7am your time"
+                title={t("notif.digest")}
+                sub={t("notif.digestSub")}
                 on={notif.emailWeeklyDigest}
                 onChange={(v) => setNotifKey("emailWeeklyDigest", v)}
               />
 
-              <h4 style={{ marginTop: 22, marginBottom: 8 }}>In-app</h4>
+              <h4 style={{ marginTop: 22, marginBottom: 8 }}>{t("notif.inAppHeading")}</h4>
               <UPToggle
-                title="Someone assigns you a to-do"
-                sub="Shows in your notifications panel"
+                title={t("notif.todoAssigned")}
+                sub={t("notif.todoAssignedSub")}
                 on={notif.notifyTodoAssigned}
                 onChange={(v) => setNotifKey("notifyTodoAssigned", v)}
               />
               <UPToggle
-                title="Desktop push notifications"
+                title={t("notif.push")}
                 on={notif.pushDesktop}
                 onChange={(v) => setNotifKey("pushDesktop", v)}
               />
               <UPToggle
-                title="Notification sounds"
+                title={t("notif.sounds")}
                 on={notif.soundsOn}
                 onChange={(v) => setNotifKey("soundsOn", v)}
               />
               <UPToggle
-                title="Do not disturb during focus hours"
-                sub="11:00 – 13:00 your time on weekdays"
+                title={t("notif.dnd")}
+                sub={t("notif.dndSub")}
                 on={notif.dnd}
                 onChange={(v) => setNotifKey("dnd", v)}
               />
@@ -406,20 +411,20 @@ export default function UserProfileSheet({
             onClick={() => signOut({ callbackUrl: "/login" })}
             style={{ color: "oklch(55% 0.18 28)" }}
           >
-            <Icons.Logout size={12} /> Sign out
+            <Icons.Logout size={12} /> {t("signOut")}
           </button>
           <span style={{ flex: 1 }} />
           <button type="button" className="btn btn-sm btn-ghost" onClick={onClose}>
-            Cancel
+            {tc("cancel")}
           </button>
           <button
             type="button"
             className="btn btn-sm btn-primary"
             onClick={save}
             disabled={saving || tab === "stats" || tab === "account"}
-            title={tab === "stats" || tab === "account" ? "No editable fields on this tab" : undefined}
+            title={tab === "stats" || tab === "account" ? t("noEditable") : undefined}
           >
-            <Icons.Check size={12} stroke={2.4} /> {saving ? "Saving…" : "Save changes"}
+            <Icons.Check size={12} stroke={2.4} /> {saving ? tc("saving") : t("saveChanges")}
           </button>
         </div>
       </div>
@@ -454,6 +459,7 @@ type StatsPayload = {
 };
 
 function UserStats() {
+  const t = useTranslations("profile.stats");
   const [data, setData] = React.useState<StatsPayload | null>(null);
   const [err, setErr] = React.useState(false);
   React.useEffect(() => {
@@ -463,7 +469,7 @@ function UserStats() {
       .catch(() => setErr(true));
   }, []);
 
-  if (err) return <p className="muted">Could not load stats.</p>;
+  if (err) return <p className="muted">{t("loadFailed")}</p>;
   if (!data) {
     return (
       <div className="col" style={{ gap: 12 }}>
@@ -487,40 +493,40 @@ function UserStats() {
           marginBottom: 18,
         }}
       >
-        <UserStat n={String(last30.candidatesTouched)} l="Candidates touched" sub="last 30 days" />
-        <UserStat n={String(last30.interviewsScheduled)} l="Interviews scheduled" sub="last 30 days" />
+        <UserStat n={String(last30.candidatesTouched)} l={t("touched")} sub={t("last30")} />
+        <UserStat n={String(last30.interviewsScheduled)} l={t("interviews")} sub={t("last30")} />
         <UserStat
           n={replyValue}
-          l="Reply within 48h"
-          sub={last30.replyDenominator > 0 ? `${last30.replyDenominator} inbound · 30 days` : "no inbound yet"}
+          l={t("reply48")}
+          sub={last30.replyDenominator > 0 ? t("inbound30", { count: last30.replyDenominator }) : t("noInbound")}
         />
       </div>
       <Glass faint style={{ padding: 16, borderRadius: 12 }}>
-        <h4 style={{ marginBottom: 12 }}>This week</h4>
+        <h4 style={{ marginBottom: 12 }}>{t("thisWeek")}</h4>
         <div className="col" style={{ gap: 10 }}>
           <UpcomingItem
             icon="Calendar"
-            t={`${thisWeek.interviewsScheduled} interview${thisWeek.interviewsScheduled === 1 ? "" : "s"} scheduled`}
-            sub={thisWeek.interviewsScheduled ? "this week" : "none yet"}
+            t={t("interviewsScheduled", { count: thisWeek.interviewsScheduled })}
+            sub={thisWeek.interviewsScheduled ? t("thisWeekLower") : t("noneYet")}
           />
           <UpcomingItem
             icon="Mail"
-            t={`${thisWeek.repliesSent} repl${thisWeek.repliesSent === 1 ? "y" : "ies"} sent`}
+            t={t("repliesSent", { count: thisWeek.repliesSent })}
             sub={
               thisWeek.medianReplyHours != null
-                ? `median response: ${thisWeek.medianReplyHours}h`
-                : "no replies yet"
+                ? t("medianResponse", { hours: thisWeek.medianReplyHours })
+                : t("noReplies")
             }
           />
           <UpcomingItem
             icon="Pipeline"
-            t={`${thisWeek.stageMoves} stage move${thisWeek.stageMoves === 1 ? "" : "s"}`}
-            sub={`${thisWeek.stageMovesForward} forward · ${thisWeek.stageMovesArchive} archive`}
+            t={t("stageMoves", { count: thisWeek.stageMoves })}
+            sub={t("stageMovesSub", { forward: thisWeek.stageMovesForward, archive: thisWeek.stageMovesArchive })}
           />
           {thisWeek.offerAccepted && (
             <UpcomingItem
               icon="Heart"
-              t="1 offer accepted"
+              t={t("offerAccepted")}
               sub={`${thisWeek.offerAccepted.candidate} · ${thisWeek.offerAccepted.job}`}
             />
           )}
@@ -570,6 +576,8 @@ function UpcomingItem({ icon, t, sub }: { icon: keyof typeof Icons; t: string; s
 
 // ─── Account tab ──────────────────────────────────────────────────────
 function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
+  const t = useTranslations("profile.account");
+  const tc = useTranslations("common");
   const [current, setCurrent] = React.useState("");
   const [next, setNext] = React.useState("");
   const [confirm, setConfirm] = React.useState("");
@@ -578,11 +586,11 @@ function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
 
   async function changePassword() {
     if (next.length < 6) {
-      onFlash("Password must be at least 6 characters.");
+      onFlash(t("tooShort"));
       return;
     }
     if (next !== confirm) {
-      onFlash("New passwords don't match.");
+      onFlash(t("mismatch"));
       return;
     }
     setBusy(true);
@@ -593,33 +601,33 @@ function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
     }).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
-      onFlash("Could not change password.");
+      onFlash(t("failed"));
       return;
     }
     setCurrent("");
     setNext("");
     setConfirm("");
     setOpen(false);
-    onFlash("Password updated.");
+    onFlash(t("updated"));
   }
 
   return (
     <div className="col" style={{ gap: 14 }}>
       <Glass faint style={{ padding: 14, borderRadius: 10 }}>
-        <h4 style={{ marginBottom: 4 }}>Password</h4>
+        <h4 style={{ marginBottom: 4 }}>{t("password")}</h4>
         <p className="tiny" style={{ marginBottom: 12, lineHeight: 1.5 }}>
-          Set a new password to sign in with email + password.
+          {t("passwordHint")}
         </p>
         {!open ? (
           <button type="button" className="btn btn-sm" onClick={() => setOpen(true)}>
-            Change password
+            {t("change")}
           </button>
         ) : (
           <div className="col" style={{ gap: 8 }}>
             <input
               className="input"
               type="password"
-              placeholder="Current password"
+              placeholder={t("current")}
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
               autoComplete="current-password"
@@ -627,7 +635,7 @@ function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
             <input
               className="input"
               type="password"
-              placeholder="New password (min 6 chars)"
+              placeholder={t("new")}
               value={next}
               onChange={(e) => setNext(e.target.value)}
               autoComplete="new-password"
@@ -635,14 +643,14 @@ function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
             <input
               className="input"
               type="password"
-              placeholder="Confirm new password"
+              placeholder={t("confirm")}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               autoComplete="new-password"
             />
             <div className="row" style={{ gap: 8, justifyContent: "flex-end" }}>
               <button type="button" className="btn btn-sm btn-ghost" onClick={() => setOpen(false)}>
-                Cancel
+                {tc("cancel")}
               </button>
               <button
                 type="button"
@@ -650,7 +658,7 @@ function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
                 disabled={busy || !next || next !== confirm}
                 onClick={changePassword}
               >
-                {busy ? "Updating…" : "Update password"}
+                {busy ? t("updating") : t("update")}
               </button>
             </div>
           </div>
@@ -658,13 +666,13 @@ function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
       </Glass>
 
       <Glass faint style={{ padding: 14, borderRadius: 10 }}>
-        <h4 style={{ marginBottom: 4 }}>Two-factor authentication</h4>
+        <h4 style={{ marginBottom: 4 }}>{t("twoFactor")}</h4>
         <p className="tiny" style={{ marginBottom: 12, lineHeight: 1.5 }}>
-          Protect your account with a second factor. Strongly recommended for admins.
+          {t("twoFactorHint")}
         </p>
         <div className="row" style={{ gap: 8 }}>
-          <button type="button" className="btn btn-sm" disabled title="Coming soon">
-            Enable 2FA
+          <button type="button" className="btn btn-sm" disabled title={t("comingSoon")}>
+            {t("enable2fa")}
           </button>
           <span
             className="chip"
@@ -674,27 +682,26 @@ function AccountTab({ onFlash }: { onFlash: (msg: string) => void }) {
               borderColor: "transparent",
             }}
           >
-            Not enabled
+            {t("notEnabled")}
           </span>
         </div>
       </Glass>
 
       <Glass faint style={{ padding: 14, borderRadius: 10 }}>
-        <h4 style={{ marginBottom: 4 }}>Active sessions</h4>
+        <h4 style={{ marginBottom: 4 }}>{t("sessions")}</h4>
         <p className="tiny" style={{ marginBottom: 12, lineHeight: 1.5 }}>
-          Devices currently signed in with your credentials.
+          {t("sessionsHint")}
         </p>
         <div className="row" style={{ gap: 10 }}>
           <Icons.Globe size={14} style={{ color: "var(--ink-2)" }} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>This browser</div>
-            <div className="tiny">Active now</div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>{t("thisBrowser")}</div>
+            <div className="tiny">{t("activeNow")}</div>
           </div>
-          <span className="chip">This device</span>
+          <span className="chip">{t("thisDevice")}</span>
         </div>
         <p className="tiny muted" style={{ marginTop: 10, lineHeight: 1.5 }}>
-          A full session list is coming with the device-management release. Use Sign out to end
-          this session.
+          {t("sessionsNote")}
         </p>
       </Glass>
     </div>

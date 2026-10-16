@@ -1,0 +1,597 @@
+{
+  "language": {
+    "title": "Sprache",
+    "userHint": "Sprache der App für dich. Überschreibt die Workspace-Vorgabe.",
+    "useWorkspaceDefault": "Workspace-Vorgabe ({language})",
+    "workspaceTitle": "Standardsprache",
+    "workspaceHint": "Gilt für alle Mitglieder, die unter Darstellung keine eigene Sprache gewählt haben."
+  },
+  "title": "Einstellungen",
+  "saveAll": "Alle Änderungen speichern",
+  "tabs": {
+    "workspace": "Workspace",
+    "appearance": "Darstellung",
+    "career": "Karriereseite",
+    "ai": "KI & Integrationen",
+    "team": "Team & Rollen",
+    "interviewKits": "Interview-Kits",
+    "email": "E-Mail",
+    "calendar": "Kalender",
+    "cookies": "Cookies & Einwilligung",
+    "danger": "Gefahrenzone"
+  },
+  "openSource": {
+    "title": "Open Source",
+    "body": "Vellum ist selbst gehostet und für immer kostenlos."
+  },
+  "workspace": {
+    "identity": "Identität",
+    "identityHint": "Branding und grundlegende Workspace-Angaben.",
+    "name": "Name des Workspace",
+    "domain": "Primäre E-Mail-Domain",
+    "timezone": "Zeitzone",
+    "color": "Farbe",
+    "id": "Workspace-ID",
+    "idHint": "für API-Aufrufe",
+    "defaults": "Vorgaben",
+    "defaultsHint": "Sinnvolle Ausgangswerte für neue Stellen und ausgehende Nachrichten.",
+    "signature": "Standard-Signatur für Antworten",
+    "signaturePlaceholder": "Herzliche Grüße\n{name}",
+    "signatureHint": "Wird beim Verfassen von Antworten im Posteingang als Signatur vorausgefüllt.",
+    "autoSend": "Bewerbungsbestätigungen automatisch senden",
+    "autoSendHint": "Kandidaten innerhalb von 60 s nach der Bewerbung per E-Mail benachrichtigen. Erfordert verbundenes SMTP.",
+    "aiRejection": "KI-Entwürfe für Absagen",
+    "aiRejectionHint": "Schlägt eine freundliche, stellenbezogene Absage zur Prüfung durch HR vor.",
+    "showSalary": "Gehalt standardmäßig öffentlich anzeigen",
+    "showSalaryHint": "Kandidaten sehen die Vergütung in jeder Stellenanzeige.",
+    "currency": "Währung",
+    "currencyHint": "Gilt für alle Gehaltsfelder in der App und für die Vergütung auf der öffentlichen Karriereseite.",
+    "departments": "Abteilungen",
+    "departmentsHint": "Die Abteilungen, für die dein Team einstellt. Erscheinen als Auswahl im Assistenten für neue Stellen und als Filter auf der Karriereseite.",
+    "removeDepartment": "{name} entfernen",
+    "departmentPlaceholder": "z. B. Engineering",
+    "savedHint": "Gespeichert · Änderungen gelten für den ganzen Workspace"
+  },
+  "career": {
+    "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es erneut.",
+    "domainBrand": "Domain & Marke",
+    "openSite": "Seite öffnen",
+    "publicUrl": "Öffentliche URL",
+    "ownDomain": "Eigene Domain",
+    "ownDomainPlaceholder": "{domain} — leer lassen, um die Adresse oben zu verwenden",
+    "domainLive": "Live — diese Adresse hatte bereits Besucher",
+    "domainPending": "Speichere und lege dann diesen Eintrag bei deinem Domain-Anbieter an. Die Adresse funktioniert ab dem ersten Aufruf — das Sicherheitszertifikat wird automatisch ausgestellt, daher dauert der allererste Seitenaufruf ein paar Sekunden.",
+    "domainHint": "Deine Karriereseite ist immer unter der Adresse oben erreichbar. Trage hier eine Domain ein, um sie stattdessen unter deiner eigenen auszuliefern.",
+    "companyName": "Firmenname",
+    "hero": "Hero",
+    "eyebrow": "Dachzeile",
+    "headline1": "Überschrift (1)",
+    "headline2": "Überschrift (2 · kursiv)",
+    "lede": "Einleitung",
+    "ledePlaceholder": "Ein Satz, der das Unternehmen vorstellt…",
+    "ctaPrimary": "Primärer Button",
+    "ctaSecondary": "Sekundärer Button",
+    "about": "Über uns",
+    "headline": "Überschrift",
+    "paragraph": "Absatz {n}",
+    "paragraph1Placeholder": "Was ihr macht, in einfachen Worten.",
+    "paragraph2Placeholder": "Wie ihr arbeitet und warum das spannend ist.",
+    "stats": "Kennzahlen (4)",
+    "statValue": "Wert (z. B. 38)",
+    "statLabel": "Bezeichnung (z. B. Mitarbeitende)",
+    "values": "Werte",
+    "valueTitle": "Titel",
+    "valueDesc": "Beschreibung in einem Satz",
+    "newValue": "Neuer Wert",
+    "addValue": "Wert hinzufügen",
+    "offices": "Standorte",
+    "officesHint": "Erscheinen auf der öffentlichen Karriereseite unter dem Über-uns-Block.",
+    "officesEmpty": "Noch keine Standorte — füge die Städte hinzu, in denen ihr einstellt.",
+    "city": "Stadt",
+    "country": "Land",
+    "address": "Adresse",
+    "people": "# Personen",
+    "addOffice": "Standort hinzufügen",
+    "stories": "Team-Geschichten",
+    "storiesHint": "Jede Geschichte erscheint auf der öffentlichen Seite mit Zitat und Porträt.",
+    "storiesEmpty": "Teile ein paar Sätze von Menschen aus dem Team.",
+    "storyName": "Name",
+    "storyRole": "Rolle",
+    "storyTenure": "Dabei seit (z. B. 2 Jahre)",
+    "storyPhoto": "Porträt-URL (optional, https://…)",
+    "storyQuote": "Was Kandidaten über die Arbeit hier wissen sollten…",
+    "addStory": "Geschichte hinzufügen",
+    "footerCta": "Abschluss-CTA",
+    "body": "Text",
+    "bodyPlaceholder": "Ein kurzer Hinweis, der zu Initiativbewerbungen einlädt.",
+    "contactEmail": "Kontakt-E-Mail",
+    "legalLine": "Rechtlicher Hinweis",
+    "savedHint": "Gespeichert · öffne die Seite, um die Änderungen zu sehen",
+    "savePublish": "Speichern & veröffentlichen"
+  },
+  "team": {
+    "errors": {
+      "forbidden": "Nur Admins können Teammitglieder verwalten.",
+      "ownerRequired": "Nur ein Owner kann einen anderen Owner befördern, herabstufen oder entfernen.",
+      "lastOwner": "Mache zuerst ein anderes Teammitglied zum Owner — jeder Workspace braucht mindestens einen.",
+      "generic": "Teammitglied konnte nicht aktualisiert werden."
+    },
+    "confirmRemove": "{name} aus dem Workspace entfernen? Das Konto bleibt bestehen, verliert aber hier den Zugriff.",
+    "invite": "Teammitglieder einladen",
+    "sendInvite": "Einladung senden",
+    "shareLink": "Teile diesen Link (kein SMTP in der OSS-Edition — wird auch im Server-Log ausgegeben):",
+    "members": "Mitglieder ({count})",
+    "cols": {
+      "name": "Name",
+      "email": "E-Mail",
+      "role": "Rolle",
+      "actions": "Aktionen",
+      "expires": "Läuft ab",
+      "link": "Link"
+    },
+    "you": "du",
+    "view": "Ansehen",
+    "removeLabel": "{name} entfernen",
+    "pendingInvites": "Offene Einladungen ({count})",
+    "copy": "kopieren",
+    "loadFailed": "Teammitglied konnte nicht geladen werden.",
+    "crumb": "Team",
+    "teammate": "Teammitglied",
+    "joined": "Dabei seit {date}",
+    "profile": {
+      "email": "E-Mail",
+      "pronouns": "Pronomen",
+      "location": "Ort",
+      "timezone": "Zeitzone",
+      "workingHours": "Arbeitszeiten",
+      "bio": "Über mich"
+    }
+  },
+  "ai": {
+    "provider": "Anbieter",
+    "providers": {
+      "anthropic": {
+        "desc": "Claude-Familie — Haiku, Sonnet, Opus",
+        "badge": "Empfohlen"
+      },
+      "openai": {
+        "desc": "GPT-4-Familie + GPT-4o",
+        "badge": ""
+      },
+      "google": {
+        "desc": "Gemini 1.5 / 2.0",
+        "badge": ""
+      },
+      "ollama": {
+        "desc": "Modelle lokal ausführen — keine Daten verlassen dein Netzwerk",
+        "badge": "Open Source"
+      }
+    },
+    "selected": "Ausgewählt",
+    "apiKeyOptional": "API-Schlüssel (optional)",
+    "apiKeyFor": "API-Schlüssel · {provider}",
+    "apiKeyOllama": "Leer lassen, wenn dein Ollama-Server keine Authentifizierung nutzt",
+    "apiKeySet": "•••••• (gesetzt, leer lassen zum Beibehalten)",
+    "apiKeyPaste": "API-Schlüssel einfügen",
+    "model": "Modell",
+    "serverUrl": "Server-URL",
+    "serverUrlHint": "URL deines selbst gehosteten Ollama-Servers. Gehostete Anbieter (Anthropic, OpenAI, Google) nutzen ihre offiziellen Endpunkte und brauchen das nicht.",
+    "testing": "Teste…",
+    "connected": "Verbunden",
+    "failed": "Fehlgeschlagen",
+    "testConnection": "Verbindung testen",
+    "tokensUsed": "~{used} / {quota} Tokens in diesem Monat verbraucht",
+    "whereAi": "Wo KI eingesetzt wird",
+    "features": {
+      "summary": {
+        "name": "Kandidaten-Zusammenfassungen",
+        "desc": "Erzeugt KI-Passungswerte und Zusammenfassungen in drei Sätzen aus Lebensläufen."
+      },
+      "draft": {
+        "name": "Antwortentwürfe",
+        "desc": "Entwirft freundliche, stellenbezogene Antworten, die HR vor dem Senden bearbeiten kann."
+      },
+      "jd": {
+        "name": "Stellenbeschreibungen",
+        "desc": "Erstellt Stellenanzeigen aus wenigen Sätzen in eurem Tonfall."
+      },
+      "screen": {
+        "name": "Vorschläge für Screening-Fragen",
+        "desc": "Schlägt Fragen auf Basis der Stellenbeschreibung vor."
+      },
+      "rejection": {
+        "name": "Absage-Entwürfe",
+        "desc": "Schreibt freundliche, konkrete Absagen zur Prüfung durch HR."
+      },
+      "recap": {
+        "name": "Tagesrückblick",
+        "desc": "Kompaktes tägliches Briefing auf dem Dashboard. Grundlage für wöchentliche und monatliche Zusammenfassungen."
+      },
+      "pulse": {
+        "name": "Kandidaten-Pulse",
+        "desc": "Engagement-Signal aus Verhalten und KI-Stimmungsanalyse eingehender Nachrichten."
+      },
+      "review_queue": {
+        "name": "Review-Queue-Hinweise",
+        "desc": "Fügt der Review-Queue 1–4 übergreifende KI-Einträge unter den regelbasierten hinzu."
+      }
+    },
+    "customize": "Anpassen",
+    "hide": "Ausblenden",
+    "recap": {
+      "title": "Rückblicke & Zusammenfassungen",
+      "hint": "Ein tägliches Briefing auf dem Dashboard sowie optionale wöchentliche und monatliche E-Mails an Workspace-Admins. Alle drei laufen über dieselbe Logik.",
+      "cadences": "Rhythmus",
+      "daily": "Heute",
+      "dailyDesc": "Immer auf dem Dashboard",
+      "weekly": "Wöchentlich",
+      "weeklyDesc": "E-Mail · Montag 08:00 Ortszeit",
+      "monthly": "Monatlich",
+      "monthlyDesc": "E-Mail · am 1. des Monats",
+      "dailyDelivery": "Täglicher Versand",
+      "hourLocal": "{hour} Ortszeit",
+      "weeklyDelivery": "Wöchentlicher Versand",
+      "monthlyDelivery": "Monatlicher Versand",
+      "dayN": "Tag {n}",
+      "tone": "Tonfall der KI-Hinweise",
+      "tones": {
+        "factual": {
+          "label": "Sachlich",
+          "preview": "„42 % der Antworten erwähnten das Gehalt.“"
+        },
+        "conversational": {
+          "label": "Locker",
+          "preview": "„Diese Woche ging es oft ums Gehalt.“"
+        },
+        "quirky": {
+          "label": "Verspielt",
+          "preview": "„Im Posteingang drehte sich alles ums Geld 💸“"
+        }
+      },
+      "recipients": "Empfänger",
+      "allAdmins": "Alle Admins",
+      "sendingToAll": "Geht an alle Owner und Admins des Workspace ({count}). Stummschalten pro Person unter Einstellungen → Profil → Benachrichtigungen.",
+      "suggested": "Handlungsvorschläge im Rückblick",
+      "suggestedHint": "Ergänzt Hinweise wie „Erwäge X“. Manche Teams wollen lieber nur die Fakten.",
+      "advanced": "Erweiterte Schwellenwerte",
+      "staleMult": "Faktor für stockende Phasen",
+      "staleMultHint": "× Median-Verweildauer des Teams in der Phase",
+      "awaiting": "Zeitfenster für ausstehende Antworten",
+      "awaitingHint": "Stunden seit der Bewerbung",
+      "retention": "Warnung vor Aufbewahrungsfrist",
+      "retentionHint": "Tage vor Ablauf von 12 Monaten",
+      "building": "Wird erstellt…",
+      "buildNow": "Jetzt erstellen",
+      "regenerated": "Rückblick neu erstellt",
+      "buildFailed": "Erstellung fehlgeschlagen",
+      "adminRecipients": "{count} Admins als Empfänger",
+      "selectedRecipients": "{count} ausgewählte Empfänger"
+    },
+    "pulse": {
+      "title": "Pulse — Engagement-Signal",
+      "hint": "Bewertet, wie engagiert jeder Kandidat ist, und wird bei jedem eingehenden Signal aktualisiert. KI-Stimmungsanalyse ist ein Faktor — schalte sie aus für einen rein verhaltensbasierten Pulse.",
+      "sentiment": "KI-Stimmungsanalyse für Pulse nutzen",
+      "sentimentHint": "Wenn aus, basiert Pulse nur auf Verhalten (Öffnungen, Klicks, Antworttakt).",
+      "alerts": "Pulse-Warnungen",
+      "alertsHint": "Benachrichtigt die verantwortliche Person, sobald Pulse eine Stufe fällt.",
+      "lock": "Wert bei Abmeldung sperren",
+      "lockHint": "Meldet sich ein Kandidat von der Kommunikation ab, bleibt Pulse bei 0."
+    },
+    "privacy": {
+      "title": "Daten & Datenschutz",
+      "hint": "Lebenslaufinhalte werden an {provider} gesendet, wenn KI-Funktionen genutzt werden. Lege fest, was erlaubt ist.",
+      "redact": "Personenbezogene Daten vor dem Senden an die KI schwärzen",
+      "redactHint": "Namen, E-Mail-Adressen und Telefonnummern werden durch Platzhalter ersetzt.",
+      "noLog": "Prompts nicht protokollieren",
+      "noLogHint": "Anfragen mit dem No-Log-Header des Anbieters senden, sofern unterstützt.",
+      "cache": "KI-Antworten zwischenspeichern",
+      "cacheHint": "Überspringt erneute Läufe für dieselbe Eingabe — spart Tokens."
+    },
+    "saveChanges": "Änderungen speichern"
+  },
+  "reviewQueue": {
+    "forbidden": "Nur Admins können diese Regeln ändern.",
+    "saveFailed": "Speichern fehlgeschlagen.",
+    "rateLimited": "Zu viele Neuaufbauten — warte einen Moment und versuche es dann erneut.",
+    "title": "Review-Queue",
+    "cacheHint": "Cache wird stündlich aktualisiert",
+    "hint": "Konfigurierbare Regeln steuern die Triage-Liste in der oberen Leiste. Jede Kategorie hat einen Schalter, eine Gewichtung und (wo sinnvoll) einen Schwellenwert.",
+    "awaitingSchema": "Schema ausstehend",
+    "disable": "{label} deaktivieren",
+    "enable": "{label} aktivieren",
+    "aiOverlay": "KI-Ergänzung",
+    "aiOverlayHint": "Fügt unter den regelbasierten Einträgen 1–4 übergreifende KI-Hinweise hinzu. Erfordert einen eingerichteten KI-Anbieter.",
+    "maxN": "Max. {n}",
+    "defaultScope": "Standardumfang",
+    "scopeMine": "Nur meine",
+    "scopeWorkspace": "Ganzer Workspace",
+    "savedHint": "Gespeichert · Workspace-Cache geleert",
+    "rebuild": "Jetzt neu aufbauen",
+    "saveRules": "Regeln speichern",
+    "severity": "Gewichtung",
+    "buckets": {
+      "no-reply": {
+        "label": "Wartet auf deine Antwort",
+        "desc": "Der Kandidat hat in einem Verlauf geantwortet, auf den du noch nicht reagiert hast."
+      },
+      "post-interview": {
+        "label": "Entscheidung nach Interview",
+        "desc": "Länger als diese Anzahl Tage in der Interview-Phase."
+      },
+      "offer-pending": {
+        "label": "Angebot offen",
+        "desc": "Angebot verschickt, aber der Kandidat hat nicht geantwortet."
+      },
+      "stale-applied": {
+        "label": "Liegengebliebene Bewerbungen",
+        "desc": "Beworben, aber noch keine Kontaktaufnahme."
+      },
+      "schedule-needed": {
+        "label": "Termin nötig",
+        "desc": "In die Interview-Phase verschoben, aber keine Kalendereinladung vorhanden."
+      },
+      "missing-debrief": {
+        "label": "Fehlendes Debriefing",
+        "desc": "Das Interview hat stattgefunden, aber es wurde kein Debriefing erfasst."
+      },
+      "reference-overdue": {
+        "label": "Referenz überfällig",
+        "desc": "Referenzprüfungen stehen zu lange aus. (Schema ausstehend — der Schalter hat derzeit keine Wirkung.)"
+      },
+      "long-cold-scorer": {
+        "label": "Starker Kandidat ohne Fortschritt",
+        "desc": "Hohe KI-Passung, aber in einer frühen Phase stehen geblieben."
+      }
+    },
+    "thresholds": {
+      "interviewDecisionDays": {
+        "label": "Markieren nach",
+        "suffix": "Tagen"
+      },
+      "offerNudgeDays": {
+        "label": "Erinnern nach",
+        "suffix": "Tagen"
+      },
+      "staleAppliedDays": {
+        "label": "Markieren nach",
+        "suffix": "Tagen"
+      },
+      "scheduleWindowDays": {
+        "label": "Innerhalb von",
+        "suffix": "Tagen"
+      },
+      "debriefSlaHours": {
+        "label": "Frist nach Interview",
+        "suffix": "Stunden"
+      },
+      "referenceSlaDays": {
+        "label": "Markieren nach",
+        "suffix": "Tagen"
+      },
+      "coldScorerMinScore": {
+        "label": "Mindestwert",
+        "suffix": "/ 100"
+      },
+      "coldScorerStageMult": {
+        "label": "Stillstandsfaktor",
+        "suffix": "× Median"
+      }
+    }
+  },
+  "email": {
+    "saveFailed": "E-Mail-Konfiguration konnte nicht gespeichert werden.",
+    "saved": "Gespeichert. Führe einen Test aus, um die Verbindung zu prüfen.",
+    "testFailed": "Test fehlgeschlagen.",
+    "testOk": "✓ IMAP und SMTP erfolgreich verbunden.",
+    "testPartial": "Teilweise: IMAP {imap} · SMTP {smtp}",
+    "pollFailed": "Abruf fehlgeschlagen.",
+    "polled": "Abgerufen — {checked, plural, one {# Nachricht} other {# Nachrichten}} geprüft, {ingested} neu übernommen.",
+    "polledSince": "Abgerufen seit {since} — {checked, plural, one {# Nachricht} other {# Nachrichten}} geprüft, {ingested} neu übernommen.",
+    "confirmDisconnect": "Dieses E-Mail-Konto trennen? Vorhandene Nachrichten bleiben erhalten; der Abruf stoppt.",
+    "disconnected": "Getrennt.",
+    "title": "E-Mail-Integration",
+    "hint": "Verbinde ein gemeinsames Postfach (Gmail, Outlook, FastMail, dein Anbieter), damit Antworten von Kandidaten hier erscheinen und du direkt in der App antworten kannst. Nutze ein <b>App-Passwort</b>, falls dein Anbieter das verlangt.",
+    "lastPolled": "Zuletzt abgerufen {date}",
+    "lastError": "Letzter Fehler: {error}",
+    "fromIdentity": "Absender",
+    "fromName": "Absendername",
+    "yourName": "Dein Name",
+    "fromAddress": "Absenderadresse",
+    "login": "Postfach-Login",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "passwordKeep": "•••••• (leer lassen zum Beibehalten)",
+    "appPassword": "App-Passwort",
+    "loginHint": "Ein Login gilt für eingehend (IMAP) und ausgehend (SMTP). Die meisten Anbieter verlangen ein <b>App-Passwort</b> statt deines Kontopassworts — sieh in der Dokumentation deines Anbieters nach.",
+    "imap": "IMAP-Server (eingehend)",
+    "smtp": "SMTP-Server (ausgehend)",
+    "host": "Host",
+    "port": "Port",
+    "tls": "TLS verwenden",
+    "tlsHint": "Wird von fast allen Anbietern verlangt.",
+    "starttlsHint": "Aus für Port 465 (implizites TLS), an für 587 (STARTTLS).",
+    "polling": "Abruf aktiviert",
+    "pollingHint": "Wenn aus, holt der Hintergrundprozess keine neuen Mails mehr ab (vorhandene Nachrichten bleiben erhalten).",
+    "disconnect": "Trennen",
+    "testing": "Teste…",
+    "test": "Verbindung testen",
+    "pollingNow": "Rufe ab…",
+    "pollNow": "Jetzt abrufen",
+    "update": "Aktualisieren",
+    "connect": "Verbinden",
+    "matching": {
+      "title": "So funktioniert die Zuordnung",
+      "sender": "Eingehende Mails werden Kandidaten anhand der Absenderadresse zugeordnet (Groß-/Kleinschreibung egal).",
+      "subject": "Ist der Absender unbekannt, wird der Betreff nach einem Stellentitel durchsucht — z. B. „Re: Senior Product Designer — Rückfrage“. Gewählt wird der Bewerber, dessen Name am besten zum Absendernamen passt.",
+      "ignored": "Absender, die weder zu einer bekannten Adresse noch zu einer Stelle oder einem Bewerber im Workspace passen, werden stillschweigend ignoriert.",
+      "threading": "Wenn möglich, werden Antworten in den bestehenden Verlauf zwischen Kandidat und Stelle einsortiert; sonst wird ein neuer Verlauf angelegt.",
+      "outbound": "Ausgehende Antworten aus Vellum verwenden den Absender oben und werden über In-Reply-To-Header verknüpft.",
+      "cadence": "Abrufintervall: {seconds} s. „Jetzt abrufen“ holt sofort neue Mails."
+    }
+  },
+  "calendar": {
+    "invites": "Kalendereinladungen",
+    "invitesHint": "Wenn du ein Interview planst, schickt Vellum dem Kandidaten eine E-Mail mit einem echten <mono>.ics</mono>-Kalenderanhang. Er lässt sich in Gmail, Apple Kalender, Outlook oder jedem anderen Programm öffnen, und der Termin landet mit Uhrzeit, Ort, Meeting-Link und Teilnehmenden im Kalender.",
+    "sendDefault": "Einladungen standardmäßig senden",
+    "sendDefaultHint": "Der Schalter „Jetzt senden“ im Planungsdialog übernimmt diesen Wert. Recruiter können ihn pro Termin ändern.",
+    "delivery": {
+      "title": "So werden Einladungen zugestellt",
+      "smtp": "Ausgehende Mails nutzen die SMTP-Zugangsdaten deines Workspace aus <link>Einstellungen → E-Mail</link>.",
+      "ready": "Bereit · {address}",
+      "notConfigured": "Nicht eingerichtet",
+      "rfc": "Die .ics-Datei folgt RFC 5545 mit der Methode <mono>REQUEST</mono>, einer Termin-UID und einer Erinnerung 10 Minuten vorher.",
+      "cc": "Ausgewählte Interviewer stehen in CC; ihre Adressen erscheinen als ATTENDEES, damit Kalender alle Teilnehmenden anzeigen.",
+      "url": "Die Meeting-URL wird zum <mono>URL</mono>-Feld des Termins — die meisten Programme zeigen sie als Beitreten-Button.",
+      "sequence": "Beim erneuten Senden einer Aktualisierung wird die iCalendar-<mono>SEQUENCE</mono> erhöht, damit Kalender den Termin aktualisieren statt ihn doppelt anzulegen."
+    },
+    "savedHint": "Gespeichert · gilt für ab jetzt geplante Interviews",
+    "saveChanges": "Änderungen speichern",
+    "confirmDisconnect": "Diesen Kalender trennen? Vellum synchronisiert dann keine Termine mehr dorthin.",
+    "accounts": "Kalenderkonten",
+    "accountsHint": "Verbinde einen Kalender, damit Vellum Interviews direkt dorthin überträgt und beim Planen belegte Zeiten überspringt.",
+    "connectedFlash": "{provider}-Kalender verbunden.",
+    "connectFailed": "Verbindung fehlgeschlagen: {error}",
+    "noAccounts": "Noch keine Kalender verbunden.",
+    "syncError": "Fehler · {error}",
+    "unknown": "unbekannt",
+    "lastSync": "zuletzt synchronisiert {date}",
+    "notSynced": "noch nicht synchronisiert",
+    "syncing": "Synchronisiere…",
+    "syncNow": "Jetzt synchronisieren",
+    "disconnect": "Trennen",
+    "syncFailed": "Synchronisierung fehlgeschlagen: {error}",
+    "pulled": "{count, plural, one {# Termin} other {# Termine}} in die Kalenderansicht übernommen.",
+    "syncEmpty": "Synchronisierung abgeschlossen — 0 Termine in den nächsten 90 Tagen gefunden. Die Verbindung funktioniert; in diesem Kalender steht im abgerufenen Zeitraum einfach nichts an. Wähle oben einen anderen Standardkalender oder lege zum Test einen Termin an.",
+    "connectGoogle": "Google Kalender verbinden",
+    "connectGoogleOff": "Google verbinden · nicht eingerichtet",
+    "connectMicrosoft": "Microsoft 365 verbinden",
+    "connectMicrosoftOff": "Microsoft verbinden · nicht eingerichtet",
+    "connectCaldav": "iCloud / CalDAV verbinden",
+    "envHint": "Setze {vars} auf dem Server",
+    "caldav": {
+      "title": "CalDAV-Verbindung",
+      "custom": "Eigener",
+      "connectFailed": "Verbindung fehlgeschlagen",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "serverUrl": "Server-URL (https://…)",
+      "username": "E-Mail / Benutzername",
+      "password": "Passwort (app-spezifisches Passwort verwenden)",
+      "connecting": "Verbinde…",
+      "test": "Verbindung testen",
+      "pick": "Wähle den Kalender, in den Vellum schreiben soll:",
+      "save": "Kalender speichern"
+    },
+    "defaults": "Kalender-Vorgaben",
+    "defaultsHint": "Arbeitszeiten für die Kalenderansicht. Zeiten außerhalb werden abgedunkelt, bleiben aber scrollbar.",
+    "dayStarts": "Tagesbeginn",
+    "dayEnds": "Tagesende",
+    "defaultKind": "Standardart",
+    "timezone": "Zeitzone",
+    "saveDefaults": "Vorgaben speichern"
+  },
+  "appearance": {
+    "mode": "Modus",
+    "modes": {
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "accent": "Akzentfarbe",
+    "accents": {
+      "indigo": "Indigo",
+      "aurora": "Aurora",
+      "cyan": "Cyan",
+      "sage": "Salbei",
+      "graphite": "Graphit"
+    },
+    "density": "Dichte",
+    "densities": {
+      "compact": "kompakt",
+      "cozy": "luftig"
+    },
+    "glass": "Glas-Intensität"
+  },
+  "cookies": {
+    "title": "Cookies & Einwilligung",
+    "hint": "Zeige auf deiner öffentlichen Karriereseite ein dezentes Einwilligungsbanner und lade Drittanbieter-Skripte erst nach Zustimmung. Notwendige Cookies sind immer erlaubt; funktionale und Marketing-Skripte warten auf die Einwilligung.",
+    "banner": "Einwilligungsbanner auf öffentlichen Seiten zeigen",
+    "bannerHint": "Wenn aus, ist das Banner ausgeblendet und nur notwendige Skripte werden geladen.",
+    "bannerTitle": "Banner-Titel",
+    "bannerTitlePlaceholder": "Wir respektieren deine Cookie-Auswahl",
+    "bannerMessage": "Banner-Text",
+    "bannerMessagePlaceholder": "Wir nutzen ein paar Cookies, damit diese Seite funktioniert…",
+    "scriptCount": "{count, plural, one {# Skript} other {# Skripte}}",
+    "empty": "Noch keine Skripte in dieser Kategorie.",
+    "inline": "inline ({chars} Zeichen)",
+    "addScript": "Skript hinzufügen",
+    "editScript": "Skript bearbeiten",
+    "savedAt": "Gespeichert · {time}",
+    "category": "Kategorie",
+    "name": "Name",
+    "provider": "Anbieter (optional)",
+    "description": "Beschreibung (optional)",
+    "descriptionPlaceholder": "Erfasst Seitenaufrufe und Conversions.",
+    "src": "Externe Skript-URL",
+    "code": "…oder Inline-JS",
+    "loadHint": "Das Skript wird nur geladen, wenn Besucher der Kategorie <b>{category}</b> zustimmen. Nutze entweder eine URL oder ein Inline-Snippet — sind beide gesetzt, gilt die URL.",
+    "saveChanges": "Änderungen speichern"
+  },
+  "danger": {
+    "title": "Gefahrenzone",
+    "export": "Alle Workspace-Daten exportieren",
+    "exportHint": "JSON-Datei mit Stellen, Kandidaten, Verläufen, Notizen und Interviews.",
+    "exportButton": "Exportieren",
+    "purge": "Rückblick-Cache leeren",
+    "purgeHint": "Löscht alle zwischengespeicherten Tages-, Wochen- und Monatsrückblicke. Beim nächsten Laden des Dashboards (oder im nächsten Worker-Lauf) werden sie neu erstellt — nützlich nach Änderungen an Prompts oder Schwellenwerten.",
+    "purging": "Leere…",
+    "purged": "✓ Geleert",
+    "purgeFailed": "✗ Fehlgeschlagen",
+    "purgeButton": "Cache leeren",
+    "delete": "Workspace löschen",
+    "deleteHint": "Entfernt diesen Workspace mit allen Daten endgültig. Gib zur Bestätigung den Workspace-Slug ein.",
+    "deleteButton": "Endgültig löschen"
+  },
+  "kits": {
+    "errors": {
+      "name": "Gib dem Kit einen Namen.",
+      "criteria": "Füge mindestens ein Kriterium hinzu.",
+      "save": "Das Kit konnte nicht gespeichert werden."
+    },
+    "confirmDelete": "Interview-Kit „{name}“ löschen? Bestehende Debriefings behalten ihre Bewertungen.",
+    "title": "Interview-Kits",
+    "hint": "Bewertungsvorlagen, die das Team nach einem Interview ausfüllt. Ordne eine einer Phase zu, damit sie beim Debriefing in diesem Schritt vorausgewählt ist.",
+    "new": "Neues Kit",
+    "edit": "Kit bearbeiten",
+    "newTitle": "Neues Interview-Kit",
+    "name": "Name des Kits",
+    "namePlaceholder": "z. B. Bewertung technisches Screening",
+    "stage": "Standardphase",
+    "anyStage": "Allgemein (jede Phase)",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Was dieses Interview prüfen soll",
+    "criteria": "Kriterien",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "criterionPlaceholder": "Kriterium {n} — z. B. Problemlösung",
+    "criterionType": "Art des Kriteriums",
+    "removeCriterion": "Kriterium entfernen",
+    "guidance": "Hinweis für Interviewende (optional)",
+    "addCriterion": "Kriterium hinzufügen",
+    "save": "Kit speichern",
+    "create": "Kit erstellen",
+    "empty": "Noch keine Interview-Kits.",
+    "createFirst": "Erstes Kit erstellen",
+    "general": "Allgemein",
+    "criteriaCount": "{count, plural, one {# Kriterium} other {# Kriterien}}",
+    "deleteLabel": "{name} löschen"
+  },
+  "preview": {
+    "banner": "Vorschau deiner Karriereseite unter <b>{domain}</b>",
+    "cnameLive": "CNAME aktiv",
+    "cnamePending": "CNAME ausstehend",
+    "edit": "Inhalte bearbeiten",
+    "openVisitor": "Als Besucher öffnen",
+    "iframeTitle": "Vorschau der Karriereseite von {name}",
+    "liveJobs": "Live-Stellenseiten",
+    "noJobs": "Keine offenen Stellen für die Vorschau."
+  }
+}

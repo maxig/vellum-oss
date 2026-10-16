@@ -1,0 +1,21 @@
+{
+  "title": "To-dos",
+  "buttonLabel": "To-dos — {count} open",
+  "scope": "To-do scope",
+  "mine": "My to-dos",
+  "assigned": "Assigned",
+  "emptyMine": "Nothing on your list. Add a to-do below.",
+  "emptyAssigned": "You haven't assigned any to-dos.",
+  "placeholder": "Add a to-do…",
+  "assignTo": "Assign to",
+  "assignToMe": "Assign to me",
+  "dueDate": "Due date",
+  "add": "Add to-do",
+  "markNotDone": "Mark not done",
+  "markDone": "Mark done",
+  "from": "from {name}",
+  "delete": "Delete to-do",
+  "openCount": "{count} open",
+  "caughtUp": "You're all caught up — nothing on your list.",
+  "more": "+{count} more"
+}

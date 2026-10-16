@@ -5,9 +5,11 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Glass, Icons } from "@/components/primitives";
 
 export function AnalyticsControls({ range, comparing }: { range: 7 | 30; comparing: boolean }) {
+  const t = useTranslations("analytics.controls");
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -24,10 +26,7 @@ export function AnalyticsControls({ range, comparing }: { range: 7 | 30; compari
   return (
     <>
       <Glass faint style={{ padding: 3, borderRadius: 9, display: "inline-flex", gap: 2 }}>
-        {[
-          { v: 7 as const, l: "7d" },
-          { v: 30 as const, l: "30d" },
-        ].map((o) => (
+        {[7 as const, 30 as const].map((v) => ({ v })).map((o) => (
           <button
             key={o.v}
             className="btn btn-sm btn-ghost"
@@ -38,13 +37,13 @@ export function AnalyticsControls({ range, comparing }: { range: 7 | 30; compari
               fontWeight: 500,
             }}
           >
-            Last {o.l}
+            {t("last", { n: o.v })}
           </button>
         ))}
       </Glass>
       <button className="btn btn-sm" onClick={() => set({ compare: comparing ? "0" : "1" })}>
         {comparing ? <Icons.Check size={11} stroke={2.4} /> : <Icons.Plus size={11} stroke={2} />}
-        Compare previous
+        {t("compare")}
       </button>
       <button
         className="btn btn-sm"
@@ -52,13 +51,14 @@ export function AnalyticsControls({ range, comparing }: { range: 7 | 30; compari
           window.location.href = `/api/analytics/export?range=${range}`;
         }}
       >
-        <Icons.ArrowUpRight size={11} /> Export
+        <Icons.ArrowUpRight size={11} /> {t("export")}
       </button>
     </>
   );
 }
 
 export function RegenerateButton({ range }: { range: 7 | 30 }) {
+  const t = useTranslations("analytics.controls");
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
   return (
@@ -75,7 +75,7 @@ export function RegenerateButton({ range }: { range: 7 | 30 }) {
         }
       }}
     >
-      <Icons.Sparkle size={11} stroke={2} /> {busy ? "Regenerating…" : "Regenerate"}
+      <Icons.Sparkle size={11} stroke={2} /> {busy ? t("regenerating") : t("regenerate")}
     </button>
   );
 }

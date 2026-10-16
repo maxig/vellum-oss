@@ -26,6 +26,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRelativeTime } from "@/i18n/format";
 import { Icons } from "@/components/Icons";
 import { Avatar } from "@/components/primitives";
 import { useProfileSheet } from "@/components/SheetHost";
@@ -64,6 +66,8 @@ type QueueResponse = {
 
 export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const t = useTranslations("nav.queue");
+  const relativeTime = useRelativeTime();
   const { openSheet } = useProfileSheet();
 
   const [data, setData] = React.useState<QueueResponse | null>(null);
@@ -81,7 +85,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
         if (!cancelled) setData(j);
       })
       .catch(() => {
-        if (!cancelled) setError("Couldn't load your queue. Try again.");
+        if (!cancelled) setError(t("loadFailed"));
       });
     return () => {
       cancelled = true;
@@ -136,13 +140,13 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
         const j = await r.json().catch(() => ({}));
         setRefreshError(
           j.retryAfter
-            ? `Wait ${j.retryAfter}s before refreshing again.`
-            : "Refresh in progress — try again shortly.",
+            ? t("waitSeconds", { seconds: j.retryAfter })
+            : t("refreshInProgress"),
         );
         return;
       }
       if (!r.ok) {
-        setRefreshError("Refresh failed.");
+        setRefreshError(t("refreshFailed"));
         return;
       }
       const j = (await r.json()) as QueueResponse;
@@ -200,7 +204,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
   const visible = filter === "all" ? items : items.filter((it) => it.bucketId === filter);
   const total = items.length;
   const visibleTotal = visible.length;
-  const builtAgo = data ? relativeMinutes(data.builtAt) : "";
+  const builtAgo = data ? relativeTime(data.builtAt) : "";
 
   // Group visible items by bucket, preserving §4 priority order.
   const grouped = BUCKETS.map((def) => ({
@@ -218,7 +222,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
         className="sheet glass glass-strong"
         style={{ width: "min(820px, calc(100vw - 48px))", height: "min(720px, calc(100vh - 48px))" }}
         role="dialog"
-        aria-label="Review queue"
+        aria-label={t("title")}
       >
         {/* Header */}
         <div style={{ padding: "18px 24px", borderBottom: "0.5px solid var(--line)" }}>
@@ -239,28 +243,22 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
               <Icons.Sparkle size={18} stroke={2} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="topbar-crumb">AI assistant</div>
-              <div className="topbar-title">Review queue</div>
+              <div className="topbar-crumb">{t("crumb")}</div>
+              <div className="topbar-title">{t("title")}</div>
             </div>
-            <button className="iconbtn" onClick={onClose} aria-label="Close">
+            <button className="iconbtn" onClick={onClose} aria-label={t("close")}>
               <Icons.X size={15} />
             </button>
           </div>
 
           <p className="muted" style={{ fontSize: 13.5, marginTop: 12 }}>
-            {!data && !error && "Loading your queue…"}
+            {!data && !error && t("loading")}
             {error && error}
             {data &&
               (total === 0 ? (
-                "Inbox zero. Nothing's blocked on you right now — nice work."
+                t("inboxZeroLine")
               ) : (
-                <>
-                  I scanned your pipeline and found{" "}
-                  <b style={{ color: "var(--ink-0)" }}>
-                    {total} candidate{total !== 1 ? "s" : ""}
-                  </b>{" "}
-                  who need attention. Sorted by what's most time-sensitive.
-                </>
+                t.rich("summary", { count: total, b: (c) => <b style={{ color: "var(--ink-0)" }}>{c}</b> })
               ))}
           </p>
 
@@ -271,7 +269,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
               before we know which one. */}
           {data?.scope && data.canSeeWorkspace && (
             <div className="row" style={{ marginTop: 12, gap: 8, alignItems: "center" }}>
-              <span className="tiny" style={{ color: "var(--ink-2)" }}>Showing</span>
+              <span className="tiny" style={{ color: "var(--ink-2)" }}>{t("showing")}</span>
               <div className="row" style={{ gap: 0 }}>
                 {(["mine", "workspace"] as const).map((opt) => (
                   <button
@@ -290,7 +288,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
                       color: data.scope === opt ? "var(--ink-0)" : "var(--ink-2)",
                     }}
                   >
-                    {opt === "mine" ? "My candidates" : "Whole workspace"}
+                    {opt === "mine" ? t("scopeMine") : t("scopeWorkspace")}
                   </button>
                 ))}
               </div>
@@ -301,7 +299,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
           {data && total > 0 && (
             <div className="row" style={{ marginTop: 14, gap: 6, flexWrap: "wrap" }}>
               <BucketChip on={filter === "all"} count={total} onClick={() => applyFilter("all")}>
-                All
+                {t("all")}
               </BucketChip>
               {presentBuckets.map((b) => (
                 <BucketChip
@@ -312,7 +310,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
                   color={b.color}
                   icon={b.icon}
                 >
-                  {b.shortLabel}
+                  {t(`buckets.${b.id}.short` as "buckets.ai.short")}
                 </BucketChip>
               ))}
             </div>
@@ -322,7 +320,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
         {/* Body */}
         <div className="scroll" style={{ flex: 1, overflowY: "auto" }}>
           {data && visibleTotal === 0 && total > 0 && (
-            <BlankState>Nothing in this bucket needs you.</BlankState>
+            <BlankState>{t("bucketEmpty")}</BlankState>
           )}
           {data && total === 0 && <InboxZero />}
           {grouped.map((g) => (
@@ -342,7 +340,7 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
               >
                 <BucketIcon name={g.def.icon} color={g.def.color} />
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--ink-0)", flex: 1, marginLeft: 8 }}>
-                  {g.def.label}
+                  {t(`buckets.${g.def.id}.label` as "buckets.ai.label")}
                 </span>
                 <span className="chip" style={{ height: 20, fontSize: 11 }}>
                   {g.items.length}
@@ -369,20 +367,20 @@ export default function ReviewQueueSheet({ onClose }: { onClose: () => void }) {
             <Icons.Sparkle size={12} style={{ color: "var(--accent-solid)" }} />
             <span className="tiny" style={{ flex: 1 }}>
               {refreshing
-                ? "Refreshing…"
+                ? t("refreshing")
                 : data.stale
-                  ? `Queue cached ${builtAgo}. Refreshing in background.`
-                  : `Queue cached ${builtAgo}. Refreshes every hour.`}
+                  ? t("cachedStale", { when: builtAgo })
+                  : t("cached", { when: builtAgo })}
               {refreshError && <span style={{ color: "oklch(50% 0.18 28)", marginLeft: 8 }}>{refreshError}</span>}
             </span>
             <button className="btn btn-sm btn-ghost" onClick={manualRefresh} disabled={refreshing}>
-              <Icons.Refresh size={11} /> Refresh
+              <Icons.Refresh size={11} /> {t("refresh")}
             </button>
             <a className="btn btn-sm btn-ghost" href="/settings?tab=ai#review-queue">
-              Customize rules
+              {t("customize")}
             </a>
             <button className="btn btn-sm btn-primary" onClick={onClose}>
-              Done
+              {t("done")}
             </button>
           </div>
         )}
@@ -404,6 +402,7 @@ function QueueRow({
 }) {
   // AI items get the design-system AI affordance per spec §3:
   // a tinted left border + a Sparkle pill next to the candidate name.
+  const t = useTranslations("nav.queue");
   const isAI = item.bucketId === "ai";
   return (
     <div
@@ -443,7 +442,7 @@ function QueueRow({
                 borderColor: "transparent",
                 gap: 4,
               }}
-              title="Surfaced by the AI overlay"
+              title={t("aiTitle")}
             >
               <Icons.Sparkle size={10} stroke={2.4} />
               AI
@@ -468,7 +467,7 @@ function QueueRow({
                 borderColor: "transparent",
               }}
             >
-              Urgent
+              {t("urgent")}
             </span>
           )}
         </div>
@@ -479,7 +478,7 @@ function QueueRow({
       <div className="row" style={{ gap: 6 }}>
         <ActionButton item={item} onClick={onAction} />
         <button className="btn btn-sm btn-ghost" onClick={onOpen}>
-          Open
+          {t("open")}
         </button>
       </div>
     </div>
@@ -487,37 +486,38 @@ function QueueRow({
 }
 
 function ActionButton({ item, onClick }: { item: QueueItem; onClick: () => void }) {
+  const t = useTranslations("nav.queue.actions");
   if (item.action === "message") {
     return (
       <button className="btn btn-sm btn-primary" onClick={onClick}>
-        <Icons.Mail size={11} /> Reply
+        <Icons.Mail size={11} /> {t("reply")}
       </button>
     );
   }
   if (item.action === "schedule") {
     return (
       <button className="btn btn-sm btn-primary" onClick={onClick}>
-        <Icons.Calendar size={11} /> Schedule
+        <Icons.Calendar size={11} /> {t("schedule")}
       </button>
     );
   }
   if (item.action === "decide") {
     return (
       <button className="btn btn-sm btn-primary" onClick={onClick}>
-        Decide
+        {t("decide")}
       </button>
     );
   }
   if (item.action === "nudge") {
     return (
       <button className="btn btn-sm btn-primary" onClick={onClick}>
-        <Icons.Send size={11} /> Nudge
+        <Icons.Send size={11} /> {t("nudge")}
       </button>
     );
   }
   return (
     <button className="btn btn-sm" onClick={onClick}>
-      <Icons.Check size={11} /> Complete
+      <Icons.Check size={11} /> {t("complete")}
     </button>
   );
 }
@@ -578,11 +578,12 @@ function BucketIcon({ name, color, size = 13 }: { name: string; color?: string; 
 }
 
 function BlankState({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("nav.queue");
   return (
     <div style={{ padding: 60, textAlign: "center", color: "var(--ink-2)" }}>
       <Icons.Check size={36} stroke={1.5} style={{ color: "oklch(70% 0.14 150)", marginBottom: 12 }} />
       <div style={{ fontSize: 15, fontWeight: 500, color: "var(--ink-0)", marginBottom: 4 }}>
-        All clear here.
+        {t("allClear")}
       </div>
       <div className="tiny">{children}</div>
     </div>
@@ -590,6 +591,7 @@ function BlankState({ children }: { children: React.ReactNode }) {
 }
 
 function InboxZero() {
+  const t = useTranslations("nav.queue");
   return (
     <div style={{ padding: 80, textAlign: "center", color: "var(--ink-2)" }}>
       <div
@@ -608,16 +610,10 @@ function InboxZero() {
         <Icons.Check size={28} stroke={2} />
       </div>
       <div style={{ fontSize: 17, fontWeight: 500, color: "var(--ink-0)", marginBottom: 6 }}>
-        Inbox zero.
+        {t("inboxZero")}
       </div>
-      <div style={{ fontSize: 13.5 }}>Nothing's blocked on you right now — nice work.</div>
+      <div style={{ fontSize: 13.5 }}>{t("nothingBlocked")}</div>
     </div>
   );
 }
 
-function relativeMinutes(iso: string): string {
-  const diffSec = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diffSec < 60) return "just now";
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-  return `${Math.floor(diffSec / 3600)}h ago`;
-}

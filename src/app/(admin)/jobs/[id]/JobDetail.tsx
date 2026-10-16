@@ -5,8 +5,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useValueLabels } from "@/i18n/labels";
 import { Glass, Chip, Avatar, Icons } from "@/components/primitives";
-import { relativeTime, fmtMoney } from "@/lib/utils";
+import { fmtMoney } from "@/lib/utils";
+import { useRelativeTime } from "@/i18n/format";
 import Wysiwyg from "@/components/Wysiwyg";
 import RichText from "@/components/RichText";
 import { markdownToHtml } from "@/lib/markdown";
@@ -41,15 +44,8 @@ type JobShape = {
 
 type StageStat = { key: string; name: string; color: string; count: number };
 
-const TABS = [
-  { id: "description", l: "Description" },
-  { id: "screening", l: "Screening" },
-  { id: "process", l: "Hiring process" },
-  { id: "team", l: "Hiring team" },
-  { id: "publish", l: "Publishing" },
-  { id: "analytics", l: "Analytics" },
-] as const;
-type Tab = (typeof TABS)[number]["id"];
+const TABS = ["description", "screening", "process", "team", "publish", "analytics"] as const;
+type Tab = (typeof TABS)[number];
 
 type Member = { id: string; name: string; email: string; role: string };
 
@@ -72,6 +68,8 @@ export default function JobDetail({
 }) {
   const canPublish = currentRole === "owner" || currentRole === "admin";
   const router = useRouter();
+  const t = useTranslations("jobs.detail");
+  const labels = useValueLabels();
   const [tab, setTab] = React.useState<Tab>("description");
   const [editing, setEditing] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -109,10 +107,7 @@ export default function JobDetail({
 
   async function setStatus(status: "Open" | "Draft" | "Closed") {
     if (status === "Closed") {
-      const ok = window.confirm(
-        `Close "${job.title}"? The role disappears from the career site immediately. ` +
-          `Existing applicants stay in the pipeline and you can reopen the role anytime.`,
-      );
+      const ok = window.confirm(t("confirmClose", { title: job.title }));
       if (!ok) return;
     }
     setBusy(true);
@@ -159,17 +154,14 @@ export default function JobDetail({
   }, [menuOpen]);
 
   async function deleteJob() {
-    const ok = window.confirm(
-      `Permanently delete "${job.title}"? This removes the job, all its applications, threads, and screening questions. ` +
-        `Funnel and stage analytics for the role stay intact.`,
-    );
+    const ok = window.confirm(t("confirmDelete", { title: job.title }));
     if (!ok) return;
     setDeleting(true);
     const res = await fetch(`/api/jobs/${job.id}`, { method: "DELETE" });
     setDeleting(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      window.alert(json?.error === "forbidden" ? "Only admins can delete jobs." : "Could not delete the job.");
+      window.alert(json?.error === "forbidden" ? t("deleteForbidden") : t("deleteFailed"));
       return;
     }
     router.push("/jobs");
@@ -180,7 +172,7 @@ export default function JobDetail({
       {/* Breadcrumb + actions */}
       <div className="row" style={{ marginBottom: 14 }}>
         <Link href="/jobs" className="btn btn-sm btn-ghost">
-          <Icons.ChevronLeft size={12} /> All jobs
+          <Icons.ChevronLeft size={12} /> {t("allJobs")}
         </Link>
         <span style={{ flex: 1 }} />
         <a
@@ -189,16 +181,16 @@ export default function JobDetail({
           target="_blank"
           rel="noreferrer"
         >
-          <Icons.ArrowUpRight size={12} /> Open public link
+          <Icons.ArrowUpRight size={12} /> {t("openPublic")}
         </a>
         <Link className="btn btn-sm" href={`/pipeline?job=${job.id}`}>
-          <Icons.Pipeline size={12} /> Open pipeline
+          <Icons.Pipeline size={12} /> {t("openPipeline")}
         </Link>
         {canPublish && (
         <div ref={menuRef} style={{ position: "relative" }}>
           <button
             className="btn btn-sm"
-            aria-label="More actions"
+            aria-label={t("moreActions")}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
@@ -230,7 +222,7 @@ export default function JobDetail({
                 style={{ width: "100%", justifyContent: "flex-start", color: "oklch(50% 0.18 28)" }}
                 onClick={() => { setMenuOpen(false); deleteJob(); }}
               >
-                <Icons.Trash size={12} /> Delete job
+                <Icons.Trash size={12} /> {t("deleteJob")}
               </button>
             </div>
           )}
@@ -253,7 +245,7 @@ export default function JobDetail({
                 }}
               >
                 <span className="chip-dot" style={{ background: statusColor }} />
-                {job.status}
+                {labels.jobStatus(job.status)}
               </span>
               {job.department && <span className="chip">{job.department}</span>}
               {job.location && (
@@ -262,9 +254,9 @@ export default function JobDetail({
                 </span>
               )}
               <span className="chip">
-                <Icons.Clock size={11} /> Posted {days}d ago
+                <Icons.Clock size={11} /> {t("postedDaysAgo", { days })}
               </span>
-              {job.employment && <span className="chip">{job.employment}</span>}
+              {job.employment && <span className="chip">{labels.employment(job.employment)}</span>}
             </div>
             <h1 style={{ fontSize: 30, letterSpacing: "-0.025em" }}>{job.title}</h1>
             {job.pitch && (
@@ -276,33 +268,33 @@ export default function JobDetail({
               <>
                 {job.status === "Draft" && (
                   <button className="btn btn-primary" disabled={busy} onClick={() => setStatus("Open")}>
-                    <Icons.ArrowUpRight size={13} stroke={2} /> Publish
+                    <Icons.ArrowUpRight size={13} stroke={2} /> {t("publish")}
                   </button>
                 )}
                 {job.status === "Open" && (
                   <>
                     <button className="btn" disabled={busy} onClick={() => setStatus("Draft")}>
-                      <Icons.X size={12} /> Unpublish
+                      <Icons.X size={12} /> {t("unpublish")}
                     </button>
                     <button className="btn btn-sm btn-ghost" disabled={busy} onClick={() => setStatus("Closed")}>
-                      Close role
+                      {t("closeRole")}
                     </button>
                   </>
                 )}
                 {job.status === "Closed" && (
                   <>
                     <button className="btn btn-primary" disabled={busy} onClick={() => setStatus("Open")}>
-                      <Icons.ArrowUpRight size={13} stroke={2} /> Reopen role
+                      <Icons.ArrowUpRight size={13} stroke={2} /> {t("reopenRole")}
                     </button>
                     <span className="tiny muted" style={{ textAlign: "center" }}>
-                      Republishes immediately on the career site
+                      {t("reopenHint")}
                     </span>
                   </>
                 )}
               </>
             ) : (
               <span className="tiny muted" style={{ textAlign: "center", maxWidth: 180 }}>
-                Only admins can publish, close, or reopen roles.
+                {t("publishForbidden")}
               </span>
             )}
           </div>
@@ -318,16 +310,16 @@ export default function JobDetail({
             borderTop: "0.5px solid var(--line)",
           }}
         >
-          <Stat2 v={job.applicantCount} l="Applicants" />
-          <Stat2 v={job.newThisWeek} l="New this week" accent={job.newThisWeek > 0} />
-          <Stat2 v={lateStage} l="In late stages" />
+          <Stat2 v={job.applicantCount} l={t("stats.applicants")} />
+          <Stat2 v={job.newThisWeek} l={t("stats.newThisWeek")} accent={job.newThisWeek > 0} />
+          <Stat2 v={lateStage} l={t("stats.lateStages")} />
           <Stat2
             v={
               (job.salaryDisplay && job.salaryDisplay.split(" ")[0]) ||
               fmtMoney(job.salaryMin, job.salaryMax, job.salaryCurrency || undefined) ||
               "—"
             }
-            l="Salary band"
+            l={t("stats.salary")}
             small
           />
         </div>
@@ -335,22 +327,22 @@ export default function JobDetail({
 
       {/* Tabs */}
       <Glass faint style={{ display: "inline-flex", padding: 3, borderRadius: 10, marginBottom: 14, gap: 2 }}>
-        {TABS.map((t) => (
+        {TABS.map((id) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={id}
+            onClick={() => setTab(id)}
             className="btn btn-sm btn-ghost"
             style={{
               height: 30,
               padding: "0 14px",
               fontSize: 12.5,
               borderRadius: 7,
-              background: tab === t.id ? "var(--glass-bg-strong)" : "transparent",
-              border: tab === t.id ? "0.5px solid var(--glass-border)" : "0.5px solid transparent",
-              color: tab === t.id ? "var(--ink-0)" : "var(--ink-2)",
+              background: tab === id ? "var(--glass-bg-strong)" : "transparent",
+              border: tab === id ? "0.5px solid var(--glass-border)" : "0.5px solid transparent",
+              color: tab === id ? "var(--ink-0)" : "var(--ink-2)",
             }}
           >
-            {t.l}
+            {t(`tabs.${id}`)}
           </button>
         ))}
       </Glass>
@@ -434,6 +426,8 @@ function DescriptionTab({
   busy: boolean;
   onSave: () => Promise<void>;
 }) {
+  const t = useTranslations("jobs.detail.description");
+  const tc = useTranslations("common");
   const [aiBusy, setAiBusy] = React.useState(false);
 
   async function aiRewrite() {
@@ -460,37 +454,37 @@ function DescriptionTab({
   return (
     <Glass style={{ padding: 26, borderRadius: 16 }}>
       <div className="row" style={{ marginBottom: 18 }}>
-        <h3 style={{ flex: 1 }}>Position description</h3>
+        <h3 style={{ flex: 1 }}>{t("title")}</h3>
         {editing ? (
           <>
             <button className="btn btn-sm btn-ghost" onClick={aiRewrite} disabled={aiBusy}>
-              <Icons.Sparkle size={12} stroke={2} /> {aiBusy ? "Rewriting…" : "AI rewrite"}
+              <Icons.Sparkle size={12} stroke={2} /> {aiBusy ? t("rewriting") : t("aiRewrite")}
             </button>
             <button className="btn btn-sm" onClick={() => setEditing(false)} disabled={busy}>
-              Cancel
+              {tc("cancel")}
             </button>
             <button className="btn btn-sm btn-primary" onClick={onSave} disabled={busy}>
-              <Icons.Check size={12} stroke={2} /> {busy ? "Saving…" : "Save changes"}
+              <Icons.Check size={12} stroke={2} /> {busy ? tc("saving") : t("save")}
             </button>
           </>
         ) : (
           <button className="btn btn-sm" onClick={() => setEditing(true)}>
-            <Icons.FileText size={12} /> Edit description
+            <Icons.FileText size={12} /> {t("edit")}
           </button>
         )}
       </div>
 
       {editing ? (
         <div className="col" style={{ gap: 14, position: "relative" }}>
-          <DField label="One-line pitch">
+          <DField label={t("pitch")}>
             <input
               className="input"
               value={draft.pitch}
               onChange={(e) => setDraft((d) => ({ ...d, pitch: e.target.value }))}
-              placeholder="What's this role in one sentence?"
+              placeholder={t("pitchPlaceholder")}
             />
           </DField>
-          <DField label="Description">
+          <DField label={t("description")}>
             <div style={{ position: "relative" }}>
               <Wysiwyg
                 value={draft.description}
@@ -505,7 +499,7 @@ function DescriptionTab({
               )}
             </div>
           </DField>
-          <DField label="Requirements" hint="One per line">
+          <DField label={t("requirements")} hint={t("onePerLine")}>
             <textarea
               className="input autogrow"
               data-max-lines="15"
@@ -514,7 +508,7 @@ function DescriptionTab({
               style={{ fontFamily: "inherit" }}
             />
           </DField>
-          <DField label="Nice to have" hint="One per line">
+          <DField label={t("niceToHave")} hint={t("onePerLine")}>
             <textarea
               className="input autogrow"
               data-max-lines="10"
@@ -523,12 +517,12 @@ function DescriptionTab({
               style={{ fontFamily: "inherit" }}
             />
           </DField>
-          <DField label="Salary band">
+          <DField label={t("salary")}>
             <input
               className="input"
               value={draft.salaryDisplay}
               onChange={(e) => setDraft((d) => ({ ...d, salaryDisplay: e.target.value }))}
-              placeholder="€85k – €110k · annual"
+              placeholder={t("salaryPlaceholder")}
             />
           </DField>
         </div>
@@ -547,20 +541,20 @@ function DescriptionTab({
               <p style={{ fontSize: 15, color: "var(--ink-0)", lineHeight: 1.5, fontStyle: "italic" }}>"{job.pitch}"</p>
             </Glass>
           )}
-          <h4 style={{ marginBottom: 8 }}>About the role</h4>
+          <h4 style={{ marginBottom: 8 }}>{t("about")}</h4>
           <RichText
             html={job.description}
             style={{ fontSize: 14.5, lineHeight: 1.7, color: "var(--ink-1)", marginBottom: 24 }}
             fallback={
               <p style={{ color: "var(--ink-3)", marginBottom: 24 }}>
-                No description yet. Click "Edit description" to add one.
+                {t("empty")}
               </p>
             }
           />
 
           {job.requirements.length > 0 && (
             <>
-              <h4 style={{ marginBottom: 8 }}>Requirements</h4>
+              <h4 style={{ marginBottom: 8 }}>{t("requirements")}</h4>
               <ul style={{ margin: "0 0 24px", padding: 0, listStyle: "none" }}>
                 {job.requirements.map((r, i) => (
                   <li key={i} className="row" style={{ alignItems: "flex-start", gap: 10, padding: "6px 0" }}>
@@ -578,7 +572,7 @@ function DescriptionTab({
 
           {job.niceToHave.length > 0 && (
             <>
-              <h4 style={{ marginBottom: 8 }}>Nice to have</h4>
+              <h4 style={{ marginBottom: 8 }}>{t("niceToHave")}</h4>
               <div className="row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
                 {job.niceToHave.map((n, i) => (
                   <span key={i} className="chip">{n}</span>
@@ -589,7 +583,7 @@ function DescriptionTab({
 
           {(job.salaryDisplay || fmtMoney(job.salaryMin, job.salaryMax, job.salaryCurrency || undefined)) && (
             <>
-              <h4 style={{ marginBottom: 8 }}>Compensation</h4>
+              <h4 style={{ marginBottom: 8 }}>{t("compensation")}</h4>
               <div style={{ fontSize: 14, color: "var(--ink-1)", marginBottom: 8 }}>
                 {job.salaryDisplay || fmtMoney(job.salaryMin, job.salaryMax, job.salaryCurrency || undefined)}
               </div>
@@ -623,6 +617,8 @@ function DField({
 
 function ScreeningTab({ job }: { job: JobShape }) {
   const router = useRouter();
+  const t = useTranslations("jobs.detail.screening");
+  const tc = useTranslations("common");
   const [questions, setQuestions] = React.useState(job.screening);
   const [editing, setEditing] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -645,7 +641,7 @@ function ScreeningTab({ job }: { job: JobShape }) {
   function add() {
     setQuestions((arr) => [
       ...arr,
-      { id: `new-${Date.now()}`, label: "New question", kind: "text", required: false },
+      { id: `new-${Date.now()}`, label: t("newQuestion"), kind: "text", required: false },
     ]);
   }
 
@@ -670,9 +666,9 @@ function ScreeningTab({ job }: { job: JobShape }) {
     <Glass style={{ padding: 26, borderRadius: 16 }}>
       <div className="row" style={{ marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
-          <h3>Screening questions</h3>
+          <h3>{t("title")}</h3>
           <p className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>
-            Custom questions asked when a candidate applies.
+            {t("hint")}
           </p>
         </div>
         {editing ? (
@@ -686,15 +682,15 @@ function ScreeningTab({ job }: { job: JobShape }) {
               }}
               disabled={busy}
             >
-              Cancel
+              {tc("cancel")}
             </button>
             <button className="btn btn-sm btn-primary" type="button" onClick={save} disabled={busy}>
-              <Icons.Check size={12} stroke={2} /> {busy ? "Saving…" : "Save questions"}
+              <Icons.Check size={12} stroke={2} /> {busy ? tc("saving") : t("save")}
             </button>
           </div>
         ) : (
           <button className="btn btn-sm" type="button" onClick={() => setEditing(true)}>
-            <Icons.Plus size={12} stroke={2} /> Edit questions
+            <Icons.Plus size={12} stroke={2} /> {t("edit")}
           </button>
         )}
       </div>
@@ -713,10 +709,10 @@ function ScreeningTab({ job }: { job: JobShape }) {
                   value={q.kind}
                   onChange={(e) => update(i, { kind: e.target.value })}
                 >
-                  <option value="text">Short text</option>
-                  <option value="longtext">Long text</option>
-                  <option value="yesno">Yes/No</option>
-                  <option value="number">Number</option>
+                  <option value="text">{t("kinds.text")}</option>
+                  <option value="longtext">{t("kinds.longtext")}</option>
+                  <option value="yesno">{t("kinds.yesno")}</option>
+                  <option value="number">{t("kinds.number")}</option>
                 </select>
                 <label className="row" style={{ gap: 6, fontSize: 12, cursor: "pointer", userSelect: "none" }}>
                   <input
@@ -724,7 +720,7 @@ function ScreeningTab({ job }: { job: JobShape }) {
                     checked={q.required}
                     onChange={(e) => update(i, { required: e.target.checked })}
                   />
-                  Required
+                  {t("required")}
                 </label>
                 <span style={{ flex: 1 }} />
                 <button
@@ -756,7 +752,7 @@ function ScreeningTab({ job }: { job: JobShape }) {
               </div>
               <input
                 className="input"
-                placeholder="Question label (e.g. Years of experience with React?)"
+                placeholder={t("labelPlaceholder")}
                 value={q.label}
                 onChange={(e) => update(i, { label: e.target.value })}
               />
@@ -768,11 +764,11 @@ function ScreeningTab({ job }: { job: JobShape }) {
             onClick={add}
             style={{ alignSelf: "flex-start", marginTop: 4 }}
           >
-            <Icons.Plus size={12} stroke={2} /> Add question
+            <Icons.Plus size={12} stroke={2} /> {t("add")}
           </button>
         </div>
       ) : job.screening.length === 0 ? (
-        <p className="muted">No screening questions yet. Candidates will only be asked the defaults.</p>
+        <p className="muted">{t("empty")}</p>
       ) : (
         <div className="col" style={{ gap: 10 }}>
           {job.screening.map((q, i) => (
@@ -781,8 +777,8 @@ function ScreeningTab({ job }: { job: JobShape }) {
                 <span className="chip mono" style={{ height: 20, fontSize: 11 }}>
                   Q{i + 1}
                 </span>
-                <span className="chip">{q.kind}</span>
-                {q.required && <span className="chip chip-accent">Required</span>}
+                <span className="chip">{t(`kinds.${q.kind as "text"}`)}</span>
+                {q.required && <span className="chip chip-accent">{t("required")}</span>}
               </div>
               <div style={{ fontSize: 14, color: "var(--ink-0)" }}>{q.label}</div>
             </Glass>
@@ -797,6 +793,8 @@ type ProcessStep = { n: string; who: string; d: string };
 
 function ProcessTab({ job }: { job: JobShape }) {
   const router = useRouter();
+  const t = useTranslations("jobs.detail.process");
+  const tc = useTranslations("common");
   // Pre-fill with sensible defaults when the role hasn't been touched yet so
   // recruiters always see a starting point to edit rather than an empty card.
   const initial: ProcessStep[] = React.useMemo(
@@ -804,12 +802,12 @@ function ProcessTab({ job }: { job: JobShape }) {
       job.processSteps && job.processSteps.length > 0
         ? job.processSteps
         : [
-            { n: "Intro chat", who: "Recruiter · 30 min", d: "Get to know each other and the role." },
-            { n: "Working session", who: "Hiring manager · 60 min", d: "Walk through a representative problem." },
-            { n: "Team meet", who: "2-3 teammates · 60 min", d: "Meet the people you'll work with day to day." },
-            { n: "Offer", who: "Decision within a week", d: "We'll move fast once everyone's met." },
+            { n: t("defaults.intro.n"), who: t("defaults.intro.who"), d: t("defaults.intro.d") },
+            { n: t("defaults.working.n"), who: t("defaults.working.who"), d: t("defaults.working.d") },
+            { n: t("defaults.team.n"), who: t("defaults.team.who"), d: t("defaults.team.d") },
+            { n: t("defaults.offer.n"), who: t("defaults.offer.who"), d: t("defaults.offer.d") },
           ],
-    [job.processSteps],
+    [job.processSteps, t],
   );
   const [steps, setSteps] = React.useState<ProcessStep[]>(initial);
   const [editing, setEditing] = React.useState(false);
@@ -831,7 +829,7 @@ function ProcessTab({ job }: { job: JobShape }) {
     setSteps((arr) => arr.filter((_, idx) => idx !== i));
   }
   function add() {
-    setSteps((arr) => [...arr, { n: "New step", who: "", d: "" }]);
+    setSteps((arr) => [...arr, { n: t("newStep"), who: "", d: "" }]);
   }
 
   async function save() {
@@ -853,9 +851,9 @@ function ProcessTab({ job }: { job: JobShape }) {
     <Glass style={{ padding: 26, borderRadius: 16 }}>
       <div className="row" style={{ marginBottom: 18 }}>
         <div style={{ flex: 1 }}>
-          <h3>Hiring process</h3>
+          <h3>{t("title")}</h3>
           <p className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>
-            What candidates can expect after they apply. Shown on the public career site.
+            {t("hint")}
           </p>
         </div>
         {editing ? (
@@ -869,15 +867,15 @@ function ProcessTab({ job }: { job: JobShape }) {
               }}
               disabled={busy}
             >
-              Cancel
+              {tc("cancel")}
             </button>
             <button className="btn btn-sm btn-primary" type="button" onClick={save} disabled={busy}>
-              <Icons.Check size={12} stroke={2} /> {busy ? "Saving…" : "Save process"}
+              <Icons.Check size={12} stroke={2} /> {busy ? tc("saving") : t("save")}
             </button>
           </>
         ) : (
           <button className="btn btn-sm" type="button" onClick={() => setEditing(true)}>
-            <Icons.FileText size={12} /> Edit process
+            <Icons.FileText size={12} /> {t("edit")}
           </button>
         )}
       </div>
@@ -887,7 +885,7 @@ function ProcessTab({ job }: { job: JobShape }) {
           {steps.map((step, i) => (
             <Glass faint key={i} style={{ padding: 14, borderRadius: 12 }}>
               <div className="row" style={{ gap: 8, marginBottom: 8, alignItems: "center" }}>
-                <span className="chip mono" style={{ height: 22, fontSize: 11 }}>Step {i + 1}</span>
+                <span className="chip mono" style={{ height: 22, fontSize: 11 }}>{t("stepN", { n: i + 1 })}</span>
                 <span style={{ flex: 1 }} />
                 <button
                   type="button"
@@ -895,7 +893,7 @@ function ProcessTab({ job }: { job: JobShape }) {
                   style={{ width: 26, height: 26 }}
                   onClick={() => move(i, -1)}
                   disabled={i === 0}
-                  aria-label="Move up"
+                  aria-label={t("moveUp")}
                 >
                   <Icons.ChevronLeft size={12} style={{ transform: "rotate(90deg)" }} />
                 </button>
@@ -905,7 +903,7 @@ function ProcessTab({ job }: { job: JobShape }) {
                   style={{ width: 26, height: 26 }}
                   onClick={() => move(i, 1)}
                   disabled={i === steps.length - 1}
-                  aria-label="Move down"
+                  aria-label={t("moveDown")}
                 >
                   <Icons.ChevronDown size={12} />
                 </button>
@@ -914,7 +912,7 @@ function ProcessTab({ job }: { job: JobShape }) {
                   className="iconbtn"
                   style={{ width: 26, height: 26 }}
                   onClick={() => remove(i)}
-                  aria-label="Remove step"
+                  aria-label={t("removeStep")}
                 >
                   <Icons.Trash size={12} />
                 </button>
@@ -922,19 +920,19 @@ function ProcessTab({ job }: { job: JobShape }) {
               <div className="col" style={{ gap: 8 }}>
                 <input
                   className="input"
-                  placeholder="Step name (e.g. Working session)"
+                  placeholder={t("namePlaceholder")}
                   value={step.n}
                   onChange={(e) => update(i, { n: e.target.value })}
                 />
                 <input
                   className="input"
-                  placeholder="Who & duration (e.g. Hiring manager · 60 min)"
+                  placeholder={t("whoPlaceholder")}
                   value={step.who}
                   onChange={(e) => update(i, { who: e.target.value })}
                 />
                 <input
                   className="input"
-                  placeholder="What candidates can expect"
+                  placeholder={t("descPlaceholder")}
                   value={step.d}
                   onChange={(e) => update(i, { d: e.target.value })}
                 />
@@ -942,11 +940,11 @@ function ProcessTab({ job }: { job: JobShape }) {
             </Glass>
           ))}
           <button className="btn btn-sm" type="button" onClick={add}>
-            <Icons.Plus size={12} stroke={2} /> Add step
+            <Icons.Plus size={12} stroke={2} /> {t("addStep")}
           </button>
         </div>
       ) : steps.length === 0 ? (
-        <p className="muted">No hiring process defined yet. Click "Edit process" to add one.</p>
+        <p className="muted">{t("empty")}</p>
       ) : (
         <div>
           {steps.map((step, i) => (
@@ -969,7 +967,7 @@ function ProcessTab({ job }: { job: JobShape }) {
                 {i + 1}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{step.n || <span className="muted">Untitled step</span>}</div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>{step.n || <span className="muted">{t("untitled")}</span>}</div>
                 {step.who && <div className="tiny" style={{ marginTop: 2, color: "var(--ink-2)" }}>{step.who}</div>}
                 {step.d && <p style={{ fontSize: 13, lineHeight: 1.55, color: "var(--ink-1)", marginTop: 6 }}>{step.d}</p>}
               </div>
@@ -981,13 +979,8 @@ function ProcessTab({ job }: { job: JobShape }) {
   );
 }
 
-const ROLE_PRESETS = [
-  "Recruiter (lead)",
-  "Hiring manager",
-  "Interviewer",
-  "Reviewer",
-  "Sourcer",
-];
+// Suggestions for the free-text role field — message keys under jobs.detail.team.presets.
+const ROLE_PRESETS = ["recruiterLead", "hiringManager", "interviewer", "reviewer", "sourcer"] as const;
 
 function TeamCard({
   job,
@@ -999,6 +992,9 @@ function TeamCard({
   canManage: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("jobs.detail.team");
+  const tc = useTranslations("common");
+  const presets = ROLE_PRESETS.map((k) => t(`presets.${k}`));
   // Hiring team is now backed by JobHiringTeamMember (FK to User). We
   // hold the userId-keyed shape locally and PATCH the full roster on
   // each change — the server diff-replaces the join rows.
@@ -1006,7 +1002,7 @@ function TeamCard({
   const [leadReviewerId, setLeadReviewerId] = React.useState(job.leadReviewerId);
   const [adding, setAdding] = React.useState(false);
   const [pickedUserId, setPickedUserId] = React.useState<string>("");
-  const [role, setRole] = React.useState(ROLE_PRESETS[1]);
+  const [role, setRole] = React.useState(presets[1]);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -1027,8 +1023,8 @@ function TeamCard({
     if (!res?.ok) {
       const j = await res?.json().catch(() => ({}));
       setError(j?.error === "forbidden_hiring_team" || j?.error === "forbidden_lead_reviewer"
-        ? "Only admins can change the hiring team or lead reviewer."
-        : "Could not save.");
+        ? t("forbidden")
+        : t("saveFailed"));
       return false;
     }
     router.refresh();
@@ -1064,7 +1060,7 @@ function TeamCard({
   async function removeMember(userId: string) {
     const m = team.find((t) => t.userId === userId);
     if (!m) return;
-    if (!confirm(`Remove ${m.name} from the hiring team?`)) return;
+    if (!confirm(t("confirmRemove", { name: m.name }))) return;
     await persistTeam(team.filter((t) => t.userId !== userId));
   }
 
@@ -1081,11 +1077,9 @@ function TeamCard({
     <Glass style={{ padding: 26, borderRadius: 16 }}>
       {/* ── Lead reviewer ─────────────────────────────────────────────── */}
       <div style={{ marginBottom: 22 }}>
-        <h3 style={{ marginBottom: 4 }}>Lead reviewer</h3>
+        <h3 style={{ marginBottom: 4 }}>{t("lead")}</h3>
         <p className="muted" style={{ fontSize: 12.5, marginBottom: 10 }}>
-          The recruiter who owns triaging candidates for this role. New
-          applications inherit this as their reviewer; the lead can be
-          reassigned per-application from the candidate profile.
+          {t("leadHint")}
         </p>
         <select
           className="select"
@@ -1094,7 +1088,7 @@ function TeamCard({
           disabled={!canManage || busy}
           style={{ maxWidth: 360 }}
         >
-          <option value="">— Unassigned —</option>
+          <option value="">{t("unassigned")}</option>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name} ({m.email})
@@ -1106,14 +1100,14 @@ function TeamCard({
       {/* ── Hiring team ───────────────────────────────────────────────── */}
       <div className="row" style={{ marginBottom: 16, borderTop: "0.5px solid var(--line)", paddingTop: 18 }}>
         <div style={{ flex: 1 }}>
-          <h3>Hiring team</h3>
+          <h3>{t("title")}</h3>
           <p className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>
-            Workspace members involved in this hire. Team members can view the candidates for this job, add notes, and write debriefs on interviews they're scheduled into.
+            {t("hint")}
           </p>
         </div>
         {!adding && canManage && (
           <button className="btn btn-sm" type="button" onClick={() => setAdding(true)} disabled={busy}>
-            <Icons.Plus size={12} stroke={2} /> Add member
+            <Icons.Plus size={12} stroke={2} /> {t("addMember")}
           </button>
         )}
       </div>
@@ -1129,13 +1123,13 @@ function TeamCard({
           <div className="col" style={{ gap: 10 }}>
             <div className="row" style={{ gap: 10 }}>
               <div style={{ flex: 2 }}>
-                <label className="label">Person</label>
+                <label className="label">{t("person")}</label>
                 <select
                   className="select"
                   value={pickedUserId}
                   onChange={(e) => setPickedUserId(e.target.value)}
                 >
-                  <option value="">Pick a teammate…</option>
+                  <option value="">{t("pick")}</option>
                   {available.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name} ({m.email})
@@ -1144,7 +1138,7 @@ function TeamCard({
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <label className="label">Role on this hire</label>
+                <label className="label">{t("role")}</label>
                 <input
                   className="input"
                   list="hiring-role-presets"
@@ -1152,13 +1146,13 @@ function TeamCard({
                   onChange={(e) => setRole(e.target.value)}
                 />
                 <datalist id="hiring-role-presets">
-                  {ROLE_PRESETS.map((r) => <option key={r} value={r} />)}
+                  {presets.map((r) => <option key={r} value={r} />)}
                 </datalist>
               </div>
             </div>
             <div className="row" style={{ justifyContent: "flex-end", gap: 8 }}>
               <button className="btn btn-sm" type="button" onClick={() => setAdding(false)} disabled={busy}>
-                Cancel
+                {tc("cancel")}
               </button>
               <button
                 className="btn btn-sm btn-primary"
@@ -1166,7 +1160,7 @@ function TeamCard({
                 onClick={addMember}
                 disabled={busy || !pickedUserId || !role.trim()}
               >
-                <Icons.Plus size={12} stroke={2} /> Add to team
+                <Icons.Plus size={12} stroke={2} /> {t("addToTeam")}
               </button>
             </div>
           </div>
@@ -1175,7 +1169,7 @@ function TeamCard({
 
       {team.length === 0 ? (
         <p className="muted" style={{ fontSize: 13 }}>
-          No one on the hiring team yet. Click "Add member" to assign a teammate.
+          {t("empty")}
         </p>
       ) : (
         <div className="col" style={{ gap: 8 }}>
@@ -1188,7 +1182,7 @@ function TeamCard({
                     <span style={{ fontSize: 13.5, fontWeight: 500 }}>{m.name}</span>
                     {m.userId === leadReviewerId && (
                       <span className="chip" style={{ height: 18, fontSize: 10, background: "var(--accent-soft)", color: "var(--accent-solid)", borderColor: "transparent" }}>
-                        Lead reviewer
+                        {t("lead")}
                       </span>
                     )}
                   </div>
@@ -1214,8 +1208,8 @@ function TeamCard({
                     className="iconbtn"
                     onClick={() => removeMember(m.userId)}
                     disabled={busy}
-                    title="Remove from team"
-                    aria-label={`Remove ${m.name}`}
+                    title={t("removeFromTeam")}
+                    aria-label={t("removeLabel", { name: m.name })}
                   >
                     <Icons.Trash size={13} />
                   </button>
@@ -1242,19 +1236,20 @@ function PublishingTab({
   publicScheme: string;
   onToggle: (key: string, value: boolean) => Promise<void>;
 }) {
+  const t = useTranslations("jobs.detail.publishing");
   const publicUrl = `${publicScheme}://${workspaceSlug}.${publicDomain}/jobs/${job.slug}`;
   const channels: { key: string; name: string; sub: string; icon: keyof typeof Icons }[] = [
-    { key: "vellum", name: `${workspaceSlug} careers`, sub: `${publicUrl} · branded`, icon: "Globe" },
-    { key: "linkedin", name: "LinkedIn Jobs", sub: "Free posting · syncs every 24h", icon: "Linkedin" },
-    { key: "indeed", name: "Indeed", sub: "Free posting · syncs every 24h", icon: "Briefcase" },
-    { key: "otta", name: "Otta", sub: "Pre-screened candidates · paid", icon: "Star" },
-    { key: "hn", name: "Hacker News Who's Hiring", sub: "First Monday of month", icon: "FileText" },
+    { key: "vellum", name: t("careers", { slug: workspaceSlug }), sub: t("branded", { url: publicUrl }), icon: "Globe" },
+    { key: "linkedin", name: "LinkedIn Jobs", sub: t("freeSync"), icon: "Linkedin" },
+    { key: "indeed", name: "Indeed", sub: t("freeSync"), icon: "Briefcase" },
+    { key: "otta", name: "Otta", sub: t("otta"), icon: "Star" },
+    { key: "hn", name: "Hacker News Who's Hiring", sub: t("hn"), icon: "FileText" },
   ];
   return (
     <Glass style={{ padding: 26, borderRadius: 16 }}>
-      <h3 style={{ marginBottom: 4 }}>Where it's published</h3>
+      <h3 style={{ marginBottom: 4 }}>{t("title")}</h3>
       <p className="muted" style={{ fontSize: 13, marginBottom: 18 }}>
-        Vellum syncs this listing across the channels you've enabled.
+        {t("hint")}
       </p>
       <div className="col" style={{ gap: 10 }}>
         {channels.map((c) => {
@@ -1289,7 +1284,7 @@ function PublishingTab({
               </div>
               {on && (
                 <span className="chip chip-accent">
-                  <span className="chip-dot" style={{ background: "var(--accent-solid)" }} /> Live
+                  <span className="chip-dot" style={{ background: "var(--accent-solid)" }} /> {t("live")}
                 </span>
               )}
               <button
@@ -1297,24 +1292,25 @@ function PublishingTab({
                 className={`switch ${on ? "on" : ""}`}
                 disabled={isVellum}
                 onClick={() => !isVellum && onToggle(c.key, !on)}
-                aria-label={`Toggle ${c.name}`}
+                aria-label={t("toggle", { name: c.name })}
               />
             </Glass>
           );
         })}
       </div>
       <p className="tiny muted" style={{ marginTop: 14 }}>
-        External channels (LinkedIn / Indeed / Otta / HN) are toggles in the OSS edition — credential sync is part
-        of the SaaS roadmap.
+        {t("ossNote")}
       </p>
     </Glass>
   );
 }
 
 function JobAnalytics({ job, stages }: { job: JobShape; stages: StageStat[] }) {
+  const t = useTranslations("jobs.detail.analytics");
+  const relativeTime = useRelativeTime();
   return (
     <Glass style={{ padding: 26, borderRadius: 16 }}>
-      <h3 style={{ marginBottom: 18 }}>Funnel & conversion</h3>
+      <h3 style={{ marginBottom: 18 }}>{t("funnel")}</h3>
       <div className="col" style={{ gap: 14 }}>
         {stages.map((s) => {
           const pct = (s.count / Math.max(1, job.applicantCount)) * 100;
@@ -1340,17 +1336,17 @@ function JobAnalytics({ job, stages }: { job: JobShape; stages: StageStat[] }) {
 
       <div className="divider" style={{ margin: "26px 0" }} />
 
-      <h3 style={{ marginBottom: 12 }}>Pipeline pulse</h3>
+      <h3 style={{ marginBottom: 12 }}>{t("pulse")}</h3>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-        <Stat2 v={`${job.avgAge}d`} l="Avg. application age" />
-        <Stat2 v={job.newThisWeek} l="New this week" accent={job.newThisWeek > 0} />
+        <Stat2 v={t("days", { n: job.avgAge })} l={t("avgAge")} />
+        <Stat2 v={job.newThisWeek} l={t("newThisWeek")} accent={job.newThisWeek > 0} />
         <Stat2
           v={
             job.publishedAt
               ? relativeTime(job.publishedAt)
               : "—"
           }
-          l="Published"
+          l={t("published")}
           small
         />
       </div>
